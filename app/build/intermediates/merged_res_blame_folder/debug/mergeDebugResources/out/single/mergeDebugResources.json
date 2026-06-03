@@ -1,0 +1,18 @@
+[
+    {
+        "merged": "com.example.wayer.app-debug-4:/drawable_input_field_box.xml.flat",
+        "source": "com.example.wayer.app-main-6:/drawable/input_field_box.xml"
+    },
+    {
+        "merged": "com.example.wayer.app-debug-4:/drawable_terminal_border.xml.flat",
+        "source": "com.example.wayer.app-main-6:/drawable/terminal_border.xml"
+    },
+    {
+        "merged": "D:\\.gradle\\daemon\\8.14.5\\com.example.wayer.app-debug-4:\\layout_activity_main.xml.flat",
+        "source": "D:\\.gradle\\daemon\\8.14.5\\com.example.wayer.app-main-6:\\layout\\activity_main.xml"
+    },
+    {
+        "merged": "com.example.wayer.app-debug-4:/layout_activity_main.xml.flat",
+        "source": "com.example.wayer.app-main-6:/layout/activity_main.xml"
+    }
+]

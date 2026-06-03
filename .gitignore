@@ -1,0 +1,9 @@
+.gradle/
+build/reports/
+local.properties
+app/build/classes/
+app/build/generated/
+app/build/intermediates
+app/build/outputs/logs/
+app/build/outputa/apk/debug/output-metadata.json
+app/build/tmp
