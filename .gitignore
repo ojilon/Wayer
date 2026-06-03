@@ -1,0 +1,14 @@
+# Gradle files
+.gradle/
+local.properties
+
+# Build outputs and reports
+build/reports/
+
+# App-specific build outputs
+app/build/classes/
+app/build/generated/
+app/build/intermediates/
+app/build/outputs/logs/
+app/build/outputs/apk/debug/output-metadata.json
+app/build/tmp/
