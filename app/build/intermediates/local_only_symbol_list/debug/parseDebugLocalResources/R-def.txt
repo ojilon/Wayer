@@ -1,8 +1,0 @@
-R_DEF: Internal format may change without notice
-local
-drawable input_field_box
-drawable terminal_border
-id et_command_input
-id tv_current_path
-id tv_terminal_output
-layout activity_main
