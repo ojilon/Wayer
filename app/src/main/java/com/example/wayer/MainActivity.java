@@ -1,25 +1,83 @@
 package com.example.wayer;
 
+//SECURITY AND STORAGE SETTINGS
+
+/*gives access to android system constants; the storage
+permissions
+*/
 import android.Manifest;
-import android.app.Activity;
+
+/*checks whether permissions have been granted by the
+user or the OS
+*/
 import android.content.pm.PackageManager;
-import android.os.Bundle;
+
+/*provides access to environment variables and root
+paths for device storage locations
+*/
 import android.os.Environment;
-import android.view.KeyEvent;
-import android.view.inputmethod.EditorInfo;
-import android.widget.EditText;
-import android.widget.TextView;
+
+//INBUILT JAVA UTILITIES
+
+/*used to list, enter and read directories*/
 import java.io.File;
 
+//THE UI AND LIFECYCLE COMPONENTS
+
+import android.app.Activity; //provides the class for creating windowed UI in android
+
+/*os.Bundle passes data between android activities
+also saves screen configuration changes such as rotating the screen
+*/
+import android.os.Bundle;
+
+/*capture hardware keyboard events such as when one presses a key*/
+import android.view.KeyEvent;
+
+/*defines soft keyboard actions*/
+import android.view.inputmethod.EditorInfo;
+
+/*provides an editable text field component where a person
+can type his or her commands */
+import android.widget.EditText;
+
+/*provides the text views for displaying data
+example is terminal history, regarding this
+project*/
+import android.widget.TextView;
+
+
 public class MainActivity extends Activity {
+
+    /*
+    GLOBAL CLASS VARIABLES:
+     - tvCurrentPath -> From .TextView; displays the path string
+    of the folder user is looking for
+     -tvTerminalOutput -> From .TextView; acts as a monitor for 
+     the scrolling, example when viewing output history.
+     -etCommandInput -> From .EditText; the input box where users
+     type the commands
+     -currentDir -> From .File; A state pointer which tracks the
+     directory which user is navigating.  
+    */
 
     private TextView tvCurrentPath;
     private TextView tvTerminalOutput;
     private EditText etCommandInput;
     private File currentDir;
 
+    /*Overriden lifecycle method
+    - Initializes screen when app starts; links the layout
+    definitions to the xml layout configurations 
+    (R.layout.activity_main).
+    -Sets the initial ddirectory to the primary external storage.
+    -Asks the phone permissions to read and write files
+    -Configures an event listener on the input box to wait for 
+    the "enter" key
+    */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
@@ -60,15 +118,31 @@ public class MainActivity extends Activity {
             }
         });
     }
+    
 
+    /*Helper method
+    -Gets the absolute path of the string of currentDirand changes the 
+    text on tvCurrentPath, 
+    Allows user to know the folder in which he or she is in*/
     private void updatePathDisplay() {
         tvCurrentPath.setText("Path: " + currentDir.getAbsolutePath());
     }
 
+    /*Helper method: param -> String text
+    - Adds a string line to the tvTerminalOutput view
+    -moves to a new line (\n)
+    */
     private void appendToConsole(String text) {
         tvTerminalOutput.append(text + "\n");
     }
 
+    /*Method for decision logic
+    -splits the entered text into two pieces:
+      ->the main command word eg /ask, /upload
+      ->the modifiers words after the main command
+    -If starts with '/', treats the command as a special networking task
+    -If a system string eg ls, initiates the internal directory helpers
+    */
     private void executeCommand(String input) {
         appendToConsole("> " + input);
 
@@ -78,7 +152,7 @@ public class MainActivity extends Activity {
 
         // Route Custom Application Protocol Networking Tasks
         if (command.startsWith("/")) {
-            if (command.equalsIgnoreCase("/ask") || command.equalsIgnoreCase("/upload") || command.equalsIgnoreCase("/push")) {
+            if (command.equalsIgnoreCase("/ask") || command.equalsIgnoreCase("/upload")) {
                 new NetworkEngine(currentDir, new NetworkEngine.OnNetworkResultListener() {
                     @Override
                     public void onUpdateConsole(String text) {
