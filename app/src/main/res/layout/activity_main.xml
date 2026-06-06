@@ -3,7 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#121212"
+    android:background="@drawable/panel_background"
     android:padding="16dp">
 
     <!-- Top current path status display -->
@@ -12,12 +12,13 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Path: /"
-        android:textColor="#00FF00"
+        android:textColor="#A0A5B5"
         android:textSize="14sp"
         android:textStyle="bold"
+        android:layout_marginStart = "12dp"
         android:layout_marginBottom="8dp" />
 
-    <!-- Terminal Output Container with the NEW custom border -->
+    <!-- Terminal Output Container -->
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -31,29 +32,31 @@
             android:id="@+id/tv_terminal_output"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Welcome to Wayer CLI Terminal Engine.\nCommands:\n  ls         - List local files\n  cd (dir)   - Change local directory\n  /ask (file)- Download from PC\n  /send (file)- Upload to PC\n\n"
-            android:textColor="#FFFFFF"
+            android:text="Welcome to Wayer CLI Terminal Engine.\nCommands:\n  ls         - List local files\n  cd (dir)   - Change local directory\n  /ask (file)- Download from PC\n  /upload (file)- Upload to PC\n\n"
+            android:textColor="#E2E8F0"
             android:textSize="15sp"
-            android:fontFamily="monospace" />
+            android:fontFamily="sans-serif" />
     </ScrollView>
 
-    <!-- Bottom Input Box Container with the NEW input style background -->
+    <!-- Bottom Input Box Container -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
         android:background="@drawable/input_field_box"
-        android:padding="10dp">
+        android:padding="10dp"
+        android:layout_marginTop = "10dp">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="&gt; "
-            android:textColor="#00FF60"
+            android:textColor="#00E676"
             android:textSize="18sp"
             android:textStyle="bold"
-            android:paddingEnd="4dp"/>
+            android:paddingStart = "18dp"
+            android:paddingEnd="18dp"/>
 
         <EditText
             android:id="@+id/et_command_input"

@@ -4,7 +4,7 @@ plugins {
 
 android {
     namespace 'com.example.wayer'
-    compileSdk 36 // Change to match one of the platform folders you have inside D:/android/sdk/platforms/ (e.g. 34, 35, or 36)
+    compileSdk 36 
 
     defaultConfig {
         applicationId "com.example.wayer"
