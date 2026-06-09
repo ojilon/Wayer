@@ -1,106 +1,57 @@
-# Wayer
+# Wayer - Android App
 
-Project for transfer of files between PC and Android phone, through hotspot connection.
+Android client for transferring files with your PC through hotspot connection.
 
-## 📱 Project Overview
+**🔗 [← Back to Main](https://github.com/ojilon/Wayer/blob/main/README.md)** | **📖 [Detailed Setup Guide →](https://github.com/ojilon/Wayer/blob/android-end/README_ANDROID_END.md)**
 
-Wayer is a file transfer application that enables seamless file sharing between your PC and Android phone using a WiFi hotspot connection. No internet required—just connect both devices to a hotspot and start transferring!
+## ⚡ Quick Start
 
-## 🏗️ Project Structure
+```bash
+# Build debug APK
+./gradlew assembleDebug
 
-This repository contains two independent implementations:
+# Find APK at:
+# app/build/outputs/apk/debug/app-debug.apk
+```
 
-### **PC-End Branch** (`pc-end`)
-A Python-based server that runs on your Windows PC to handle file requests from your Android phone.
+## 📂 Project Structure
 
-- **Primary File**: `python/server/app3.py`
-- **Technology**: Python with socket server, C DLL for file search
-- **Purpose**: Server-side file management and transfers
-- **Quick Start**: 
-  ```bash
-  cd python
-  python server/app3.py
-  ```
-- **📖 Full Guide**: [README_PC_END.md](https://github.com/ojilon/Wayer/blob/pc-end/README_PC_END.md)
+```
+android-end/
+├── app/
+│   ├── build.gradle         # App configuration
+│   └── src/
+│       └── main/
+│           ├── AndroidManifest.xml
+│           ├── java/        # Source code
+│           └── res/         # Resources
+└── build.gradle             # Project config
+```
 
-### **Android-End Branch** (`android-end`)
-A native Android app for browsing and transferring files with your PC.
+## 🎮 Usage Commands
 
-- **Technology**: Android (Java/Kotlin), Gradle build system
-- **Purpose**: Client-side mobile app for file transfers
-- **Build**: Generates APK for installation on Android devices
-- **📖 Full Guide**: [README_ANDROID_END.md](https://github.com/ojilon/Wayer/blob/android-end/README_ANDROID_END.md)
+Once connected to PC hotspot and server is running:
 
-## 🚀 Getting Started
+| Command | Purpose |
+|---------|----------|
+| `ls` | List files/folders |
+| `cd <path>` | Change directory |
+| `/ask <filename>` | Download file |
+| `/upload <filepath>` | Upload file |
 
-### For PC Users (Server)
-1. Switch to the `pc-end` branch
-2. Follow the setup instructions in [README_PC_END.md](https://github.com/ojilon/Wayer/blob/pc-end/README_PC_END.md)
-3. Install Python dependencies
-4. Start the server: `python server/app3.py`
+**Example workflow:**
+```
+ls
+cd Documents
+/ask report.pdf
+/upload /sdcard/Pictures/photo.jpg
+```
 
-### For Android Users (Client)
-1. Switch to the `android-end` branch
-2. Follow the setup instructions in [README_ANDROID_END.md](https://github.com/ojilon/Wayer/blob/android-end/README_ANDROID_END.md)
-3. Build the APK in Android Studio
-4. Install the APK on your Android device
+## 📚 Full Documentation
 
-## 📋 Quick Command Reference
+For complete build instructions, installation, and usage:
+👉 **[README_ANDROID_END.md](https://github.com/ojilon/Wayer/blob/android-end/README_ANDROID_END.md)**
 
-Once connected, use these commands in the Android app:
+## 🔗 Related Branch
 
-| Command | Purpose | Example |
-|---------|---------|---------|
-| `ls` | List files/folders | `ls` |
-| `cd <path>` | Navigate directories | `cd Documents` |
-| `/ask <filename>` | Download file from PC | `/ask document.pdf` |
-| `/upload <filepath>` | Upload file to PC | `/upload /sdcard/Pictures/photo.jpg` |
-
-## ✨ Features
-
-- 📂 Browse PC file system from Android phone
-- ⬇️ Download files with simple commands
-- ⬆️ Upload files from phone to PC
-- 🔗 No internet required (hotspot-only connection)
-- ⚡ Fast transfers optimized for WiFi hotspot speed
-- 🔍 Automatic file search with C DLL optimization
-
-## 📖 Documentation
-
-- **[PC-End Setup & Usage](https://github.com/ojilon/Wayer/blob/pc-end/README_PC_END.md)** - Server installation and configuration
-- **[Android-End Setup & Usage](https://github.com/ojilon/Wayer/blob/android-end/README_ANDROID_END.md)** - Client app build and usage guide
-
-## 🔧 Requirements
-
-### PC Side
-- Windows PC with Python 3.x
-- DLL file: `libfilesearch.dll` (for file search)
-
-### Android Side
-- Android 5.0+ (API 21+)
-- Android Studio (for building)
-- Android SDK
-
-## 🛠️ Troubleshooting
-
-### General Connection Issues
-- Verify both devices are connected to the same hotspot
-- Ensure PC server is running
-- Check firewall settings
-
-### Specific Issues
-For detailed troubleshooting, refer to:
-- [PC-End Troubleshooting](https://github.com/ojilon/Wayer/blob/pc-end/README_PC_END.md#troubleshooting)
-- [Android-End Troubleshooting](https://github.com/ojilon/Wayer/blob/android-end/README_ANDROID_END.md#troubleshooting)
-
-## 📝 License
-
-This project is licensed under the MIT License. See the LICENSE file for details.
-
-## 🤝 Contributing
-
-Contributions are welcome! Feel free to submit issues and pull requests.
-
----
-
-**Ready to get started?** Choose your branch above and follow the corresponding guide!
+- **PC Server**: [pc-end branch](https://github.com/ojilon/Wayer/tree/pc-end)
