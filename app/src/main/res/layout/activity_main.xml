@@ -32,7 +32,21 @@
             android:id="@+id/tv_terminal_output"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Welcome to Wayer CLI Terminal Engine.\nCommands:\n  ls         - List local files\n  cd (dir)   - Change local directory\n  /ask (file)- Download from PC\n  /upload (file)- Upload to PC\n\n"
+            android:text="Welcome to Wayer CLI Terminal Engine.\n
+            Commands:\n  ls         - List local files\n  
+            cd (dir)   - Change local directory\n 
+             /ask (file)- Download from PC\n  
+             /upload (file)- Upload to PC\n
+             stz (file) -sanitize file\n
+             find (key_word) -find file\n
+             refresh -refresh cache for file paths\n 
+             jump (folder) -jump to folder\n
+             findfile (file) -global file search \n
+             choose (number) -choose selection \n
+             mkdir (folder) -create folder in current location\n
+             setdownloadpath (folder) -setwhere to keep Downloads\n
+             sanitizepath -sanitize names inside current working folder
+             "
             android:textColor="#E2E8F0"
             android:textSize="15sp"
             android:fontFamily="sans-serif" />
