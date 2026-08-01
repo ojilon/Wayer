@@ -7,3 +7,8 @@ build/reports/
 
 # App-specific build outputs
 app/build/
+
+collect_context.py
+context.txt
+.clangd
+.cxx/

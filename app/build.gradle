@@ -6,12 +6,29 @@ android {
     namespace 'com.example.wayer'
     compileSdk 36 
 
+    ndkVersion "29.0.14206865"
+
     defaultConfig {
         applicationId "com.example.wayer"
         minSdk 26
         targetSdk 34
-        versionCode 1
-        versionName "0.0.1"
+        
+        versionCode project.property("app.versionCode").toInteger()
+        versionName project.property("app.versionName")
+
+        //Native ABIs -> read from gradle.properties
+        ndk { 
+            def abiProperty = project.findProperty("aurora.abiFilters") as String
+            if (abiProperty != null) {
+                abiFilters.addAll(abiProperty.split(",").collect { it.trim() })
+            }
+        }
+
+        externalNativeBuild {
+            cmake {
+                cppFlags "-std=c++23"
+            }
+        }
     }
 
     buildTypes {
@@ -23,6 +40,13 @@ android {
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
+    }
+
+    externalNativeBuild {
+        cmake {
+            path file("src/main/cpp/CMakeLists.txt")
+            version "3.22.1"
+        }
     }
 }
 
