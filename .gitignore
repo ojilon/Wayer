@@ -12,3 +12,5 @@ collect_context.py
 context.txt
 .clangd
 .cxx/
+
+goals.md

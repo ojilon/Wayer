@@ -33,7 +33,7 @@ public class MainActivity extends Activity {
     //fore more complex file navigation
     private FileIndexer indexer = new FileIndexer();
     private FolderSkipController skipController = new FolderSkipController();
-    private String appDownloadPath = null; // Requirement 5: Stores your downloadable target variable
+    private String appDownloadPath = null; // Stores your downloadable target variable
     
     // Core engine module states
     private FileNavigator navigator;
@@ -115,8 +115,7 @@ public class MainActivity extends Activity {
                   ACTION_DOWN when press it down, and ACTION_UP when you let it go.
                   Makes sure the command runs only once(exact instant key is pressed down)
                 */
-                if (actionId == EditorInfo.IME_ACTION_DONE || 
-                    (event != null && event.getKeyCode() == KeyEvent.KEYCODE_ENTER && event.getAction() == KeyEvent.ACTION_DOWN)) {
+                if (actionId == EditorInfo.IME_ACTION_DONE || (event != null && event.getKeyCode() == KeyEvent.KEYCODE_ENTER && event.getAction() == KeyEvent.ACTION_DOWN)) {
                     
                     /*
                     -etCommandInput.getText(): Fetches the text out of the input field, returned as

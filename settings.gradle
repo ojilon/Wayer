@@ -15,3 +15,9 @@ dependencyResolutionManagement {
 }
 
 include ':app'
+include ':core'
+include ':storage'
+include ':documents'
+include ':transfer'
+include ':native'
+include ':cli'
