@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<resources>
+
+    <color name="wayer_background">#0F1115</color>
+    <color name="wayer_surface">#181B21</color>
+    <color name="wayer_surface_variant">#222630</color>
+
+    <color name="wayer_primary">#7C9CFF</color>
+    <color name="wayer_primary_dark">#5F7FE0</color>
+
+    <color name="wayer_text_primary">#F2F4F8</color>
+    <color name="wayer_text_secondary">#A7ADB9</color>
+
+    <color name="wayer_success">#4CAF80</color>
+    <color name="wayer_warning">#E0A458</color>
+    <color name="wayer_error">#E06C75</color>
+
+</resources>
