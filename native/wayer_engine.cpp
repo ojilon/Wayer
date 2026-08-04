@@ -3,6 +3,7 @@
 #include <string>
 #include <string_view>
 #include "storage/storage_engine.hpp"
+#include "transfer/transfer_engine.hpp"
 
 #define LOG_TAG "WayerEngine"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
@@ -12,6 +13,7 @@
 constexpr int ACTION_PING = 1;
 constexpr int ACTION_GET_STATUS = 2;
 constexpr int ACTION_LIST_FILES = 3;
+constexpr int ACTION_GET_NETWORK_INFO = 4;
 
 namespace {
     // Isolated internal router (keeps JNI layer minimal)
@@ -23,6 +25,8 @@ namespace {
                 return R"({"status": "ready", "engine": "C++23"})";
             case ACTION_LIST_FILES:
                 return wayer::storage::list_files(payload);
+            case ACTION_GET_NETWORK_INFO:
+                return wayer::transfer::get_network_info();
             default:
                 LOGE("Unknown action_id: %d", action_id);
                 return R"({"error": "unknown_action"})";
