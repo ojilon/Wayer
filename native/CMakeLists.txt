@@ -12,6 +12,7 @@ add_library(
     SHARED
     wayer_engine.cpp
     storage/storage_engine.cpp
+    transfer/transfer_engine.cpp
 )
 
 target_include_directories(wayer_engine PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
