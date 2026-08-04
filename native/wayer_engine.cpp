@@ -2,6 +2,7 @@
 #include <android/log.h>
 #include <string>
 #include <string_view>
+#include "storage/storage_engine.hpp"
 
 #define LOG_TAG "WayerEngine"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
@@ -10,6 +11,7 @@
 // Action Identifiers (Match Java UI events)
 constexpr int ACTION_PING = 1;
 constexpr int ACTION_GET_STATUS = 2;
+constexpr int ACTION_LIST_FILES = 3;
 
 namespace {
     // Isolated internal router (keeps JNI layer minimal)
@@ -19,6 +21,8 @@ namespace {
                 return "PONG: " + std::string(payload);
             case ACTION_GET_STATUS:
                 return R"({"status": "ready", "engine": "C++23"})";
+            case ACTION_LIST_FILES:
+                return wayer::storage::list_files(payload);
             default:
                 LOGE("Unknown action_id: %d", action_id);
                 return R"({"error": "unknown_action"})";
