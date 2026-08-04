@@ -8,6 +8,10 @@ android {
 
     ndkVersion "29.0.14206865"
 
+    buildFeatures {
+        viewBinding true
+    }
+
     defaultConfig {
         applicationId "com.example.wayer"
         minSdk 26
@@ -44,7 +48,7 @@ android {
 
     externalNativeBuild {
         cmake {
-            path file("src/main/cpp/CMakeLists.txt")
+            path file("../native/CMakeLists.txt")
             version "3.22.1"
         }
     }

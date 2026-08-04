@@ -1,64 +1,37 @@
 package com.example.wayer.ui;
 
 import android.os.Bundle;
+import android.view.LayoutInflater;
 import android.view.View;
-
+import android.view.ViewGroup;
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-
-import com.example.wayer.R;
-
-import java.util.ArrayList;
-import java.util.List;
+import com.example.wayer.databinding.FragmentHomeBinding;
 
 public class FilesFragment extends Fragment {
+    
+    // Hold the UI struct pointer
+    private FragmentHomeBinding binding;
 
-    public FilesFragment() {
-        super(R.layout.fragment_files);
+    @Override
+    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        // Inflate the layout
+        binding = FragmentHomeBinding.inflate(inflater, container, false);
+        
+        setupUI();
+        
+        return binding.getRoot();
+    }
+
+    // Isolate UI event bindings here
+    private void setupUI() {
+        // Example: binding.refreshButton.setOnClickListener(v -> NativeEngine.triggerRefresh());
     }
 
     @Override
-    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-
-        super.onViewCreated(view, savedInstanceState);
-
-        RecyclerView fileList = view.findViewById(R.id.file_list);
-
-        fileList.setLayoutManager( new LinearLayoutManager(requireContext()) );
-
-        List<FileItem> files = new ArrayList<>();
-
-        files.add( new FileItem( "Documents", "Folder", true) );
-
-        files.add(
-                new FileItem(
-                        "Download",
-                        "Folder",
-                        true
-                )
-        );
-
-        files.add(
-                new FileItem(
-                        "Pictures",
-                        "Folder",
-                        true
-                )
-        );
-
-        files.add(
-                new FileItem(
-                        "notes.txt",
-                        "12 KB",
-                        false
-                )
-        );
-
-        FileAdapter adapter = new FileAdapter(files);
-
-        fileList.setAdapter(adapter);
+    public void onDestroyView() {
+        super.onDestroyView();
+        // CRITICAL: Clear the pointer to prevent memory leaks when the fragment is in the backstack
+        binding = null; 
     }
 }
