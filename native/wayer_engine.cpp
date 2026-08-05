@@ -1,7 +1,9 @@
+#include <charconv>
 #include <jni.h>
 #include <android/log.h>
 #include <string>
 #include <string_view>
+#include <system_error>
 #include "storage/storage_engine.hpp"
 #include "transfer/transfer_engine.hpp"
 
@@ -14,6 +16,7 @@ constexpr int ACTION_PING = 1;
 constexpr int ACTION_GET_STATUS = 2;
 constexpr int ACTION_LIST_FILES = 3;
 constexpr int ACTION_GET_NETWORK_INFO = 4;
+constexpr int ACTION_START_LISTENER = 5;
 
 namespace {
     // Isolated internal router (keeps JNI layer minimal)
@@ -27,6 +30,20 @@ namespace {
                 return wayer::storage::list_files(payload);
             case ACTION_GET_NETWORK_INFO:
                 return wayer::transfer::get_network_info();
+            case ACTION_START_LISTENER: {
+                int port = 8080; //default test port
+                if (!payload.empty()) {
+                    // payload.data() gives the pointer, 
+                    //payload.data()+payload.size() gives the end boundary
+                    auto [ptr, ec] = std::from_chars(payload.data(), payload.data() + payload.size(), port);
+
+                    if (ec != std::errc()) {
+                        // parsing failed
+                        port = 8080;
+                    }
+                }
+                return wayer::transfer::start_listener(port);
+            }
             default:
                 LOGE("Unknown action_id: %d", action_id);
                 return R"({"error": "unknown_action"})";
