@@ -6,7 +6,6 @@
 #include <arpa/inet.h>
 #include <format>       //  C++20: Replaces <sstream> for fast, modern string formatting
 #include <cstdint>      //  Modern C++: Standard fixed-width integer types (std::uint16_t)
-#include <bit>          //  Modern C++: Standard type-safe casting alternative
 
 namespace wayer::transfer {
 

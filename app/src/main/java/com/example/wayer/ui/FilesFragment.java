@@ -6,26 +6,33 @@ import android.view.View;
 import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
-import com.example.wayer.databinding.FragmentHomeBinding;
+
+import com.example.wayer.core.NativeEngine;
+import com.example.wayer.databinding.FragmentFilesBinding;
 
 public class FilesFragment extends Fragment {
     
     // Hold the UI struct pointer
-    private FragmentHomeBinding binding;
+    private FragmentFilesBinding binding;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         // Inflate the layout
-        binding = FragmentHomeBinding.inflate(inflater, container, false);
-        
-        setupUI();
-        
+        binding = FragmentFilesBinding.inflate(inflater, container, false);
+        loadFiles();        
         return binding.getRoot();
     }
 
     // Isolate UI event bindings here
-    private void setupUI() {
-        // Example: binding.refreshButton.setOnClickListener(v -> NativeEngine.triggerRefresh());
+    private void loadFiles() {
+        if (getContext() == null) return;
+
+        String path = getContext().getFilesDir().getAbsolutePath();
+        NativeEngine.processActionAsync(3, path, result -> {
+            if(binding != null) {
+                android.util.Log.i("FilesFragment", "Files Response: " + result);
+            }
+        });
     }
 
     @Override

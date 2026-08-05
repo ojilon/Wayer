@@ -59,7 +59,6 @@ public class MainActivity extends AppCompatActivity {
         binding.bottomNavigation.setOnItemSelectedListener(item -> {
             int itemId = item.getItemId();
             if (itemId == R.id.nav_home) return showFragment(new HomeFragment());
-            if (itemId == R.id.nav_documents) return showFragment(new DocumentsFragment());
             if (itemId == R.id.nav_storage) return showFragment(new StorageFragment());
             if (itemId == R.id.nav_transfer) return showFragment(new TransferFragment());
             if (itemId == R.id.nav_files) return showFragment(new FilesFragment());
