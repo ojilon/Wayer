@@ -14,11 +14,6 @@
         android:title="Files" />
 
     <item
-        android:id="@+id/nav_documents"
-        android:icon="@android:drawable/ic_menu_edit"
-        android:title="Documents" />
-
-    <item
         android:id="@+id/nav_storage"
         android:icon="@android:drawable/ic_menu_manage"
         android:title="Storage" />

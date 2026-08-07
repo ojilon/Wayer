@@ -20,6 +20,14 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!--
+        When a user opens a file, launch a distinct Activity that takes over the full window
+        -->
+        <activity 
+            android:name=".ui.DocumentActivity"
+            android:theme="@style/Theme.Wayer"
+            android:exported="false" />
         
     </application>
 </manifest>

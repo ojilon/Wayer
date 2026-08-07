@@ -1,103 +1,65 @@
 <?xml version="1.0" encoding="utf-8"?>
-
-<LinearLayout
+<androidx.drawerlayout.widget.DrawerLayout 
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/drawer_layout"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:background="@color/wayer_background">
+    android:layout_height="match_parent">
 
-    <!-- Header -->
-
+    <!-- Main Content Area (Must be the first child) -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:padding="@dimen/spacing_md">
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:background="@color/wayer_background">
 
+        <!-- Top Bar with Menu & Search -->
         <LinearLayout
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical">
+            android:orientation="horizontal"
+            android:padding="@dimen/spacing_md"
+            android:gravity="center_vertical">
 
-            <TextView
-                android:layout_width="match_parent"
+            <ImageButton
+                android:id="@+id/btn_open_drawer"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@android:drawable/ic_menu_sort_by_size"
+                android:contentDescription="Open navigation drawer" />
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:text="Files"
-                android:textColor="@color/wayer_text_primary"
-                android:textSize="24sp"
-                android:textStyle="bold" />
+                android:layout_weight="1"
+                android:hint="Search files..."
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
 
-            <TextView
-                android:id="@+id/current_path"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/spacing_xs"
-                android:text="/storage/emulated/0"
-                android:textColor="@color/wayer_text_secondary"
-                android:textSize="13sp" />
-
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/search_input"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:maxLines="1"
+                    android:inputType="text" />
+            </com.google.android.material.textfield.TextInputLayout>
         </LinearLayout>
 
-        <ImageButton
-            android:id="@+id/more_button"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="More options"
-            android:src="@android:drawable/ic_menu_more" />
-
+        <!-- Search Results / File Listing -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/file_list"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
     </LinearLayout>
 
+    <!-- Left Side Drawer (Must be after main content) -->
+    <com.google.android.material.navigation.NavigationView
+        android:id="@+id/left_drawer"
+        android:layout_width="280dp"
+        android:layout_height="match_parent"
+        android:layout_gravity="start"
+        android:background="@color/wayer_surface"
+        app:headerLayout="@layout/nav_header" 
+        app:menu="@menu/nav_menu" />
 
-    <!-- Search and New -->
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:paddingStart="@dimen/spacing_md"
-        android:paddingEnd="@dimen/spacing_md">
-
-        <com.google.android.material.textfield.TextInputLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:hint="Search files"
-            style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/search_input"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:singleLine="true"
-                android:inputType="text" />
-
-        </com.google.android.material.textfield.TextInputLayout>
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/new_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="@dimen/spacing_sm"
-            android:text="+"
-            android:minWidth="0dp" />
-
-    </LinearLayout>
-
-
-    <!-- File list -->
-
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/file_list"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:layout_marginTop="@dimen/spacing_sm"
-        android:clipToPadding="false"
-        android:paddingBottom="@dimen/spacing_md" />
-
-</LinearLayout>
+</androidx.drawerlayout.widget.DrawerLayout>

@@ -1,13 +1,9 @@
-#include <charconv>
 #include <jni.h>
 #include <android/log.h>
 #include <string>
-#include <string_view>
-#include <system_error>
-#include "documents/document_engine.hpp"
 #include "storage/storage_engine.hpp"
 #include "transfer/transfer_engine.hpp"
-#include "transfer/transfer_engine.hpp"
+#include "documents/document_engine.hpp"
 
 #define LOG_TAG "WayerEngine"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
@@ -18,8 +14,9 @@ constexpr int ACTION_PING = 1;
 constexpr int ACTION_GET_STATUS = 2;
 constexpr int ACTION_LIST_FILES = 3;
 constexpr int ACTION_GET_NETWORK_INFO = 4;
-constexpr int ACTION_START_LISTENER = 6;
 constexpr int ACTION_FILTER_DOCUMENTS = 5;
+constexpr int ACTION_START_LISTENER = 6;
+constexpr int ACTION_GET_STORAGE_STATS = 7;
 
 namespace {
     // Isolated internal router (keeps JNI layer minimal)
@@ -37,6 +34,8 @@ namespace {
                 return wayer::documents::filter_documents(payload);
             case ACTION_START_LISTENER: {
                 return wayer::transfer::start_listener(8080);
+            case ACTION_GET_STORAGE_STATS:
+                return wayer::storage::get_storage_stats(std::string(payload));
             }
             default:
                 LOGE("Unknown action_id: %d", action_id);

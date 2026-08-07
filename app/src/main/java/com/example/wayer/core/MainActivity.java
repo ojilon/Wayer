@@ -20,10 +20,6 @@ public class MainActivity extends AppCompatActivity {
 
         //Initialize the native engine
         NativeEngine.initEngine();
-
-        //test route call to verify di-directional communication
-        String response = NativeEngine.processAction(1, "Ping from Java");
-        android.util.Log.i("WayerNativeTest", "C++ Response:" + response);
         
         // 2. Inflate the layout using the binding
         binding = ActivityMainBinding.inflate(getLayoutInflater());
@@ -71,5 +67,10 @@ public class MainActivity extends AppCompatActivity {
             .replace(R.id.fragment_container, fragment)
             .commit();
         return true; // Return true to satisfy the item selected listener
+    }
+
+    // Public entry point so fragments can trigger nav without findViewById
+    public void navigateTo(int itemId) {
+        binding.bottomNavigation.setSelectedItemId(itemId);
     }
 }
