@@ -26,71 +26,74 @@ StorageFragment
 
 ### Category “graph”
 No chart library. A horizontal `LinearLayout` with five coloured `View`s.  
-Java sets each child’s `layout_weight` proportional to bytes. Empty categories get a tiny weight so the bar still looks continuous.
+Java sets each child’s `layout_weight` proportional to bytes.
 
 ### Next for Storage
 - C++ action to return **large files** (bulk JSON)
 - Multi-select + delete via `FileMutator.delete`
-- Optional: move large-file scan into background with progress
 
 ---
 
 ## Transfer screen
 
 ### Purpose
-Connect the phone to **WayerPC** over hotspot, test link, show session activity.
+Connect the phone to **WayerPC** over hotspot, test link, download/upload files.
 
 ### Files
 | File | Role |
 |------|------|
-| `fragment_transfer.xml` | Connection card, test/listener buttons, session stats, log, recent list |
-| `TransferFragment.java` | TCP test (Java), C++ listener (Action 6), activity log |
-| `network/NetworkManager.java` | Real file upload/download protocol with PC |
-| `network/NetworkCallback.java` | Console + completion callbacks |
-| `transfer/TransferController.java` | Thin wrapper around C++ listener |
-| `core/Config.java` | `HOST` + `PORT` for WayerPC |
+| `fragment_transfer.xml` | Connection, filename field, Download/Upload, session, log |
+| `TransferFragment.java` | UI + test + calls NetworkManager |
+| `network/NetworkManager.java` | Socket protocol `/ask` and `/upload` |
+| `network/NetworkCallback.java` | Progress + completion (background thread) |
+| `transfer/TransferController.java` | C++ listener wrapper (Action 6) |
+| `core/Config.java` | `HOST` + `PORT` |
 
 ### Networking rule
 - **Sockets / hotspot protocol → Java** (`NetworkManager`)
-- **Heavy non-network work → C++** (progress aggregation later, etc.)
+- **Heavy non-network work → C++**
 
-### Test connection
-`TransferFragment` opens a short TCP connect to `Config.HOST:Config.PORT` (3s timeout) and reports success/failure + latency in the log.
+### How to transfer
+1. Set `Config.HOST` / `Config.PORT` to your PC hotspot address.
+2. Open **Transfer** tab → **Test connection**.
+3. Enter a **file name** (not full path).
+4. **Download** runs `/ask <name>` → file lands in app `filesDir`.
+5. **Upload** runs `/upload <name>` → file must already exist in app `filesDir`.
 
-### Start listener
-Uses `TransferController.startServerListener(8080)` → C++ Action **6**.
+Activity log shows handshake and result. Session counters update on success; bandwidth is estimated from elapsed time.
+
+### Protocol (phone ↔ WayerPC)
+```
+Download:
+  phone → /ask <filename>
+  pc    → FOUND <size>
+  phone → /send
+  pc    → <raw bytes>
+
+Upload:
+  phone → /upload <size> <filename>
+  pc    → READY  (or /send)
+  phone → <raw bytes>
+```
 
 ### Next for Transfer
-- Wire UI buttons to `NetworkManager.processProtocolCommand` for real send/receive
-- Folder transfer (list of files in one session)
-- Bandwidth estimate from timed transfers
-- Recent transfers list backed by a small local log file
+- Folder transfer (list of files)
+- Pick file from storage UI instead of typing name
+- Persist recent transfers list
 
 ---
 
 ## Shared file operations (`FileMutator`)
 
-**Single place** for create / rename / delete used by Files (and later Storage cleanup).
-
-```text
-com.example.wayer.storage.FileMutator
-```
+**Single place** for create / rename / delete.
 
 | Method | Use |
 |--------|-----|
-| `createFile(parent, name)` | New empty file |
-| `createDirectory(parent, name)` | New folder |
-| `rename(fullPath, newName)` | Rename in place |
-| `delete(fullPath)` | File or folder (recursive) |
+| `createFile` / `createDirectory` | New items |
+| `rename` | Rename in place |
+| `delete` | File or folder (recursive) |
 
-All return `FileMutator.Result { ok, message }`.
-
-### How Files uses it
-- **Long-press item** → Open / Browse / Rename / Delete  
-- **Long-press path bar** → New folder / New file in `currentPath`  
-After success, list is refreshed with `loadDirectory(currentPath)`.
-
-Later the same APIs can be called from Storage (delete large files) without new UI logic.
+Used from Files long-press and path long-press; reuse from Storage cleanup later.
 
 ---
 
@@ -107,19 +110,8 @@ Later the same APIs can be called from Storage (delete large files) without new 
 
 ## Config
 
-Edit PC address once:
-
 ```java
 // core/Config.java
 public static final String HOST = "192.168.43.41";
 public static final int PORT = 5000;
 ```
-
----
-
-## Learning checklist
-
-1. Storage UI only displays C++ JSON — no scanning in Java.  
-2. Transfer **test** is pure Java sockets; listener can be C++.  
-3. Never duplicate delete/rename — always `FileMutator`.  
-4. Prefer bulk JSON from C++ over many small JNI calls.  
