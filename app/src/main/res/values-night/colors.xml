@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+  Light theme colors for Wayer.
+  Android automatically switches to these when the system is in light mode
+  (because Theme.Wayer parent is DayNight).
+-->
+
+<resources>
+
+    <!-- Core surfaces -->
+    <color name="wayer_background">#F5F6F8</color>
+    <color name="wayer_surface">#FFFFFF</color>
+    <color name="wayer_surface_variant">#E8EBF0</color>
+    <color name="wayer_surface_elevated">#FFFFFF</color>
+
+    <!-- Brand -->
+    <color name="wayer_primary">#3B5BDB</color>
+    <color name="wayer_primary_dark">#2B4AC7</color>
+    <color name="wayer_primary_container">#DCE4FF</color>
+    <color name="wayer_on_primary">#FFFFFF</color>
+
+    <!-- Text -->
+    <color name="wayer_text_primary">#1A1D26</color>
+    <color name="wayer_text_secondary">#5C6575</color>
+    <color name="wayer_text_disabled">#9AA3B5</color>
+
+    <!-- Status -->
+    <color name="wayer_success">#2E9E6A</color>
+    <color name="wayer_warning">#C98A12</color>
+    <color name="wayer_error">#D1434B</color>
+    <color name="wayer_info">#1A9BB5</color>
+
+    <!-- Borders / dividers -->
+    <color name="wayer_outline">#D0D5E0</color>
+    <color name="wayer_outline_variant">#E0E4ED</color>
+
+    <!-- Category accents -->
+    <color name="wayer_cat_images">#E85D3C</color>
+    <color name="wayer_cat_videos">#1E88E5</color>
+    <color name="wayer_cat_audio">#8E24AA</color>
+    <color name="wayer_cat_docs">#43A047</color>
+    <color name="wayer_cat_others">#607D8B</color>
+
+</resources>
