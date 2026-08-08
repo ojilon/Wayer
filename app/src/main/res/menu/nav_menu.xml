@@ -1,6 +1,53 @@
 <?xml version="1.0" encoding="utf-8"?>
-<menu xmlns:android="http://android.com">
-    <item
-        android:id="@+id/nav_home"
-        android:title="Home" />
+
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <group android:checkableBehavior="single">
+
+        <item
+            android:id="@+id/nav_browse"
+            android:icon="@android:drawable/ic_menu_compass"
+            android:title="Browse storage" />
+
+        <item
+            android:id="@+id/nav_internal"
+            android:icon="@android:drawable/ic_menu_agenda"
+            android:title="Internal storage" />
+
+        <item
+            android:id="@+id/nav_external"
+            android:icon="@android:drawable/ic_menu_save"
+            android:title="External / SD" />
+
+        <item
+            android:id="@+id/nav_downloads"
+            android:icon="@android:drawable/ic_menu_upload"
+            android:title="Downloads" />
+
+        <item
+            android:id="@+id/nav_images"
+            android:icon="@android:drawable/ic_menu_gallery"
+            android:title="Images" />
+
+        <item
+            android:id="@+id/nav_videos"
+            android:icon="@android:drawable/ic_menu_slideshow"
+            android:title="Videos" />
+
+        <item
+            android:id="@+id/nav_documents"
+            android:icon="@android:drawable/ic_menu_edit"
+            android:title="Documents" />
+
+    </group>
+
+    <item android:title="Actions">
+        <menu>
+            <item
+                android:id="@+id/nav_refresh"
+                android:icon="@android:drawable/ic_menu_rotate"
+                android:title="Refresh" />
+        </menu>
+    </item>
+
 </menu>
