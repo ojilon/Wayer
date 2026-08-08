@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<!-- Full-window video viewer foundation. -->
+<!-- Full-window video viewer foundation. MediaController is attached in Java. -->
 
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
@@ -54,12 +54,6 @@
             android:textColor="@color/wayer_text_secondary"
             android:textSize="14sp" />
     </FrameLayout>
-
-    <MediaController
-        android:id="@+id/media_controller_host"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:visibility="gone" />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btn_close"
