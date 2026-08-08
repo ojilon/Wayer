@@ -1,6 +1,7 @@
 #include <jni.h>
 #include <android/log.h>
 #include <string>
+#include <vector>
 #include <cstdlib>
 #include "storage/storage_engine.hpp"
 #include "transfer/transfer_engine.hpp"
@@ -22,7 +23,6 @@ constexpr int ACTION_FIND_LARGE_FILES  = 9;
 
 namespace {
 
-// "root|query" or "root|min_bytes|max_results"
 std::vector<std::string> split_payload(std::string_view payload, char sep = '|') {
     std::vector<std::string> parts;
     size_t start = 0;
@@ -69,7 +69,6 @@ std::string route_action(int action_id, std::string_view payload) {
         }
 
         case ACTION_FIND_LARGE_FILES: {
-            // payload: root|min_bytes|max_results  (min/max optional)
             auto parts = split_payload(payload);
             std::string root = parts.empty() ? "/storage/emulated/0" : parts[0];
             uint64_t min_bytes = 10ull * 1024 * 1024;
