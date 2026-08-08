@@ -20,3 +20,8 @@ goals.md
 native/third_party/*
 !native/third_party/README.md
 !native/third_party/.gitkeep
+
+# Release signing — never commit
+keystore.properties
+*.jks
+*.keystore
