@@ -15,3 +15,8 @@ context2.txt
 .cxx/
 
 goals.md
+
+# External C++ libraries (install locally; stay across branches)
+native/third_party/*
+!native/third_party/README.md
+!native/third_party/.gitkeep
