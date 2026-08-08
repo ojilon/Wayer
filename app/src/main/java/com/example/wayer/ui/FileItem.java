@@ -1,26 +1,42 @@
 package com.example.wayer.ui;
 
-public class FileItem  {
-    private String name;
-    private String details;
-    private boolean deirectory;
+/**
+ * Simple data class for one row in the Files list / search results.
+ * Java only displays; C++ supplies the data via bulk JSON.
+ */
+public class FileItem {
 
-    public FileItem(String name, String details, boolean deirectory) {
+    private final String name;
+    private final String path;       // full path (needed for open / browse)
+    private final String details;    // e.g. "Folder" or "2.4 MB"
+    private final boolean directory;
+    private final long sizeBytes;    // 0 for folders
+
+    public FileItem(String name, String path, String details, boolean directory, long sizeBytes) {
         this.name = name;
+        this.path = path;
         this.details = details;
-        this.deirectory = deirectory;
+        this.directory = directory;
+        this.sizeBytes = sizeBytes;
     }
 
     public String getName() {
         return name;
     }
 
-    public String getDetials() {
+    public String getPath() {
+        return path;
+    }
+
+    public String getDetails() {
         return details;
     }
 
     public boolean isDirectory() {
-        return deirectory;
+        return directory;
     }
-    
+
+    public long getSizeBytes() {
+        return sizeBytes;
+    }
 }
