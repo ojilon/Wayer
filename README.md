@@ -1,8 +1,8 @@
 # Wayer - Android App
 
-Android client for transferring files with your PC through hotspot connection.
+Android client for transferring files with your PC through a hotspot connection. Provides a small CLI-like terminal UI to browse the PC file system, download files to the phone, and upload phone files to the PC.
 
-**🔗 [← Back to Main](https://github.com/ojilon/Wayer/blob/main/README.md)** | **📖 [Detailed Setup Guide →](https://github.com/ojilon/Wayer/blob/android-end/README_ANDROID_END.md)**
+**🔗 [← Back to Main](https://github.com/ojilon/Wayer/blob/main/README.md)** | **📖 [Detailed Setup & Command Reference →](https://github.com/ojilon/Wayer/blob/main/README_ANDROID_END.md)**
 
 ## ⚡ Quick Start
 
@@ -14,7 +14,7 @@ Android client for transferring files with your PC through hotspot connection.
 # app/build/outputs/apk/debug/app-debug.apk
 ```
 
-## 📂 Project Structure
+## 📂 Project Structure (high level)
 
 ```
 android-end/
@@ -22,57 +22,48 @@ android-end/
 │   ├── build.gradle         # App-level build configurations and dependencies
 │   └── src/
 │       └── main/
-│           ├── AndroidManifest.xml   # Declares application components (Activities, Permissions)
-│           ├── java/
-│           │   └── com/
-│           │       └── example/
-│           │           └── wayer/
-│           │               ├── core/
-│           │               │   ├── Config.java         # Centralized host IP and port settings
-│           │               │   └── MainActivity.java   # App orchestration & UI terminal interaction
-│           │               │
-│           │               ├── network/
-│           │               │   ├── NetworkCallback.java # Asynchronous thread messaging interface
-│           │               │   └── NetworkManager.java  # Threaded TCP Socket networking operations
-│           │               │
-│           │               ├── storage/
-│           │               │   ├── FileMutator.java    # Disk mutations (write, rename, JNI hooks)
-│           │               │   ├── FileNavigator.java  # Internal terminal path pointer state (cd)
-│           │               │   └── FileSearcher.java   # Local directory query matching & file lookup
-│           │               │
-│           │               └── utils/
-│           │                   └── TextSanitizer.java  # Pure string handling utilities
-│           │
-│           └── res/         # UI layout XMLs, drawable assets, and values
-│               └── layout/
-│                   └── activity_main.xml  # Terminal view layout tree file
-│
+│           ├── AndroidManifest.xml   # Declares application components & permissions
+│           ├── java/                    # App Java source (core, network, storage, utils)
+│           └── res/                     # UI layouts and resources
 └── build.gradle             # Project-level configuration definitions
 ```
 
-## 🎮 Usage Commands
+## 🎮 Usage Commands (summary)
 
-Once connected to PC hotspot and server is running:
+The app exposes a CLI-style terminal. Commands are split between local filesystem operations (run on the device) and protocol/network operations (sent to the PC server).
 
-| Command | Purpose |
-|---------|---------|
-| `ls` | List files/folders |
-| `cd <path>` | Change directory |
-| `/ask <filename>` | Download file |
-| `/upload <filepath>` | Upload file |
+Local commands:
 
-**Example workflow:**
+- `ls` — list files/folders in the current working directory on the phone
+- `cd <path>` — change current working directory
+- `cls` — clear terminal output
+- `stz <filename>` — sanitize and rename a file (convert spaces/unsafe characters)
+- `find <keyword>` — search for filenames containing the keyword under current directory
+- `refresh` — refresh internal file path cache (may take time on first run)
+- `jump <folder>` — jump directly to a named folder within the current hierarchy (shortcut)
+- `findfile <filename>` — global search for a specific filename
+- `choose <number>` — pick an item from the last search/list output
+- `mkdir <folder>` — create a folder in the current directory
+- `setdownloadpath <folder>` — set custom download target in local storage
+- `sanitizepath` — sanitize names inside the current working folder
+
+Network/protocol commands (require the PC server to be running and both devices on the same hotspot):
+
+- `/ask <filename>` — request a file from the PC server; server responds and the file is streamed to the phone
+- `/upload <filepath>` — send a local phone file to the PC server
+
+Example session:
+
 ```
 ls
 cd Documents
 /ask report.pdf
-/upload /sdcard/Pictures/photo.jpg
+/upload Pictures/photo.jpg
 ```
 
 ## 📚 Full Documentation
 
-For complete build instructions, installation, and usage:
-👉 **[README_ANDROID_END.md](https://github.com/ojilon/Wayer/blob/android-end/README_ANDROID_END.md)**
+For detailed build instructions, installation steps, and a complete command reference, see README_ANDROID_END.md in this repository.
 
 ## 🔗 Related Branch
 
