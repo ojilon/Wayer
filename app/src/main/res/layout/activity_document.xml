@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+  Full-window document viewer / editor foundation.
+  Launched when user chooses "Open" on a file.
+  Real rendering will be done later via C++ + external libraries.
+-->
+
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/wayer_background">
+
+    <!-- Top toolbar -->
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="@color/wayer_surface"
+        app:title="Document"
+        app:titleTextColor="@color/wayer_text_primary"
+        app:navigationIcon="@android:drawable/ic_menu_close_clear_cancel"
+        app:navigationIconTint="@color/wayer_text_primary" />
+
+    <!-- File path / name -->
+    <TextView
+        android:id="@+id/doc_path"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="@dimen/spacing_md"
+        android:paddingVertical="@dimen/spacing_sm"
+        android:textColor="@color/wayer_text_secondary"
+        android:textSize="12sp"
+        android:maxLines="1"
+        android:ellipsize="middle"
+        android:text="/path/to/file" />
+
+    <!-- Main content area (placeholder for future renderer) -->
+    <FrameLayout
+        android:id="@+id/document_container"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:background="@color/wayer_surface">
+
+        <!-- Temporary placeholder until C++ renderer is ready -->
+        <TextView
+            android:id="@+id/placeholder"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:padding="@dimen/spacing_lg"
+            android:gravity="center"
+            android:text="Document viewer foundation\n\nC++ rendering will appear here\nafter libraries are chosen"
+            android:textColor="@color/wayer_text_secondary"
+            android:textSize="15sp" />
+
+    </FrameLayout>
+
+    <!-- Bottom action bar (optional future: save, share, etc.) -->
+    <LinearLayout
+        android:id="@+id/bottom_actions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="@dimen/spacing_sm"
+        android:background="@color/wayer_surface"
+        android:gravity="end">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_close"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Close" />
+
+    </LinearLayout>
+
+</LinearLayout>
