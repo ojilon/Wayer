@@ -1,11 +1,13 @@
 package com.example.wayer.ui;
 
 import android.os.Bundle;
+import android.text.InputType;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
+import android.widget.EditText;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -17,6 +19,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import com.example.wayer.R;
 import com.example.wayer.core.NativeEngine;
 import com.example.wayer.databinding.FragmentFilesBinding;
+import com.example.wayer.storage.FileMutator;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -27,13 +30,7 @@ import java.util.List;
 
 /**
  * Files screen.
- * - Left drawer for specialised browse locations
- * - Search bar → C++ bulk search (exact + related)
- * - Current path indicator
- * - RecyclerView list of files/folders
- * - Empty state when nothing to show
- *
- * C++ does the heavy work (list / search). Java only displays the bulk JSON.
+ * List/search via C++; create/rename/delete via FileMutator (shared).
  */
 public class FilesFragment extends Fragment {
 
@@ -52,6 +49,7 @@ public class FilesFragment extends Fragment {
         setupRecycler();
         setupDrawer();
         setupSearch();
+        setupPathActions();
         loadDirectory(currentPath);
         return binding.getRoot();
     }
@@ -65,7 +63,6 @@ public class FilesFragment extends Fragment {
             @Override
             public void onItemClick(FileItem item) {
                 if (item.isDirectory()) {
-                    // Leave search mode and browse into the folder
                     showingSearchResults = false;
                     binding.searchResultsHeader.setVisibility(View.GONE);
                     loadDirectory(item.getPath());
@@ -81,38 +78,118 @@ public class FilesFragment extends Fragment {
         });
     }
 
+    /** Long-press on the path bar → create file / folder in current directory. */
+    private void setupPathActions() {
+        binding.currentPath.setOnLongClickListener(v -> {
+            showCreateMenu();
+            return true;
+        });
+    }
+
+    private void showCreateMenu() {
+        String[] options = {"New folder", "New file", "Cancel"};
+        new AlertDialog.Builder(requireContext())
+                .setTitle("In " + currentPath)
+                .setItems(options, (d, which) -> {
+                    if (which == 0) promptCreate(true);
+                    else if (which == 1) promptCreate(false);
+                })
+                .show();
+    }
+
+    private void promptCreate(boolean folder) {
+        final EditText input = new EditText(requireContext());
+        input.setInputType(InputType.TYPE_CLASS_TEXT);
+        input.setHint(folder ? "Folder name" : "File name (e.g. notes.txt)");
+
+        new AlertDialog.Builder(requireContext())
+                .setTitle(folder ? "New folder" : "New file")
+                .setView(input)
+                .setPositiveButton("Create", (d, w) -> {
+                    String name = input.getText().toString().trim();
+                    FileMutator.Result r = folder
+                            ? FileMutator.createDirectory(currentPath, name)
+                            : FileMutator.createFile(currentPath, name);
+                    Toast.makeText(getContext(), r.message, Toast.LENGTH_SHORT).show();
+                    if (r.ok) loadDirectory(currentPath);
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
     private void showItemOptions(FileItem item) {
-        String[] options;
-        if (item.isDirectory()) {
-            options = new String[]{"Browse folder", "Cancel"};
-        } else {
-            options = new String[]{"Open file", "Open parent folder", "Cancel"};
-        }
+        final String[] options = item.isDirectory()
+                ? new String[]{"Browse folder", "Rename", "Delete", "Cancel"}
+                : new String[]{"Open file", "Open parent folder", "Rename", "Delete", "Cancel"};
 
         new AlertDialog.Builder(requireContext())
                 .setTitle(item.getName())
                 .setItems(options, (dialog, which) -> {
                     if (item.isDirectory()) {
-                        if (which == 0) {
-                            showingSearchResults = false;
-                            binding.searchResultsHeader.setVisibility(View.GONE);
-                            loadDirectory(item.getPath());
-                        }
-                    } else {
-                        if (which == 0) {
-                            DocumentActivity.open(requireContext(), item.getPath());
-                        } else if (which == 1) {
-                            // Open parent folder
-                            String parent = item.getPath();
-                            int slash = parent.lastIndexOf('/');
-                            if (slash > 0) {
+                        switch (which) {
+                            case 0 -> {
                                 showingSearchResults = false;
                                 binding.searchResultsHeader.setVisibility(View.GONE);
-                                loadDirectory(parent.substring(0, slash));
+                                loadDirectory(item.getPath());
                             }
+                            case 1 -> promptRename(item);
+                            case 2 -> confirmDelete(item);
+                        }
+                    } else {
+                        switch (which) {
+                            case 0 -> DocumentActivity.open(requireContext(), item.getPath());
+                            case 1 -> {
+                                String parent = item.getPath();
+                                int slash = parent.lastIndexOf('/');
+                                if (slash > 0) {
+                                    showingSearchResults = false;
+                                    binding.searchResultsHeader.setVisibility(View.GONE);
+                                    loadDirectory(parent.substring(0, slash));
+                                }
+                            }
+                            case 2 -> promptRename(item);
+                            case 3 -> confirmDelete(item);
                         }
                     }
                 })
+                .show();
+    }
+
+    private void promptRename(FileItem item) {
+        final EditText input = new EditText(requireContext());
+        input.setInputType(InputType.TYPE_CLASS_TEXT);
+        input.setText(item.getName());
+
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Rename")
+                .setView(input)
+                .setPositiveButton("Rename", (d, w) -> {
+                    String newName = input.getText().toString().trim();
+                    FileMutator.Result r = FileMutator.rename(item.getPath(), newName);
+                    Toast.makeText(getContext(), r.message, Toast.LENGTH_SHORT).show();
+                    if (r.ok) {
+                        if (showingSearchResults) {
+                            // stay on search results; user can search again
+                        }
+                        loadDirectory(currentPath);
+                    }
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void confirmDelete(FileItem item) {
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Delete?")
+                .setMessage(item.getName() + (item.isDirectory()
+                        ? "\n\nFolder and all contents will be removed."
+                        : ""))
+                .setPositiveButton("Delete", (d, w) -> {
+                    FileMutator.Result r = FileMutator.delete(item.getPath());
+                    Toast.makeText(getContext(), r.message, Toast.LENGTH_SHORT).show();
+                    if (r.ok) loadDirectory(currentPath);
+                })
+                .setNegativeButton("Cancel", null)
                 .show();
     }
 
@@ -138,12 +215,7 @@ public class FilesFragment extends Fragment {
             } else if (id == R.id.nav_documents) {
                 loadDirectory("/storage/emulated/0/Documents");
             } else if (id == R.id.nav_refresh) {
-                if (showingSearchResults) {
-                    // re-run last search not stored yet → just refresh dir
-                    loadDirectory(currentPath);
-                } else {
-                    loadDirectory(currentPath);
-                }
+                loadDirectory(currentPath);
             } else if (id == R.id.nav_external) {
                 Toast.makeText(getContext(), "External / SD – coming soon", Toast.LENGTH_SHORT).show();
             }
@@ -173,11 +245,6 @@ public class FilesFragment extends Fragment {
         });
     }
 
-    /**
-     * Bulk search via C++ (Action 8).
-     * Payload format: "root_path|query"
-     * Response: { "exact_matches":[...], "related_matches":[...] }
-     */
     private void performSearch(String query) {
         String payload = currentPath + "|" + query;
 
@@ -207,7 +274,6 @@ public class FilesFragment extends Fragment {
         try {
             JSONObject root = new JSONObject(rawJson);
 
-            // Exact matches first (100%)
             JSONArray exact = root.optJSONArray("exact_matches");
             if (exact != null) {
                 for (int i = 0; i < exact.length(); i++) {
@@ -223,7 +289,6 @@ public class FilesFragment extends Fragment {
                 }
             }
 
-            // Related matches (~50%)
             JSONArray related = root.optJSONArray("related_matches");
             if (related != null) {
                 for (int i = 0; i < related.length(); i++) {
