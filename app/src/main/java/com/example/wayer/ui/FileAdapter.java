@@ -54,11 +54,8 @@ public class FileAdapter extends RecyclerView.Adapter<FileAdapter.ViewHolder> {
         holder.name.setText(item.getName());
         holder.details.setText(item.getDetails());
 
-        // Simple icon: folder vs file
         holder.icon.setImageResource(
-                item.isDirectory()
-                        ? android.R.drawable.ic_menu_agenda
-                        : android.R.drawable.ic_menu_save
+                item.isDirectory() ? R.drawable.ic_folder : R.drawable.ic_file
         );
 
         holder.itemView.setOnClickListener(v -> {
