@@ -10,39 +10,64 @@
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 
 // Action Identifiers (Match Java UI events)
-constexpr int ACTION_PING = 1;
-constexpr int ACTION_GET_STATUS = 2;
-constexpr int ACTION_LIST_FILES = 3;
+constexpr int ACTION_PING             = 1;
+constexpr int ACTION_GET_STATUS       = 2;
+constexpr int ACTION_LIST_FILES       = 3;
 constexpr int ACTION_GET_NETWORK_INFO = 4;
 constexpr int ACTION_FILTER_DOCUMENTS = 5;
-constexpr int ACTION_START_LISTENER = 6;
+constexpr int ACTION_START_LISTENER   = 6;
 constexpr int ACTION_GET_STORAGE_STATS = 7;
+constexpr int ACTION_SEARCH_FILES     = 8;
 
 namespace {
-    // Isolated internal router (keeps JNI layer minimal)
-    std::string route_action(int action_id, std::string_view payload) {
-        switch (action_id) {
-            case ACTION_PING:
-                return "PONG: " + std::string(payload);
-            case ACTION_GET_STATUS:
-                return R"({"status": "ready", "engine": "C++23"})";
-            case ACTION_LIST_FILES:
-                return wayer::storage::list_files(payload);
-            case ACTION_GET_NETWORK_INFO:
-                return wayer::transfer::get_network_info();
-            case ACTION_FILTER_DOCUMENTS:
-                return wayer::documents::filter_documents(payload);
-            case ACTION_START_LISTENER: {
-                return wayer::transfer::start_listener(8080);
-            case ACTION_GET_STORAGE_STATS:
-                return wayer::storage::get_storage_stats(std::string(payload));
-            }
-            default:
-                LOGE("Unknown action_id: %d", action_id);
-                return R"({"error": "unknown_action"})";
+
+// Payload for search is: "root_path|query"
+std::pair<std::string, std::string> split_search_payload(std::string_view payload) {
+    auto pos = payload.find('|');
+    if (pos == std::string_view::npos) {
+        return {std::string(payload), ""};
+    }
+    return {
+        std::string(payload.substr(0, pos)),
+        std::string(payload.substr(pos + 1))
+    };
+}
+
+std::string route_action(int action_id, std::string_view payload) {
+    switch (action_id) {
+        case ACTION_PING:
+            return "PONG: " + std::string(payload);
+
+        case ACTION_GET_STATUS:
+            return R"({"status": "ready", "engine": "C++23"})";
+
+        case ACTION_LIST_FILES:
+            return wayer::storage::list_files(payload);
+
+        case ACTION_GET_NETWORK_INFO:
+            return wayer::transfer::get_network_info();
+
+        case ACTION_FILTER_DOCUMENTS:
+            return wayer::documents::filter_documents(payload);
+
+        case ACTION_START_LISTENER:
+            return wayer::transfer::start_listener(8080);
+
+        case ACTION_GET_STORAGE_STATS:
+            return wayer::storage::get_storage_stats(std::string(payload));
+
+        case ACTION_SEARCH_FILES: {
+            auto [root, query] = split_search_payload(payload);
+            return wayer::storage::search_files(root, query);
         }
+
+        default:
+            LOGE("Unknown action_id: %d", action_id);
+            return R"({"error": "unknown_action"})";
     }
 }
+
+} // namespace
 
 extern "C" {
 
@@ -52,7 +77,9 @@ Java_com_example_wayer_core_NativeEngine_initEngine(JNIEnv* /* env */, jclass /*
 }
 
 JNIEXPORT jstring JNICALL
-Java_com_example_wayer_core_NativeEngine_processAction(JNIEnv* env, jclass /* clazz */, jint action_id, jstring payload) {
+Java_com_example_wayer_core_NativeEngine_processAction(
+        JNIEnv* env, jclass /* clazz */, jint action_id, jstring payload) {
+
     const char* native_str = env->GetStringUTFChars(payload, nullptr);
     if (!native_str) return env->NewStringUTF("");
 
