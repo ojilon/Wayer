@@ -7,3 +7,21 @@ build/reports/
 
 # App-specific build outputs
 app/build/
+
+collect_context.py
+context.txt
+context2.txt
+.clangd
+.cxx/
+
+goals.md
+
+# External C++ libraries (install locally; stay across branches)
+native/third_party/*
+!native/third_party/README.md
+!native/third_party/.gitkeep
+
+# Release signing — never commit
+keystore.properties
+*.jks
+*.keystore

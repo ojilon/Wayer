@@ -6,12 +6,15 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
     <application
-        android:label="Wayer Link"
+        android:theme="@style/Theme.Wayer"
+        android:label="Wayer"
+        android:icon="@drawable/ic_launcher"
+        android:roundIcon="@drawable/ic_launcher"
         android:allowBackup="true"
         android:supportsRtl="true"
         android:requestLegacyExternalStorage="true">
-        
-        <activity 
+
+        <activity
             android:name=".core.MainActivity"
             android:exported="true">
             <intent-filter>
@@ -19,6 +22,22 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        
+
+        <activity
+            android:name=".ui.DocumentActivity"
+            android:theme="@style/Theme.Wayer"
+            android:exported="false" />
+
+        <activity
+            android:name=".ui.ImageActivity"
+            android:theme="@style/Theme.Wayer"
+            android:exported="false" />
+
+        <activity
+            android:name=".ui.VideoActivity"
+            android:theme="@style/Theme.Wayer"
+            android:exported="false"
+            android:configChanges="orientation|screenSize" />
+
     </application>
 </manifest>

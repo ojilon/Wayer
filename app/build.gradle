@@ -2,33 +2,119 @@ plugins {
     id 'com.android.application'
 }
 
+// Optional local signing file (never commit real passwords).
+// Create app/keystore.properties from keystore.properties.example
+def keystorePropertiesFile = rootProject.file("keystore.properties")
+def keystoreProperties = new Properties()
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
 android {
     namespace 'com.example.wayer'
-    compileSdk 36 
+    compileSdk 36
+
+    ndkVersion "29.0.14206865"
+
+    buildFeatures {
+        viewBinding true
+    }
 
     defaultConfig {
         applicationId "com.example.wayer"
         minSdk 26
         targetSdk 34
-        versionCode 1
-        versionName "0.0.1"
+
+        // Python tool edits gradle.properties → these read here
+        versionCode project.property("app.versionCode").toInteger()
+        versionName project.property("app.versionName")
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        // Multi-ABI: comma list in gradle.properties → aurora.abiFilters
+        ndk {
+            def abiProperty = project.findProperty("aurora.abiFilters") as String
+            if (abiProperty != null && !abiProperty.trim().isEmpty()) {
+                abiFilters.clear()
+                abiFilters.addAll(abiProperty.split(",").collect { it.trim() }.findAll { !it.isEmpty() })
+            }
+        }
+
+        externalNativeBuild {
+            cmake {
+                cppFlags "-std=c++23"
+            }
+        }
+    }
+
+    signingConfigs {
+        release {
+            // Prefer keystore.properties; fall back to env vars (CI / Python tool)
+            if (keystorePropertiesFile.exists()) {
+                storeFile file(keystoreProperties["storeFile"])
+                storePassword keystoreProperties["storePassword"]
+                keyAlias keystoreProperties["keyAlias"]
+                keyPassword keystoreProperties["keyPassword"]
+            } else if (System.getenv("WAYER_STORE_FILE")) {
+                storeFile file(System.getenv("WAYER_STORE_FILE"))
+                storePassword System.getenv("WAYER_STORE_PASSWORD")
+                keyAlias System.getenv("WAYER_KEY_ALIAS")
+                keyPassword System.getenv("WAYER_KEY_PASSWORD")
+            }
+        }
     }
 
     buildTypes {
+        debug {
+            applicationIdSuffix ".debug"
+            versionNameSuffix "-debug"
+        }
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            // Only apply signing when a keystore is configured
+            if (keystorePropertiesFile.exists() || System.getenv("WAYER_STORE_FILE")) {
+                signingConfig signingConfigs.release
+            }
         }
     }
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
     }
+
+    externalNativeBuild {
+        cmake {
+            path file("../native/CMakeLists.txt")
+            version "3.22.1"
+        }
+    }
+
+    testOptions {
+        unitTests {
+            includeAndroidResources = false
+            returnDefaultValues = true
+        }
+    }
+
+    // One APK with all ABIs listed in aurora.abiFilters (simple for sideload).
+    // For Play Store later you can enable splits / App Bundle.
+    packaging {
+        jniLibs {
+            useLegacyPackaging = true
+        }
+    }
 }
 
 dependencies {
-    // Standard android core libraries will be pulled into the new cache
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'com.google.android.material:material:1.11.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    implementation 'androidx.recyclerview:recyclerview:1.3.2'
+
+    testImplementation 'junit:junit:4.13.2'
+
+    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
 }

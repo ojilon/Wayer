@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+  Central theme. All windows, sidebars, cards, buttons inherit from here.
+  Change colors in colors.xml / values-night/colors.xml only.
+-->
+
+<resources>
+
+    <style name="Theme.Wayer" parent="Theme.Material3.DayNight.NoActionBar">
+
+        <!-- Status & navigation bars -->
+        <item name="android:statusBarColor">@color/wayer_background</item>
+        <item name="android:navigationBarColor">@color/wayer_background</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowBackground">@color/wayer_background</item>
+
+        <!-- Core Material3 color roles -->
+        <item name="colorPrimary">@color/wayer_primary</item>
+        <item name="colorOnPrimary">@color/wayer_on_primary</item>
+        <item name="colorPrimaryContainer">@color/wayer_primary_container</item>
+        <item name="colorSecondary">@color/wayer_primary</item>
+
+        <item name="colorSurface">@color/wayer_surface</item>
+        <item name="colorOnSurface">@color/wayer_text_primary</item>
+        <item name="colorOnSurfaceVariant">@color/wayer_text_secondary</item>
+        <item name="colorSurfaceVariant">@color/wayer_surface_variant</item>
+
+        <item name="colorOutline">@color/wayer_outline</item>
+        <item name="colorError">@color/wayer_error</item>
+
+        <!-- Typography -->
+        <item name="android:fontFamily">sans-serif</item>
+
+        <!-- Bottom navigation & cards get rounded modern look via theme -->
+        <item name="bottomNavigationStyle">@style/Widget.Wayer.BottomNavigation</item>
+    </style>
+
+    <!-- Optional refined bottom nav style -->
+    <style name="Widget.Wayer.BottomNavigation" parent="Widget.Material3.BottomNavigationView">
+        <item name="android:background">@color/wayer_surface</item>
+        <item name="itemIconTint">@color/wayer_primary</item>
+        <item name="itemTextColor">@color/wayer_text_secondary</item>
+        <item name="elevation">8dp</item>
+    </style>
+
+</resources>
