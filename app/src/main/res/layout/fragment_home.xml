@@ -15,7 +15,6 @@
         android:padding="@dimen/spacing_md">
 
         <!-- Header -->
-
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -28,13 +27,11 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/spacing_xs"
-            android:text="Your files, documents and devices"
+            android:text="Your files, devices and transfers"
             android:textColor="@color/wayer_text_secondary"
             android:textSize="14sp" />
 
-
         <!-- Storage Card -->
-
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -58,21 +55,12 @@
                     android:textSize="18sp"
                     android:textStyle="bold" />
 
-                <!--
-                    how java will be used to make things dynamic,from static
-
-                    java code snippet;
-
-                    TextView summary = view.findViewById(R.id.storage_summary);
-
-                    summary.setText("80 GB used of 128 GB");
-                -->
                 <TextView
                     android:id="@+id/storage_summary"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/spacing_sm"
-                    android:text="53 GB used of 64 GB"
+                    android:text="Calculating..."
                     android:textColor="@color/wayer_text_secondary"
                     android:textSize="14sp" />
 
@@ -83,15 +71,141 @@
                     android:layout_height="8dp"
                     android:layout_marginTop="@dimen/spacing_md"
                     android:max="100"
-                    android:progress="33" />
+                    android:progress="0" />
 
+                <!-- Category breakdown (filled by Java from C++ JSON) -->
+                <LinearLayout
+                    android:id="@+id/storage_breakdown"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/spacing_md"
+                    android:orientation="vertical">
+
+                    <!-- Images -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingTop="@dimen/spacing_xs"
+                        android:paddingBottom="@dimen/spacing_xs">
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Images"
+                            android:textColor="@color/wayer_text_secondary"
+                            android:textSize="13sp" />
+                        <TextView
+                            android:id="@+id/cat_images"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="—"
+                            android:textColor="@color/wayer_text_primary"
+                            android:textSize="13sp" />
+                    </LinearLayout>
+
+                    <!-- Videos -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingTop="@dimen/spacing_xs"
+                        android:paddingBottom="@dimen/spacing_xs">
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Videos"
+                            android:textColor="@color/wayer_text_secondary"
+                            android:textSize="13sp" />
+                        <TextView
+                            android:id="@+id/cat_videos"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="—"
+                            android:textColor="@color/wayer_text_primary"
+                            android:textSize="13sp" />
+                    </LinearLayout>
+
+                    <!-- Audio -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingTop="@dimen/spacing_xs"
+                        android:paddingBottom="@dimen/spacing_xs">
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Audio"
+                            android:textColor="@color/wayer_text_secondary"
+                            android:textSize="13sp" />
+                        <TextView
+                            android:id="@+id/cat_audio"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="—"
+                            android:textColor="@color/wayer_text_primary"
+                            android:textSize="13sp" />
+                    </LinearLayout>
+
+                    <!-- Documents -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingTop="@dimen/spacing_xs"
+                        android:paddingBottom="@dimen/spacing_xs">
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Documents"
+                            android:textColor="@color/wayer_text_secondary"
+                            android:textSize="13sp" />
+                        <TextView
+                            android:id="@+id/cat_documents"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="—"
+                            android:textColor="@color/wayer_text_primary"
+                            android:textSize="13sp" />
+                    </LinearLayout>
+
+                    <!-- Others -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingTop="@dimen/spacing_xs"
+                        android:paddingBottom="@dimen/spacing_xs">
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Others"
+                            android:textColor="@color/wayer_text_secondary"
+                            android:textSize="13sp" />
+                        <TextView
+                            android:id="@+id/cat_others"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="—"
+                            android:textColor="@color/wayer_text_primary"
+                            android:textSize="13sp" />
+                    </LinearLayout>
+
+                </LinearLayout>
             </LinearLayout>
-
         </com.google.android.material.card.MaterialCardView>
 
-
         <!-- Quick Actions -->
-
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -121,7 +235,6 @@
                 android:layout_marginStart="@dimen/spacing_sm"
                 android:layout_weight="1"
                 android:text="Transfer" />
-
         </LinearLayout>
 
         <LinearLayout
@@ -144,12 +257,9 @@
                 android:layout_marginStart="@dimen/spacing_sm"
                 android:layout_weight="1"
                 android:text="Terminal" />
-
         </LinearLayout>
 
-
         <!-- Recent Files -->
-
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -168,9 +278,7 @@
             android:textColor="@color/wayer_text_secondary"
             android:textSize="14sp" />
 
-
         <!-- Recent Transfers -->
-
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -190,5 +298,4 @@
             android:textSize="14sp" />
 
     </LinearLayout>
-
 </ScrollView>

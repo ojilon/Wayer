@@ -27,22 +27,36 @@ public class HomeFragment extends Fragment {
     }
 
     private void setupUI() {
-        // Fetch and display storage stats (Action ID 7)
+        // C++ Action 7 → full storage stats + category breakdown (one big JSON)
         NativeEngine.processActionAsync(7, "/storage/emulated/0", rawJson -> {
             try {
                 JSONObject data = new JSONObject(rawJson);
+
                 int progress = data.getInt("progress_percent");
-                long usedGb = data.getLong("used_bytes") / (1024L * 1024L * 1024L);
-                long totalGb = data.getLong("total_bytes") / (1024L * 1024L * 1024L);
+                long usedBytes = data.getLong("used_bytes");
+                long totalBytes = data.getLong("total_bytes");
 
                 binding.storageProgress.setProgress(progress);
-                binding.storageSummary.setText(usedGb + " GB used of " + totalGb + " GB");
+                binding.storageSummary.setText(
+                    formatSize(usedBytes) + " used of " + formatSize(totalBytes)
+                );
+
+                // Category breakdown
+                if (data.has("breakdown")) {
+                    JSONObject b = data.getJSONObject("breakdown");
+                    binding.catImages.setText(formatSize(b.optLong("images", 0)));
+                    binding.catVideos.setText(formatSize(b.optLong("videos", 0)));
+                    binding.catAudio.setText(formatSize(b.optLong("audio", 0)));
+                    binding.catDocuments.setText(formatSize(b.optLong("documents", 0)));
+                    binding.catOthers.setText(formatSize(b.optLong("others", 0)));
+                }
             } catch (JSONException e) {
                 e.printStackTrace();
+                binding.storageSummary.setText("Failed to load storage info");
             }
         });
 
-        // Navigate via MainActivity's binding instead of findViewById
+        // Quick actions → bottom navigation
         binding.actionFiles.setOnClickListener(v ->
             ((MainActivity) requireActivity()).navigateTo(R.id.nav_files)
         );
@@ -51,13 +65,21 @@ public class HomeFragment extends Fragment {
             ((MainActivity) requireActivity()).navigateTo(R.id.nav_transfer)
         );
 
-        binding.actionTerminal.setOnClickListener(v ->
-            Toast.makeText(getContext(), "Terminal button clicked!", Toast.LENGTH_SHORT).show()
-        );
-
         binding.actionStorage.setOnClickListener(v ->
             ((MainActivity) requireActivity()).navigateTo(R.id.nav_storage)
         );
+
+        binding.actionTerminal.setOnClickListener(v ->
+            Toast.makeText(getContext(), "Terminal – coming soon", Toast.LENGTH_SHORT).show()
+        );
+    }
+
+    /** Convert bytes → human readable (KB / MB / GB) */
+    private String formatSize(long bytes) {
+        if (bytes < 1024) return bytes + " B";
+        if (bytes < 1024 * 1024) return String.format("%.1f KB", bytes / 1024.0);
+        if (bytes < 1024L * 1024 * 1024) return String.format("%.1f MB", bytes / (1024.0 * 1024));
+        return String.format("%.1f GB", bytes / (1024.0 * 1024 * 1024));
     }
 
     @Override
