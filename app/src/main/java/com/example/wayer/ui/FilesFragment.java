@@ -63,7 +63,7 @@ public class FilesFragment extends Fragment {
                     loadDirectory(item.getPath());
                 } else {
                     // Later: open document viewer
-                    Toast.makeText(getContext(), "Open file: " + item.getName(), Toast.LENGTH_SHORT).show();
+                    DocumentActivity.open(requireContext(), item.getPath());
                 }
             }
 
