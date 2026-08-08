@@ -1,180 +1,106 @@
 # Wayer - Android End
 
-An Android app for transferring files with your PC through hotspot connection. Browse, download, and upload files.
+An Android app that connects to the Wayer PC server over a Wi‑Fi hotspot. The app exposes a small CLI-style terminal to browse the PC file tree, request downloads, and upload local files to the PC.
 
 ## Prerequisites
 - Android SDK (API 21+)
-- Gradle build system
-- A PC running the Wayer PC-end server
-- Android sdk and ndk build tools
+- Gradle (wrapper included)
+- A PC running the Wayer PC-end server (see pc-end branch)
+- For optional native work: Android NDK and native build tools
 
-## Installation & Build
-
-### 1. Clone the Repository
-
-```bash
-git checkout android-end
-```
-
-### 2. Open in Android Studio
+## Quick start / Build
+From the repository root:
 
 ```bash
-# Navigate to the project root
-cd Wayer
-# Open in Android Studio or use gradle
+# switch to the branch you want (optional)
+git checkout main
+
+# Build debug APK
+./gradlew assembleDebug
+
+# Debug APK path
+app/build/outputs/apk/debug/app-debug.apk
 ```
 
-### 3. Install Dependencies
+Install with ADB:
 
-Dependencies are declared in `app/build.gradle`. Gradle will automatically download them.
-
-### 4. Build the APK
-
-**Using Command Line**
 ```bash
-./gradlew assembleDebug    # Debug APK
-./gradlew assembleRelease  # Release APK (requires signing)
+adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
 
-### 5. Locate the APK
-
-Built APKs are located at:
-```
-app/build/outputs/apk/debug/app-debug.apk        (Debug)
-app/build/outputs/apk/release/app-release.apk    (Release)
-```
-
-## Installation on Android Device
-
-### Method 1: ADB (Android Debug Bridge)
-```bash
-adb install app/build/outputs/apk/debug/app-debug.apk
-```
-
-### Method 2: Manual Installation
-1. Copy the APK to your device
-2. Open a file manager
-3. Tap the APK file to install
-
-## Project Structure
+## Project layout (high level)
 
 ```
 android-end/
-├── app/
-│   ├── build.gradle          # App build configuration
-│   ├── src/
-│   │   └── main/
-│   │       ├── AndroidManifest.xml    # App permissions and components
-│   │       ├── java/                  # Source code
-│   │       └── res/                   # Resources (layouts, strings, etc)
-├── build.gradle              # Project build configuration
-├── settings.gradle           # Gradle settings
-├── gradle.properties         # Gradle properties
-└── README.md
+├── app/                  # Android Studio project
+│   ├── build.gradle
+│   └── src/main/
+│       ├── AndroidManifest.xml
+│       ├── java/com/example/wayer/
+│       │   ├── core/         # MainActivity, Config, etc.
+│       │   ├── network/      # NetworkManager, NetworkCallback
+│       │   ├── storage/      # FileNavigator, FileMutator, FileSearcher
+│       │   └── utils/        # Text utilities
+│       └── res/             # layouts, strings, drawables
+└── build.gradle
 ```
 
-## Usage Guide
+## How the app works
+- Local commands operate on the Android device filesystem (using the terminal UI).
+- Protocol/network commands (start with a slash, e.g. `/ask`) are sent to the PC server. The PC server must be running and both devices must be on the same hotspot network.
 
-Connect your Android phone to your PC's hotspot, then open the Wayer app to start transferring files.
+## Commands
 
-### Core Commands
+Local (device) commands:
+- `ls` — list files and folders in the current working directory
+- `cd <path>` — change working directory
+- `cls` — clear terminal output
+- `stz <filename>` — sanitize and rename a file (replace spaces/unsafe characters)
+- `find <keyword>` — search for filenames containing the keyword under the current directory
+- `findfile <filename>` — global search for a specific filename
+- `refresh` — refresh internal file path cache (may be slow)
+- `jump <folder>` — quick jump to a subfolder by name
+- `choose <number>` — select an item from the last search/list output
+- `mkdir <folder>` — create a directory in the current location
+- `setdownloadpath <folder>` — set custom download folder on the device
+- `sanitizepath` — run sanitization across names in the current directory
 
-The app supports three main operations:
+Network/protocol commands (require PC server):
+- `/ask <filename>` — request a file from the PC server; if found, the server replies with a header (e.g. `FOUND <bytes>`), then the app initiates the download and streams the file to local storage
+- `/upload <filepath>` — upload a local file to the PC server; the app sends an upload header with size, the server replies with a handshake (`/send` or `READY`) and the binary payload is streamed
 
-#### 1. **Navigation - `ls` and `cd` Commands**
+Example session:
 
-- **`ls`** - List files and folders in the current directory
-  ```
-  ls
-  ```
-  Shows available files/folders on the PC server
-
-- **`cd <path>`** - Change directory
-  ```
-  cd Documents
-  cd ..           # Go back one level
-  ```
-  Navigate through the file system hierarchy
-
-#### 2. **Download Files - `/ask` Command**
-
-Request a file from the PC server:
 ```
-/ask <filename>
-```
-
-**Example:**
-```
-/ask document.pdf
-/ask photo.jpg
+ls
+cd Documents
+/ask report.pdf
+/upload Pictures/photo.jpg
 ```
 
-- Enters the filename you want to download
-- Server searches for the file in the shared folder
-- File downloads to your Android device (typically in Downloads)
-- Connection status is shown in the app
-
-#### 3. **Upload Files - `/upload` Command**
-
-Send a file from your phone to the PC:
-```
-/upload <filepath>
-```
-
-**Example:**
-```
-/upload /sdcard/Pictures/photo.jpg
-/upload /sdcard/Documents/notes.txt
-```
-
-- Specifies the full path to the file on your phone
-- File is sent to the PC's `received/` folder
-- Upload progress is displayed
-- Confirmation shown when complete
-
-## Quick Workflow
-
-1. **Open the app** - Connect to PC hotspot
-2. **Explore files** - Use `ls` and `cd` to navigate
-3. **Download** - Use `/ask <filename>` to get files from PC
-4. **Upload** - Use `/upload <filepath>` to send files to PC
-5. **Check status** - App displays connection status and transfer progress
-
-## Features
-
-✅ Browse PC file system from Android  
-✅ Download files with `/ask` command  
-✅ Upload files with `/upload` command  
-✅ Directory navigation with `ls` and `cd`  
-✅ Real-time transfer status  
-✅ Hotspot-based connection (no internet required)  
-
-## Troubleshooting
-
-| Issue | Solution |
-|-------|----------|
-| **Build fails** | Run `./gradlew clean` then rebuild |
-| **Can't connect to PC** | Verify both devices on same hotspot; check PC server is running |
-| **File not found** | Ensure filename exists; check path is correct; use `ls` to verify |
-| **Upload fails** | Verify file path is accessible; check Android permissions |
-| **APK won't install** | Enable "Unknown Sources" in Android settings (may vary by device) |
-
-## Build Output
-
-After successful build:
-- **Debug APK**: `app/build/outputs/apk/debug/app-debug.apk`
-- **Release APK**: `app/build/outputs/apk/release/app-release.apk`
+Protocol notes
+- The app expects the PC server to follow a simple text-header + streaming protocol:
+  - For `/ask`: client sends `/ask <filename>`, server responds `FOUND <size>` or an error. Client then sends `/send` and reads the byte stream until the advertised size is received.
+  - For `/upload`: client sends `/upload <size> <filename>`, server responds with `/send` or `READY`. Client streams the file bytes afterwards.
+- If the server closes the connection or responds with an error header, the app prints an informative message to the terminal.
 
 ## Permissions
+(See AndroidManifest.xml)
+- INTERNET — for socket connections to PC server
+- STORAGE read/write (or scoped storage equivalents) — to access and save files on the device
+  - On modern Android releases, runtime storage permissions and scoped storage rules apply — grant permissions or use the app’s configured download path.
 
-The app requires these Android permissions (see `AndroidManifest.xml`):
-- Internet access
-- File read/write access
-- Storage permissions (varies by Android version)
+## Troubleshooting
+- Can't connect: make sure both phone and PC are on the same hotspot and the PC server is running.
+- File not found: verify filename and use `ls` / `find` to inspect the server or local folders.
+- Upload fails: confirm the local file path and that the app has storage permission to read the file.
+- Build issues: run `./gradlew clean` then rebuild; open the project in Android Studio for configuration assistance.
 
-## Notes
+## Build output
+- Debug APK: `app/build/outputs/apk/debug/app-debug.apk`
+- Release APK: `app/build/outputs/apk/release/app-release.apk` (requires signing config)
 
-- Keep the PC server running for the app to function
-- Both devices must be on the same hotspot network
-- File transfers are optimized for WiFi hotspot speed
-- Larger files may take longer depending on connection quality
+## Notes & next steps
+- The app is intentionally minimal (CLI-style) for fast file transfers over a hotspot.
+- The PC server implements the file-serving protocol — see the pc-end branch for the server implementation and exact protocol details.
+- Future improvements: UI polish, resumable transfers, checksums, TLS, and an alternative discovery/handshake mechanism.
