@@ -31,6 +31,7 @@ import java.util.List;
 /**
  * Files screen.
  * List/search via C++; create/rename/delete via FileMutator (shared).
+ * Open routes through FileOpenHelper → Image / Video / Document.
  */
 public class FilesFragment extends Fragment {
 
@@ -67,7 +68,7 @@ public class FilesFragment extends Fragment {
                     binding.searchResultsHeader.setVisibility(View.GONE);
                     loadDirectory(item.getPath());
                 } else {
-                    DocumentActivity.open(requireContext(), item.getPath());
+                    FileOpenHelper.open(requireContext(), item.getPath());
                 }
             }
 
@@ -78,7 +79,6 @@ public class FilesFragment extends Fragment {
         });
     }
 
-    /** Long-press on the path bar → create file / folder in current directory. */
     private void setupPathActions() {
         binding.currentPath.setOnLongClickListener(v -> {
             showCreateMenu();
@@ -137,7 +137,7 @@ public class FilesFragment extends Fragment {
                         }
                     } else {
                         switch (which) {
-                            case 0 -> DocumentActivity.open(requireContext(), item.getPath());
+                            case 0 -> FileOpenHelper.open(requireContext(), item.getPath());
                             case 1 -> {
                                 String parent = item.getPath();
                                 int slash = parent.lastIndexOf('/');
@@ -167,12 +167,7 @@ public class FilesFragment extends Fragment {
                     String newName = input.getText().toString().trim();
                     FileMutator.Result r = FileMutator.rename(item.getPath(), newName);
                     Toast.makeText(getContext(), r.message, Toast.LENGTH_SHORT).show();
-                    if (r.ok) {
-                        if (showingSearchResults) {
-                            // stay on search results; user can search again
-                        }
-                        loadDirectory(currentPath);
-                    }
+                    if (r.ok) loadDirectory(currentPath);
                 })
                 .setNegativeButton("Cancel", null)
                 .show();
