@@ -54,6 +54,10 @@ public class HomeFragment extends Fragment {
         binding.actionTerminal.setOnClickListener(v ->
             Toast.makeText(getContext(), "Terminal button clicked!", Toast.LENGTH_SHORT).show()
         );
+
+        binding.actionStorage.setOnClickListener(v ->
+            ((MainActivity) requireActivity()).navigateTo(R.id.nav_storage)
+        );
     }
 
     @Override
