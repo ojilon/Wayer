@@ -1,106 +1,227 @@
-# Wayer - Android End
+# Wayer — Android end (detailed)
 
-An Android app that connects to the Wayer PC server over a Wi‑Fi hotspot. The app exposes a small CLI-style terminal to browse the PC file tree, request downloads, and upload local files to the PC.
+Android app for local file management and transfers with **WayerPC** over hotspot.
+
+This document matches the **current** codebase on branch `ui_home_files_work`.
+
+---
 
 ## Prerequisites
-- Android SDK (API 21+)
-- Gradle (wrapper included)
-- A PC running the Wayer PC-end server (see pc-end branch)
-- For optional native work: Android NDK and native build tools
 
-## Quick start / Build
-From the repository root:
+- Android Studio or command-line Android SDK  
+- **JDK 17**  
+- **NDK** (version pinned in `app/build.gradle`, e.g. `29.0.14206865`)  
+- **CMake** 3.22+  
+- Device or emulator (ABI must be in `aurora.abiFilters`)  
+- Optional: PC running WayerPC for Transfer tests  
+
+Min SDK **26**, compile SDK **36**, target SDK **34**.
+
+---
+
+## Clone & branch
 
 ```bash
-# switch to the branch you want (optional)
-git checkout main
-
-# Build debug APK
-./gradlew assembleDebug
-
-# Debug APK path
-app/build/outputs/apk/debug/app-debug.apk
+git clone https://github.com/ojilon/Wayer.git
+cd Wayer
+git checkout ui_home_files_work
 ```
 
-Install with ADB:
+---
+
+## Configure PC address
+
+```text
+app/src/main/java/com/example/wayer/core/Config.java
+```
+
+```java
+public static final String HOST = "192.168.x.x";  // PC hotspot IP
+public static final int PORT = 5000;
+```
+
+---
+
+## Build & install
 
 ```bash
+./gradlew :app:testDebugUnitTest   # unit tests
+./gradlew :app:assembleDebug      # debug APK
+./gradlew :app:assembleRelease    # release (signing optional)
+
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
 
-## Project layout (high level)
+| Output | Path |
+|--------|------|
+| Debug APK | `app/build/outputs/apk/debug/app-debug.apk` |
+| Release APK | `app/build/outputs/apk/release/` |
 
-```
-android-end/
-├── app/                  # Android Studio project
-│   ├── build.gradle
-│   └── src/main/
-│       ├── AndroidManifest.xml
-│       ├── java/com/example/wayer/
-│       │   ├── core/         # MainActivity, Config, etc.
-│       │   ├── network/      # NetworkManager, NetworkCallback
-│       │   ├── storage/      # FileNavigator, FileMutator, FileSearcher
-│       │   └── utils/        # Text utilities
-│       └── res/             # layouts, strings, drawables
-└── build.gradle
+**Version & ABIs** — edit only `gradle.properties`:
+
+```properties
+app.versionCode=1
+app.versionName=0.0.1_0
+aurora.abiFilters=arm64-v8a,armeabi-v7a,x86_64
 ```
 
-## How the app works
-- Local commands operate on the Android device filesystem (using the terminal UI).
-- Protocol/network commands (start with a slash, e.g. `/ask`) are sent to the PC server. The PC server must be running and both devices must be on the same hotspot network.
+Signing: copy `keystore.properties.example` → `keystore.properties` (gitignored), or set `WAYER_*` env vars.  
+See [docs/RELEASE_AND_BUILD.md](docs/RELEASE_AND_BUILD.md).
 
-## Commands
+---
 
-Local (device) commands:
-- `ls` — list files and folders in the current working directory
-- `cd <path>` — change working directory
-- `cls` — clear terminal output
-- `stz <filename>` — sanitize and rename a file (replace spaces/unsafe characters)
-- `find <keyword>` — search for filenames containing the keyword under the current directory
-- `findfile <filename>` — global search for a specific filename
-- `refresh` — refresh internal file path cache (may be slow)
-- `jump <folder>` — quick jump to a subfolder by name
-- `choose <number>` — select an item from the last search/list output
-- `mkdir <folder>` — create a directory in the current location
-- `setdownloadpath <folder>` — set custom download folder on the device
-- `sanitizepath` — run sanitization across names in the current directory
+## App screens
 
-Network/protocol commands (require PC server):
-- `/ask <filename>` — request a file from the PC server; if found, the server replies with a header (e.g. `FOUND <bytes>`), then the app initiates the download and streams the file to local storage
-- `/upload <filepath>` — upload a local file to the PC server; the app sends an upload header with size, the server replies with a handshake (`/send` or `READY`) and the binary payload is streamed
+### Home
+- Storage used/total from C++ (**Action 7**)
+- Category breakdown
+- Shortcuts to Files / Storage / Transfer
 
-Example session:
+### Files
+- Left drawer (Downloads, DCIM, Movies, Documents, …)
+- List directory (**Action 3**)
+- Search exact + related (**Action 8**)
+- Long-press item → open / rename / delete  
+- Long-press path bar → new file / folder  
+- Open routes via `FileOpenHelper` → Image / Video / Document activity
 
+### Storage
+- Same stats as Home + visual category bars
+- **Scan for large files** (**Action 9**, default ≥ 10 MB)
+- Long-press → open or delete (`FileMutator`)
+
+### Transfer
+- Test TCP connection to `Config.HOST:PORT`
+- Optional C++ listener (**Action 6**)
+- **Download** = `/ask <name>` → app `filesDir`
+- **Upload** = `/upload <name>` from app `filesDir`
+- Activity log + rough session stats
+
+---
+
+## Architecture
+
+```text
+┌──────────── XML layouts ────────────┐
+│  Fragments / Activities (ViewBinding) │
+└─────────────────┬───────────────────┘
+                  │ display only
+┌─────────────────▼───────────────────┐
+│  Java: navigation, dialogs, sockets │
+│  NetworkManager → WayerPC           │
+│  FileMutator → local create/rename/ │
+│                delete                 │
+└─────────────────┬───────────────────┘
+                  │ JNI bulk JSON
+┌─────────────────▼───────────────────┐
+│  native/ C++23  (NativeEngine)      │
+│  list, search, stats, large files   │
+└─────────────────────────────────────┘
 ```
-ls
-cd Documents
-/ask report.pdf
-/upload Pictures/photo.jpg
+
+### Native action IDs
+
+| ID | Purpose |
+|----|---------|
+| 3 | List directory |
+| 6 | Start listener |
+| 7 | Storage stats |
+| 8 | Search files |
+| 9 | Find large files |
+
+### Main source map
+
+```text
+app/src/main/java/com/example/wayer/
+  core/          MainActivity, NativeEngine, Config
+  ui/            Home/Files/Storage/Transfer fragments,
+                 Document/Image/Video activities, FileAdapter, FileOpenHelper
+  network/       NetworkManager, NetworkCallback
+  storage/       FileMutator, StorageController, …
+  transfer/      TransferController, NetworkStatus
+  utils/         TextSanitizer
+
+native/
+  wayer_engine.cpp          JNI router
+  storage/storage_engine.*  list, stats, search, large files
+  transfer/                 listener / network info stubs
+  documents/                document filter stub
+  third_party/              external C++ libs (local only)
 ```
 
-Protocol notes
-- The app expects the PC server to follow a simple text-header + streaming protocol:
-  - For `/ask`: client sends `/ask <filename>`, server responds `FOUND <size>` or an error. Client then sends `/send` and reads the byte stream until the advertised size is received.
-  - For `/upload`: client sends `/upload <size> <filename>`, server responds with `/send` or `READY`. Client streams the file bytes afterwards.
-- If the server closes the connection or responds with an error header, the app prints an informative message to the terminal.
+---
+
+## Transfer protocol (phone ↔ WayerPC)
+
+```text
+Download:
+  phone → /ask <filename>
+  pc    → FOUND <size>
+  phone → /send
+  pc    → <bytes>
+
+Upload:
+  phone → /upload <size> <filename>
+  pc    → READY (or /send)
+  phone → <bytes>
+```
+
+File names for Transfer UI are **names only** relative to the app files directory (download destination / upload source), not full phone paths.
+
+---
+
+## Tests & CI
+
+```bash
+./gradlew :app:testDebugUnitTest
+```
+
+- Unit tests: `TextSanitizer`, `FileMutator`, `FileItem`  
+- CI: `.github/workflows/android-ci.yml`  
+- How to write more: [docs/TESTING.md](docs/TESTING.md)
+
+---
+
+## Documentation index
+
+| File | Topic |
+|------|--------|
+| [docs/HOME_AND_FILES.md](docs/HOME_AND_FILES.md) | Home + Files flow |
+| [docs/STORAGE_AND_TRANSFER.md](docs/STORAGE_AND_TRANSFER.md) | Storage, Transfer, FileMutator |
+| [docs/MEDIA_AND_DOCUMENTS.md](docs/MEDIA_AND_DOCUMENTS.md) | Viewers + third_party |
+| [docs/RELEASE_AND_BUILD.md](docs/RELEASE_AND_BUILD.md) | Version, ABI, signing, Python tool |
+| [docs/TESTING.md](docs/TESTING.md) | Tests |
+| [docs/XML_UI_GUIDE.md](docs/XML_UI_GUIDE.md) | Learn / improve XML UI |
+| [docs/ICONS.md](docs/ICONS.md) | Vector launcher & nav icons |
+
+---
 
 ## Permissions
-(See AndroidManifest.xml)
-- INTERNET — for socket connections to PC server
-- STORAGE read/write (or scoped storage equivalents) — to access and save files on the device
-  - On modern Android releases, runtime storage permissions and scoped storage rules apply — grant permissions or use the app’s configured download path.
+
+Declared in `AndroidManifest.xml`:
+
+- `INTERNET`
+- `READ_EXTERNAL_STORAGE` / `WRITE_EXTERNAL_STORAGE` (legacy flag enabled for broader file access on older patterns)
+
+On newer Android versions you may still need runtime grants or scoped-storage adjustments depending on paths you open.
+
+---
 
 ## Troubleshooting
-- Can't connect: make sure both phone and PC are on the same hotspot and the PC server is running.
-- File not found: verify filename and use `ls` / `find` to inspect the server or local folders.
-- Upload fails: confirm the local file path and that the app has storage permission to read the file.
-- Build issues: run `./gradlew clean` then rebuild; open the project in Android Studio for configuration assistance.
 
-## Build output
-- Debug APK: `app/build/outputs/apk/debug/app-debug.apk`
-- Release APK: `app/build/outputs/apk/release/app-release.apk` (requires signing config)
+| Issue | What to try |
+|-------|-------------|
+| Build / NDK fails | Install matching NDK; `./gradlew clean`; check `ndkVersion` |
+| App only on your phone | Ensure device ABI is in `aurora.abiFilters` |
+| Transfer fails | Same hotspot; WayerPC running; correct `Config.HOST`/`PORT` |
+| Empty file list | Storage permission; path exists (`/storage/emulated/0/...`) |
+| Large scan slow | Expected on full tree; threshold is 10 MB in StorageFragment |
+| Release unsigned | Add `keystore.properties` or `WAYER_*` env |
 
-## Notes & next steps
-- The app is intentionally minimal (CLI-style) for fast file transfers over a hotspot.
-- The PC server implements the file-serving protocol — see the pc-end branch for the server implementation and exact protocol details.
-- Future improvements: UI polish, resumable transfers, checksums, TLS, and an alternative discovery/handshake mechanism.
+---
+
+## Status notes
+
+- **Usable** for browse, search, local file ops, storage overview, basic PC transfer  
+- **Document rendering** (PDF/office) is a placeholder until libraries are added under `native/third_party/`  
+- Terminal-style `ls`/`cd` UI is not the primary surface anymore; Files UI + Transfer UI replace that workflow  

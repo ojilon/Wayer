@@ -1,70 +1,85 @@
-# Wayer - Android App
+# Wayer (Android)
 
-Android client for transferring files with your PC through a hotspot connection. Provides a small CLI-like terminal UI to browse the PC file system, download files to the phone, and upload phone files to the PC.
+Android client for browsing local storage and transferring files with **WayerPC** over a phone hotspot.
 
-**🔗 [← Back to Main](https://github.com/ojilon/Wayer/blob/main/README.md)** | **📖 [Detailed Setup & Command Reference →](https://github.com/ojilon/Wayer/blob/main/README_ANDROID_END.md)**
+**Active UI branch:** `ui_home_files_work` (built on top of `restructure_ui`)
 
-## ⚡ Quick Start
+| Doc | Purpose |
+|-----|---------|
+| [README_ANDROID_END.md](README_ANDROID_END.md) | Full Android setup, structure, usage |
+| [docs/](docs/) | Feature guides (Home, Files, Storage, Transfer, tests, icons, XML) |
+
+---
+
+## Quick start
 
 ```bash
-# Build debug APK
-./gradlew assembleDebug
-
-# Find APK at:
-# app/build/outputs/apk/debug/app-debug.apk
+git checkout ui_home_files_work
+./gradlew :app:testDebugUnitTest
+./gradlew :app:assembleDebug
+# APK → app/build/outputs/apk/debug/app-debug.apk
 ```
 
-## 📂 Project Structure (high level)
+Set the PC address in `app/.../core/Config.java` (`HOST` / `PORT`) before Transfer tests.
 
-```
-android-end/
-├── app/
-│   ├── build.gradle         # App-level build configurations and dependencies
-│   └── src/
-│       └── main/
-│           ├── AndroidManifest.xml   # Declares application components & permissions
-│           ├── java/                    # App Java source (core, network, storage, utils)
-│           └── res/                     # UI layouts and resources
-└── build.gradle             # Project-level configuration definitions
-```
+---
 
-## 🎮 Usage Commands (summary)
+## What the app does now
 
-The app exposes a CLI-style terminal. Commands are split between local filesystem operations (run on the device) and protocol/network operations (sent to the PC server).
+| Tab | Role |
+|-----|------|
+| **Home** | Storage summary (C++ Action 7), shortcuts into other tabs |
+| **Files** | Browse, search (C++), create/rename/delete, open image/video/document |
+| **Storage** | Stats + category bars, large-file scan (C++ Action 9), delete to free space |
+| **Transfer** | Test link to WayerPC, download (`/ask`) / upload (`/upload`) via Java sockets |
 
-Local commands:
+**Architecture idea**
 
-- `ls` — list files/folders in the current working directory on the phone
-- `cd <path>` — change current working directory
-- `cls` — clear terminal output
-- `stz <filename>` — sanitize and rename a file (convert spaces/unsafe characters)
-- `find <keyword>` — search for filenames containing the keyword under current directory
-- `refresh` — refresh internal file path cache (may take time on first run)
-- `jump <folder>` — jump directly to a named folder within the current hierarchy (shortcut)
-- `findfile <filename>` — global search for a specific filename
-- `choose <number>` — pick an item from the last search/list output
-- `mkdir <folder>` — create a folder in the current directory
-- `setdownloadpath <folder>` — set custom download target in local storage
-- `sanitizepath` — sanitize names inside the current working folder
+- **Java + XML** → UI, navigation, sockets to PC  
+- **C++ (JNI)** → heavy local work (list, search, storage stats, large files) via bulk JSON  
+- **Networking** stays on the Java side (`NetworkManager`)
 
-Network/protocol commands (require the PC server to be running and both devices on the same hotspot):
+---
 
-- `/ask <filename>` — request a file from the PC server; server responds and the file is streamed to the phone
-- `/upload <filepath>` — send a local phone file to the PC server
+## Project layout (high level)
 
-Example session:
-
-```
-ls
-cd Documents
-/ask report.pdf
-/upload Pictures/photo.jpg
+```text
+Wayer/
+├── app/                    # Android application (UI + Java)
+│   └── src/main/
+│       ├── java/.../wayer/
+│       │   ├── core/       # MainActivity, NativeEngine, Config
+│       │   ├── ui/         # Fragments, viewers, FileAdapter
+│       │   ├── network/    # Hotspot protocol to WayerPC
+│       │   ├── storage/    # FileMutator, StorageController
+│       │   └── transfer/
+│       └── res/            # Layouts, menus, vectors, themes
+├── native/                 # C++23 engine (storage, transfer, documents)
+│   └── third_party/        # Local external libs (gitignored)
+├── docs/                   # Learning / feature documentation
+├── gradle.properties       # versionCode, versionName, ABI list
+└── .github/workflows/      # Unit-test CI
 ```
 
-## 📚 Full Documentation
+---
 
-For detailed build instructions, installation steps, and a complete command reference, see README_ANDROID_END.md in this repository.
+## Build notes
 
-## 🔗 Related Branch
+| Topic | Where |
+|-------|--------|
+| Version / multi-ABI / signing | [docs/RELEASE_AND_BUILD.md](docs/RELEASE_AND_BUILD.md) |
+| Unit tests + how to add more | [docs/TESTING.md](docs/TESTING.md) |
+| Icons | [docs/ICONS.md](docs/ICONS.md) |
 
-- **PC Server**: [pc-end branch](https://github.com/ojilon/Wayer/tree/pc-end)
+Default native ABIs (edit `aurora.abiFilters` in `gradle.properties`):
+
+```text
+arm64-v8a, armeabi-v7a, x86_64
+```
+
+---
+
+## Related
+
+- PC server work: other branches / `pc-end` as you maintain them  
+- Document rendering (PDF, etc.): foundation only — libs go under `native/third_party/` when ready  
