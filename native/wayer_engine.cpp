@@ -1,6 +1,7 @@
 #include <jni.h>
 #include <android/log.h>
 #include <string>
+#include <cstdlib>
 #include "storage/storage_engine.hpp"
 #include "transfer/transfer_engine.hpp"
 #include "documents/document_engine.hpp"
@@ -9,28 +10,32 @@
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 
-// Action Identifiers (Match Java UI events)
-constexpr int ACTION_PING             = 1;
-constexpr int ACTION_GET_STATUS       = 2;
-constexpr int ACTION_LIST_FILES       = 3;
-constexpr int ACTION_GET_NETWORK_INFO = 4;
-constexpr int ACTION_FILTER_DOCUMENTS = 5;
-constexpr int ACTION_START_LISTENER   = 6;
+constexpr int ACTION_PING              = 1;
+constexpr int ACTION_GET_STATUS        = 2;
+constexpr int ACTION_LIST_FILES        = 3;
+constexpr int ACTION_GET_NETWORK_INFO  = 4;
+constexpr int ACTION_FILTER_DOCUMENTS  = 5;
+constexpr int ACTION_START_LISTENER    = 6;
 constexpr int ACTION_GET_STORAGE_STATS = 7;
-constexpr int ACTION_SEARCH_FILES     = 8;
+constexpr int ACTION_SEARCH_FILES      = 8;
+constexpr int ACTION_FIND_LARGE_FILES  = 9;
 
 namespace {
 
-// Payload for search is: "root_path|query"
-std::pair<std::string, std::string> split_search_payload(std::string_view payload) {
-    auto pos = payload.find('|');
-    if (pos == std::string_view::npos) {
-        return {std::string(payload), ""};
+// "root|query" or "root|min_bytes|max_results"
+std::vector<std::string> split_payload(std::string_view payload, char sep = '|') {
+    std::vector<std::string> parts;
+    size_t start = 0;
+    while (start <= payload.size()) {
+        auto pos = payload.find(sep, start);
+        if (pos == std::string_view::npos) {
+            parts.emplace_back(payload.substr(start));
+            break;
+        }
+        parts.emplace_back(payload.substr(start, pos - start));
+        start = pos + 1;
     }
-    return {
-        std::string(payload.substr(0, pos)),
-        std::string(payload.substr(pos + 1))
-    };
+    return parts;
 }
 
 std::string route_action(int action_id, std::string_view payload) {
@@ -57,8 +62,25 @@ std::string route_action(int action_id, std::string_view payload) {
             return wayer::storage::get_storage_stats(std::string(payload));
 
         case ACTION_SEARCH_FILES: {
-            auto [root, query] = split_search_payload(payload);
+            auto parts = split_payload(payload);
+            std::string root = parts.empty() ? "" : parts[0];
+            std::string query = parts.size() > 1 ? parts[1] : "";
             return wayer::storage::search_files(root, query);
+        }
+
+        case ACTION_FIND_LARGE_FILES: {
+            // payload: root|min_bytes|max_results  (min/max optional)
+            auto parts = split_payload(payload);
+            std::string root = parts.empty() ? "/storage/emulated/0" : parts[0];
+            uint64_t min_bytes = 10ull * 1024 * 1024;
+            int max_results = 50;
+            if (parts.size() > 1 && !parts[1].empty()) {
+                min_bytes = static_cast<uint64_t>(std::strtoull(parts[1].c_str(), nullptr, 10));
+            }
+            if (parts.size() > 2 && !parts[2].empty()) {
+                max_results = static_cast<int>(std::strtol(parts[2].c_str(), nullptr, 10));
+            }
+            return wayer::storage::find_large_files(root, min_bytes, max_results);
         }
 
         default:
@@ -83,8 +105,7 @@ Java_com_example_wayer_core_NativeEngine_processAction(
     const char* native_str = env->GetStringUTFChars(payload, nullptr);
     if (!native_str) return env->NewStringUTF("");
 
-    std::string_view payload_view(native_str);
-    std::string response = route_action(static_cast<int>(action_id), payload_view);
+    std::string response = route_action(static_cast<int>(action_id), native_str);
 
     env->ReleaseStringUTFChars(payload, native_str);
     return env->NewStringUTF(response.c_str());
