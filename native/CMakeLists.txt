@@ -12,6 +12,7 @@ add_library(
     wayer_core
     STATIC
     storage/storage_engine.cpp
+    storage/file_search.cpp
     documents/document_engine.cpp
     transfer/transfer_engine.cpp
 )
