@@ -11,8 +11,8 @@
         android:allowBackup="true"
         android:supportsRtl="true"
         android:requestLegacyExternalStorage="true">
-        
-        <activity 
+
+        <activity
             android:name=".core.MainActivity"
             android:exported="true">
             <intent-filter>
@@ -21,13 +21,21 @@
             </intent-filter>
         </activity>
 
-        <!--
-        When a user opens a file, launch a distinct Activity that takes over the full window
-        -->
-        <activity 
+        <activity
             android:name=".ui.DocumentActivity"
             android:theme="@style/Theme.Wayer"
             android:exported="false" />
-        
+
+        <activity
+            android:name=".ui.ImageActivity"
+            android:theme="@style/Theme.Wayer"
+            android:exported="false" />
+
+        <activity
+            android:name=".ui.VideoActivity"
+            android:theme="@style/Theme.Wayer"
+            android:exported="false"
+            android:configChanges="orientation|screenSize" />
+
     </application>
 </manifest>
