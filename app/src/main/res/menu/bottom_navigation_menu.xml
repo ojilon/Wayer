@@ -1,26 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<menu
-    xmlns:android="http://schemas.android.com/apk/res/android">
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
 
     <item
         android:id="@+id/nav_home"
-        android:icon="@android:drawable/ic_menu_view"
+        android:icon="@drawable/ic_nav_home"
         android:title="Home" />
 
     <item
         android:id="@+id/nav_files"
-        android:icon="@android:drawable/ic_menu_save"
+        android:icon="@drawable/ic_nav_files"
         android:title="Files" />
 
     <item
         android:id="@+id/nav_storage"
-        android:icon="@android:drawable/ic_menu_manage"
+        android:icon="@drawable/ic_nav_storage"
         android:title="Storage" />
 
     <item
         android:id="@+id/nav_transfer"
-        android:icon="@android:drawable/ic_menu_upload"
+        android:icon="@drawable/ic_nav_transfer"
         android:title="Transfer" />
 
 </menu>
