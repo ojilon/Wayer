@@ -1,12 +1,15 @@
 package com.example.wayer.ui;
 
 import android.os.Bundle;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.EditorInfo;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.core.view.GravityCompat;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -25,7 +28,7 @@ import java.util.List;
 /**
  * Files screen.
  * - Left drawer for specialised browse locations
- * - Search bar (results area ready)
+ * - Search bar → C++ bulk search (exact + related)
  * - Current path indicator
  * - RecyclerView list of files/folders
  * - Empty state when nothing to show
@@ -34,11 +37,14 @@ import java.util.List;
  */
 public class FilesFragment extends Fragment {
 
+    private static final int ACTION_LIST_FILES   = 3;
+    private static final int ACTION_SEARCH_FILES = 8;
+
     private FragmentFilesBinding binding;
     private FileAdapter adapter;
 
-    // Current directory we are browsing
     private String currentPath = "/storage/emulated/0";
+    private boolean showingSearchResults = false;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -59,31 +65,67 @@ public class FilesFragment extends Fragment {
             @Override
             public void onItemClick(FileItem item) {
                 if (item.isDirectory()) {
-                    // Enter folder
+                    // Leave search mode and browse into the folder
+                    showingSearchResults = false;
+                    binding.searchResultsHeader.setVisibility(View.GONE);
                     loadDirectory(item.getPath());
                 } else {
-                    // Later: open document viewer
                     DocumentActivity.open(requireContext(), item.getPath());
                 }
             }
 
             @Override
             public void onItemLongClick(FileItem item) {
-                // Later: show options dialog (Open folder / Open file / ...)
-                Toast.makeText(getContext(), "Long press: " + item.getName(), Toast.LENGTH_SHORT).show();
+                showItemOptions(item);
             }
         });
     }
 
+    private void showItemOptions(FileItem item) {
+        String[] options;
+        if (item.isDirectory()) {
+            options = new String[]{"Browse folder", "Cancel"};
+        } else {
+            options = new String[]{"Open file", "Open parent folder", "Cancel"};
+        }
+
+        new AlertDialog.Builder(requireContext())
+                .setTitle(item.getName())
+                .setItems(options, (dialog, which) -> {
+                    if (item.isDirectory()) {
+                        if (which == 0) {
+                            showingSearchResults = false;
+                            binding.searchResultsHeader.setVisibility(View.GONE);
+                            loadDirectory(item.getPath());
+                        }
+                    } else {
+                        if (which == 0) {
+                            DocumentActivity.open(requireContext(), item.getPath());
+                        } else if (which == 1) {
+                            // Open parent folder
+                            String parent = item.getPath();
+                            int slash = parent.lastIndexOf('/');
+                            if (slash > 0) {
+                                showingSearchResults = false;
+                                binding.searchResultsHeader.setVisibility(View.GONE);
+                                loadDirectory(parent.substring(0, slash));
+                            }
+                        }
+                    }
+                })
+                .show();
+    }
+
     private void setupDrawer() {
-        // Open drawer button
         binding.btnOpenDrawer.setOnClickListener(v ->
                 binding.drawerLayout.openDrawer(GravityCompat.START)
         );
 
-        // Sidebar item clicks
         binding.leftDrawer.setNavigationItemSelectedListener(menuItem -> {
             int id = menuItem.getItemId();
+
+            showingSearchResults = false;
+            binding.searchResultsHeader.setVisibility(View.GONE);
 
             if (id == R.id.nav_browse || id == R.id.nav_internal) {
                 loadDirectory("/storage/emulated/0");
@@ -96,7 +138,12 @@ public class FilesFragment extends Fragment {
             } else if (id == R.id.nav_documents) {
                 loadDirectory("/storage/emulated/0/Documents");
             } else if (id == R.id.nav_refresh) {
-                loadDirectory(currentPath);
+                if (showingSearchResults) {
+                    // re-run last search not stored yet → just refresh dir
+                    loadDirectory(currentPath);
+                } else {
+                    loadDirectory(currentPath);
+                }
             } else if (id == R.id.nav_external) {
                 Toast.makeText(getContext(), "External / SD – coming soon", Toast.LENGTH_SHORT).show();
             }
@@ -107,27 +154,108 @@ public class FilesFragment extends Fragment {
     }
 
     private void setupSearch() {
-        // Basic: when user presses search on keyboard we will later call C++ search.
-        // For now just hide results header until real search is wired.
         binding.searchResultsHeader.setVisibility(View.GONE);
+
+        binding.searchInput.setOnEditorActionListener((v, actionId, event) -> {
+            boolean isSearch = actionId == EditorInfo.IME_ACTION_SEARCH
+                    || (event != null && event.getKeyCode() == KeyEvent.KEYCODE_ENTER);
+
+            if (isSearch) {
+                String query = binding.searchInput.getText() != null
+                        ? binding.searchInput.getText().toString().trim()
+                        : "";
+                if (!query.isEmpty()) {
+                    performSearch(query);
+                }
+                return true;
+            }
+            return false;
+        });
     }
 
     /**
-     * Ask C++ for the content of a directory (Action ID 3).
-     * Expected JSON shape (simple for now):
-     * { "files": [ "name1", "name2", ... ] }
-     * Later we will upgrade C++ to return richer objects (is_dir, size, path).
+     * Bulk search via C++ (Action 8).
+     * Payload format: "root_path|query"
+     * Response: { "exact_matches":[...], "related_matches":[...] }
      */
+    private void performSearch(String query) {
+        String payload = currentPath + "|" + query;
+
+        binding.searchResultsHeader.setVisibility(View.VISIBLE);
+        binding.searchResultsHeader.setText("Searching…");
+        showEmpty(false);
+
+        NativeEngine.processActionAsync(ACTION_SEARCH_FILES, payload, rawJson -> {
+            if (binding == null) return;
+
+            List<FileItem> items = parseSearchResults(rawJson);
+            showingSearchResults = true;
+
+            if (items.isEmpty()) {
+                binding.searchResultsHeader.setText("No results for \"" + query + "\"");
+                showEmpty(true);
+            } else {
+                binding.searchResultsHeader.setText("Results for \"" + query + "\"");
+                showEmpty(false);
+                adapter.submitList(items);
+            }
+        });
+    }
+
+    private List<FileItem> parseSearchResults(String rawJson) {
+        List<FileItem> result = new ArrayList<>();
+        try {
+            JSONObject root = new JSONObject(rawJson);
+
+            // Exact matches first (100%)
+            JSONArray exact = root.optJSONArray("exact_matches");
+            if (exact != null) {
+                for (int i = 0; i < exact.length(); i++) {
+                    JSONObject o = exact.getJSONObject(i);
+                    boolean isDir = o.optBoolean("is_dir", false);
+                    result.add(new FileItem(
+                            o.getString("name"),
+                            o.getString("path"),
+                            isDir ? "Folder · exact match" : "File · exact match",
+                            isDir,
+                            0
+                    ));
+                }
+            }
+
+            // Related matches (~50%)
+            JSONArray related = root.optJSONArray("related_matches");
+            if (related != null) {
+                for (int i = 0; i < related.length(); i++) {
+                    JSONObject o = related.getJSONObject(i);
+                    boolean isDir = o.optBoolean("is_dir", false);
+                    result.add(new FileItem(
+                            o.getString("name"),
+                            o.getString("path"),
+                            isDir ? "Folder · related" : "File · related",
+                            isDir,
+                            0
+                    ));
+                }
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+            Toast.makeText(getContext(), "Failed to parse search results", Toast.LENGTH_SHORT).show();
+        }
+        return result;
+    }
+
     private void loadDirectory(String path) {
         currentPath = path;
         binding.currentPath.setText(path);
+        showingSearchResults = false;
+        binding.searchResultsHeader.setVisibility(View.GONE);
 
-        // Show loading state
         showEmpty(false);
         binding.fileList.setVisibility(View.VISIBLE);
 
-        NativeEngine.processActionAsync(3, path, rawJson -> {
-            if (binding == null) return; // fragment already destroyed
+        NativeEngine.processActionAsync(ACTION_LIST_FILES, path, rawJson -> {
+            if (binding == null) return;
 
             List<FileItem> items = parseSimpleFileList(rawJson, path);
 
@@ -140,12 +268,6 @@ public class FilesFragment extends Fragment {
         });
     }
 
-    /**
-     * Temporary parser for the current simple C++ response:
-     * {"files":["file1","folder2",...]}
-     * Treats everything as unknown type for now.
-     * When C++ returns richer JSON we will upgrade this method only.
-     */
     private List<FileItem> parseSimpleFileList(String rawJson, String parentPath) {
         List<FileItem> result = new ArrayList<>();
         try {
@@ -164,7 +286,6 @@ public class FilesFragment extends Fragment {
                         ? parentPath + name
                         : parentPath + "/" + name;
 
-                // Heuristic until C++ gives is_dir: no extension → treat as folder
                 boolean isDir = !name.contains(".");
                 String details = isDir ? "Folder" : "File";
 
