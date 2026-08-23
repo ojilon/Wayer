@@ -2,8 +2,6 @@
 
 Android client for browsing local storage and transferring files with **WayerPC** over a phone hotspot.
 
-**Active UI branch:** `ui_home_files_work` (built on top of `restructure_ui`)
-
 | Doc | Purpose |
 |-----|---------|
 | [README_ANDROID_END.md](README_ANDROID_END.md) | Full Android setup, structure, usage |
@@ -14,7 +12,7 @@ Android client for browsing local storage and transferring files with **WayerPC*
 ## Quick start
 
 ```bash
-git checkout ui_home_files_work
+git checkout main
 ./gradlew :app:testDebugUnitTest
 ./gradlew :app:assembleDebug
 # APK → app/build/outputs/apk/debug/app-debug.apk
