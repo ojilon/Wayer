@@ -4,6 +4,8 @@ import android.os.Bundle;
 import android.text.InputType;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
@@ -18,6 +20,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.example.wayer.R;
 import com.example.wayer.core.NativeEngine;
+import com.example.wayer.core.ThemePrefs;
 import com.example.wayer.databinding.FragmentFilesBinding;
 import com.example.wayer.storage.FileMutator;
 
@@ -32,6 +35,7 @@ import java.util.List;
  * Files screen.
  * List/search via C++; create/rename/delete via FileMutator (shared).
  * Open routes through FileOpenHelper → Image / Video / Document.
+ * Left drawer includes Appearance → Theme (System / Dark / Light).
  */
 public class FilesFragment extends Fragment {
 
@@ -193,8 +197,18 @@ public class FilesFragment extends Fragment {
                 binding.drawerLayout.openDrawer(GravityCompat.START)
         );
 
+        refreshThemeMenuTitle();
+
         binding.leftDrawer.setNavigationItemSelectedListener(menuItem -> {
             int id = menuItem.getItemId();
+
+            if (id == R.id.nav_theme) {
+                String label = ThemePrefs.cycle(requireContext());
+                Toast.makeText(getContext(), "Theme: " + label, Toast.LENGTH_SHORT).show();
+                refreshThemeMenuTitle();
+                // keep drawer open so user can cycle again
+                return true;
+            }
 
             showingSearchResults = false;
             binding.searchResultsHeader.setVisibility(View.GONE);
@@ -218,6 +232,15 @@ public class FilesFragment extends Fragment {
             binding.drawerLayout.closeDrawer(GravityCompat.START);
             return true;
         });
+    }
+
+    private void refreshThemeMenuTitle() {
+        if (binding == null) return;
+        Menu menu = binding.leftDrawer.getMenu();
+        MenuItem themeItem = menu.findItem(R.id.nav_theme);
+        if (themeItem != null) {
+            themeItem.setTitle("Theme: " + ThemePrefs.currentLabel(requireContext()));
+        }
     }
 
     private void setupSearch() {

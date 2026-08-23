@@ -15,6 +15,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.example.wayer.R;
 import com.example.wayer.core.Config;
+import com.example.wayer.core.ThemePrefs;
 import com.example.wayer.databinding.FragmentTransferBinding;
 import com.example.wayer.network.NetworkCallback;
 import com.example.wayer.network.NetworkManager;
@@ -29,10 +30,7 @@ import java.util.List;
 
 /**
  * Transfer screen.
- * - Test TCP link to WayerPC (Java)
- * - Download (/ask) into configurable save folder (default Downloads via FileIndexer)
- * - Upload: search FileIndexer cache by name → confirm / pick → send absolute path
- * - Right drawer: change save folder (browse tab) + refresh indexer
+ * Right drawer: change save folder, refresh indexer, theme cycle (shared appearance).
  */
 public class TransferFragment extends Fragment {
 
@@ -41,10 +39,7 @@ public class TransferFragment extends Fragment {
     private long sessionSentBytes = 0;
     private long sessionReceivedBytes = 0;
 
-    /** Where downloads from PC are written. */
     private String savePath = FileIndexer.getDefaultSavePath();
-
-    /** Browse path inside the "change save" tab. */
     private String browsePath = FileIndexer.getDefaultSavePath();
 
     private FileAdapter browseAdapter;
@@ -62,6 +57,7 @@ public class TransferFragment extends Fragment {
         binding.connectionStatus.setText("Not tested");
         updateSessionStats();
         updateSavePathLabel();
+        updateThemeLabel();
 
         binding.btnTestConnection.setOnClickListener(v -> testConnection());
         binding.btnStartListener.setOnClickListener(v -> startListener());
@@ -73,6 +69,11 @@ public class TransferFragment extends Fragment {
 
         binding.btnChangeSave.setOnClickListener(v -> showBrowseTab());
         binding.btnRefreshIndexer.setOnClickListener(v -> refreshIndexer());
+        binding.btnTheme.setOnClickListener(v -> {
+            String label = ThemePrefs.cycle(requireContext());
+            updateThemeLabel();
+            Toast.makeText(getContext(), "Theme: " + label, Toast.LENGTH_SHORT).show();
+        });
         binding.btnBackToTransfer.setOnClickListener(v -> showTransferTab());
         binding.btnUseThisFolder.setOnClickListener(v -> {
             savePath = browsePath;
@@ -84,6 +85,12 @@ public class TransferFragment extends Fragment {
 
         setupBrowseList();
         showTransferTab();
+    }
+
+    private void updateThemeLabel() {
+        if (binding == null) return;
+        binding.themeLabel.setText("Theme: " + ThemePrefs.currentLabel(requireContext()));
+        binding.btnTheme.setText("Cycle theme (" + ThemePrefs.currentLabel(requireContext()) + ")");
     }
 
     private void setupBrowseList() {
@@ -132,7 +139,6 @@ public class TransferFragment extends Fragment {
 
         List<String> cached = indexer.getContentsOfFolder(path);
         if (cached.isEmpty() && !indexer.isCacheEmpty()) {
-            // Folder not in cache or empty — fall back to live listFiles for browse UX
             File dir = new File(path);
             File[] children = dir.listFiles();
             if (children != null) {
@@ -151,7 +157,6 @@ public class TransferFragment extends Fragment {
             }
         }
 
-        // Parent entry when not at root
         if (!path.equals(FileIndexer.DEFAULT_ROOT) && path.contains("/")) {
             int slash = path.lastIndexOf('/');
             if (slash > 0) {
@@ -290,9 +295,6 @@ public class TransferFragment extends Fragment {
         });
     }
 
-    /**
-     * Upload flow: keyword search on FileIndexer → confirm / pick one → upload absolute path.
-     */
     private void runUploadSearch() {
         String name = binding.transferFilename.getText() != null
                 ? binding.transferFilename.getText().toString().trim()
@@ -368,7 +370,6 @@ public class TransferFragment extends Fragment {
         setTransferButtonsEnabled(false);
 
         long started = System.currentTimeMillis();
-        // workingDir unused when path is absolute; pass parent for safety
         File parent = local.getParentFile() != null ? local.getParentFile() : requireContext().getFilesDir();
 
         NetworkManager.processProtocolCommand(command, parent, new NetworkCallback() {
