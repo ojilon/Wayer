@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!-- Light configuration (night resources = light UI in this project). -->
+
+<resources>
+
+    <style name="Theme.Wayer" parent="Theme.Material3.DayNight.NoActionBar">
+
+        <item name="android:statusBarColor">@color/wayer_background</item>
+        <item name="android:navigationBarColor">@color/wayer_background</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+        <item name="android:windowBackground">@color/wayer_background</item>
+
+        <item name="colorPrimary">@color/wayer_primary</item>
+        <item name="colorOnPrimary">@color/wayer_on_primary</item>
+        <item name="colorPrimaryContainer">@color/wayer_primary_container</item>
+        <item name="colorSecondary">@color/wayer_primary</item>
+
+        <item name="colorSurface">@color/wayer_surface_solid</item>
+        <item name="colorOnSurface">@color/wayer_text_primary</item>
+        <item name="colorOnSurfaceVariant">@color/wayer_text_secondary</item>
+        <item name="colorSurfaceVariant">@color/wayer_surface_variant</item>
+
+        <item name="colorOutline">@color/wayer_outline</item>
+        <item name="colorError">@color/wayer_error</item>
+
+        <item name="android:fontFamily">sans-serif</item>
+
+        <item name="bottomNavigationStyle">@style/Widget.Wayer.BottomNavigation</item>
+        <item name="materialCardViewStyle">@style/Widget.Wayer.GlassCard</item>
+    </style>
+
+</resources>
