@@ -29,8 +29,7 @@ std::string search_files(const std::string& root_path, const std::string& query)
     }
 
     std::error_code ec;
-    for (const auto& entry : fs::recursive_directory_iterator(
-             root_path, fs::directory_options::skip_permission_denied, ec)) {
+    for (const auto& entry : fs::recursive_directory_iterator(root_path, fs::directory_options::skip_permission_denied, ec)) {
         if (ec) break;
 
         std::string name = entry.path().filename().string();
