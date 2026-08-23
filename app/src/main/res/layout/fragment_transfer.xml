@@ -2,8 +2,7 @@
 
 <!--
   Transfer screen with right sidebar + in-window tabs (ViewFlipper).
-  Tab 0: connection / download / upload
-  Tab 1: browse local folders to set download save path
+  Glass cards via wayer_surface + outline_glass; theme control in drawer.
 -->
 
 <androidx.drawerlayout.widget.DrawerLayout
@@ -14,13 +13,11 @@
     android:layout_height="match_parent"
     android:background="@color/wayer_background">
 
-    <!-- ========== MAIN ========== -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical">
 
-        <!-- Top bar -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -68,7 +65,6 @@
             android:layout_height="0dp"
             android:layout_weight="1">
 
-            <!-- ===== TAB 0: Transfer ===== -->
             <ScrollView
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
@@ -81,14 +77,13 @@
                     android:paddingHorizontal="@dimen/spacing_md"
                     android:paddingBottom="@dimen/spacing_md">
 
-                    <!-- Connection card -->
                     <com.google.android.material.card.MaterialCardView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="@dimen/spacing_sm"
                         app:cardBackgroundColor="@color/wayer_surface"
                         app:cardCornerRadius="@dimen/radius_md"
-                        app:strokeColor="@color/wayer_outline"
+                        app:strokeColor="@color/wayer_outline_glass"
                         app:strokeWidth="1dp"
                         app:cardElevation="0dp">
 
@@ -132,6 +127,7 @@
 
                                 <com.google.android.material.button.MaterialButton
                                     android:id="@+id/btn_test_connection"
+                                    style="@style/Widget.Wayer.GlassButton"
                                     android:layout_width="0dp"
                                     android:layout_height="wrap_content"
                                     android:layout_weight="1"
@@ -139,7 +135,7 @@
 
                                 <com.google.android.material.button.MaterialButton
                                     android:id="@+id/btn_start_listener"
-                                    style="@style/Widget.Material3.Button.OutlinedButton"
+                                    style="@style/Widget.Wayer.GlassButton.Outlined"
                                     android:layout_width="0dp"
                                     android:layout_height="wrap_content"
                                     android:layout_marginStart="@dimen/spacing_sm"
@@ -149,14 +145,13 @@
                         </LinearLayout>
                     </com.google.android.material.card.MaterialCardView>
 
-                    <!-- File transfer card -->
                     <com.google.android.material.card.MaterialCardView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="@dimen/spacing_md"
                         app:cardBackgroundColor="@color/wayer_surface"
                         app:cardCornerRadius="@dimen/radius_md"
-                        app:strokeColor="@color/wayer_outline"
+                        app:strokeColor="@color/wayer_outline_glass"
                         app:strokeWidth="1dp"
                         app:cardElevation="0dp">
 
@@ -215,6 +210,7 @@
 
                                 <com.google.android.material.button.MaterialButton
                                     android:id="@+id/btn_download"
+                                    style="@style/Widget.Wayer.GlassButton"
                                     android:layout_width="0dp"
                                     android:layout_height="wrap_content"
                                     android:layout_weight="1"
@@ -222,7 +218,7 @@
 
                                 <com.google.android.material.button.MaterialButton
                                     android:id="@+id/btn_upload"
-                                    style="@style/Widget.Material3.Button.OutlinedButton"
+                                    style="@style/Widget.Wayer.GlassButton.Outlined"
                                     android:layout_width="0dp"
                                     android:layout_height="wrap_content"
                                     android:layout_marginStart="@dimen/spacing_sm"
@@ -232,14 +228,13 @@
                         </LinearLayout>
                     </com.google.android.material.card.MaterialCardView>
 
-                    <!-- Session -->
                     <com.google.android.material.card.MaterialCardView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="@dimen/spacing_md"
                         app:cardBackgroundColor="@color/wayer_surface"
                         app:cardCornerRadius="@dimen/radius_md"
-                        app:strokeColor="@color/wayer_outline"
+                        app:strokeColor="@color/wayer_outline_glass"
                         app:strokeWidth="1dp"
                         app:cardElevation="0dp">
 
@@ -292,7 +287,7 @@
                         android:layout_marginTop="@dimen/spacing_sm"
                         app:cardBackgroundColor="@color/wayer_surface"
                         app:cardCornerRadius="@dimen/radius_md"
-                        app:strokeColor="@color/wayer_outline"
+                        app:strokeColor="@color/wayer_outline_glass"
                         app:strokeWidth="1dp"
                         app:cardElevation="0dp">
 
@@ -336,7 +331,6 @@
                 </LinearLayout>
             </ScrollView>
 
-            <!-- ===== TAB 1: Browse save folder ===== -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
@@ -378,7 +372,7 @@
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btn_back_to_transfer"
-                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        style="@style/Widget.Wayer.GlassButton.Outlined"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
@@ -386,6 +380,7 @@
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btn_use_this_folder"
+                        style="@style/Widget.Wayer.GlassButton"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="@dimen/spacing_sm"
@@ -396,13 +391,13 @@
         </ViewFlipper>
     </LinearLayout>
 
-    <!-- ========== RIGHT SIDEBAR ========== -->
+    <!-- Right sidebar: specialised + general (theme) -->
     <LinearLayout
         android:layout_width="280dp"
         android:layout_height="match_parent"
         android:layout_gravity="end"
         android:orientation="vertical"
-        android:background="@color/wayer_surface"
+        android:background="@drawable/bg_glass_sidebar"
         android:padding="@dimen/spacing_md"
         android:clickable="true"
         android:focusable="true">
@@ -442,6 +437,7 @@
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_change_save"
+            style="@style/Widget.Wayer.GlassButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/spacing_md"
@@ -449,7 +445,7 @@
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_refresh_indexer"
-            style="@style/Widget.Material3.Button.OutlinedButton"
+            style="@style/Widget.Wayer.GlassButton.Outlined"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/spacing_sm"
@@ -459,17 +455,34 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/spacing_lg"
-            android:text="General"
+            android:text="Appearance"
             android:textColor="@color/wayer_text_secondary"
             android:textSize="11sp" />
 
         <TextView
+            android:id="@+id/theme_label"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/spacing_xs"
-            android:text="Theme & scale settings will live here across windows in a later pass."
+            android:text="Theme: System"
+            android:textColor="@color/wayer_text_primary"
+            android:textSize="13sp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_theme"
+            style="@style/Widget.Wayer.GlassButton.Outlined"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_sm"
+            android:text="Cycle theme (System)" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_sm"
+            android:text="Cycles System → Dark → Light. Same control lives in the Files side panel."
             android:textColor="@color/wayer_text_disabled"
-            android:textSize="12sp" />
+            android:textSize="11sp" />
     </LinearLayout>
 
 </androidx.drawerlayout.widget.DrawerLayout>
