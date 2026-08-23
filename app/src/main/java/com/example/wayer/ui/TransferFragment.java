@@ -15,11 +15,14 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.example.wayer.R;
 import com.example.wayer.core.Config;
+import com.example.wayer.core.GlassBlur;
 import com.example.wayer.core.ThemePrefs;
+import com.example.wayer.core.UiChrome;
 import com.example.wayer.databinding.FragmentTransferBinding;
 import com.example.wayer.network.NetworkCallback;
 import com.example.wayer.network.NetworkManager;
 import com.example.wayer.storage.FileIndexer;
+import com.example.wayer.transfer.RecentTransfersStore;
 import com.example.wayer.transfer.TransferController;
 
 import java.io.File;
@@ -28,10 +31,6 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Transfer screen.
- * Right drawer: change save folder, refresh indexer, theme cycle (shared appearance).
- */
 public class TransferFragment extends Fragment {
 
     private FragmentTransferBinding binding;
@@ -43,6 +42,7 @@ public class TransferFragment extends Fragment {
     private String browsePath = FileIndexer.getDefaultSavePath();
 
     private FileAdapter browseAdapter;
+    private FileAdapter recentAdapter;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -72,7 +72,18 @@ public class TransferFragment extends Fragment {
         binding.btnTheme.setOnClickListener(v -> {
             String label = ThemePrefs.cycle(requireContext());
             updateThemeLabel();
+            if (getActivity() != null) UiChrome.apply(getActivity());
             Toast.makeText(getContext(), "Theme: " + label, Toast.LENGTH_SHORT).show();
+        });
+        binding.btnBlur.setOnClickListener(v -> {
+            if (!GlassBlur.isSupported()) {
+                Toast.makeText(getContext(), "Blur needs Android 12+", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            boolean on = ThemePrefs.toggleBlur(requireContext());
+            GlassBlur.applyFromPrefs(binding.transferSidebarRoot, requireContext());
+            updateThemeLabel();
+            Toast.makeText(getContext(), on ? "Glass blur on" : "Glass blur off", Toast.LENGTH_SHORT).show();
         });
         binding.btnBackToTransfer.setOnClickListener(v -> showTransferTab());
         binding.btnUseThisFolder.setOnClickListener(v -> {
@@ -84,13 +95,65 @@ public class TransferFragment extends Fragment {
         });
 
         setupBrowseList();
+        setupRecentList();
+        GlassBlur.applyFromPrefs(binding.transferSidebarRoot, requireContext());
         showTransferTab();
+    }
+
+    private void setupRecentList() {
+        recentAdapter = new FileAdapter();
+        binding.recentTransfersList.setLayoutManager(new LinearLayoutManager(requireContext()));
+        binding.recentTransfersList.setAdapter(recentAdapter);
+        recentAdapter.setOnItemClickListener(new FileAdapter.OnItemClickListener() {
+            @Override
+            public void onItemClick(FileItem item) {
+                // name only; optional fill filename field
+                binding.transferFilename.setText(item.getName());
+            }
+
+            @Override
+            public void onItemLongClick(FileItem item) {
+                // no-op
+            }
+        });
+        refreshRecentUi();
+    }
+
+    private void refreshRecentUi() {
+        if (binding == null) return;
+        List<RecentTransfersStore.Entry> entries = RecentTransfersStore.load(requireContext());
+        if (entries.isEmpty()) {
+            binding.recentTransfersEmpty.setVisibility(View.VISIBLE);
+            binding.recentTransfersEmpty.setText("No transfers yet");
+            binding.recentTransfersList.setVisibility(View.GONE);
+            recentAdapter.submitList(null);
+            return;
+        }
+        binding.recentTransfersEmpty.setVisibility(View.GONE);
+        binding.recentTransfersList.setVisibility(View.VISIBLE);
+        List<FileItem> items = new ArrayList<>();
+        for (RecentTransfersStore.Entry e : entries) {
+            String details = (e.download ? "Download" : "Upload") + " · " + e.detail;
+            items.add(new FileItem(e.name, e.detail, details, false, 0));
+        }
+        recentAdapter.submitList(items);
+    }
+
+    private void recordSuccess(boolean download, String name, String detail) {
+        RecentTransfersStore.add(requireContext(), download, name, detail);
+        refreshRecentUi();
     }
 
     private void updateThemeLabel() {
         if (binding == null) return;
         binding.themeLabel.setText("Theme: " + ThemePrefs.currentLabel(requireContext()));
         binding.btnTheme.setText("Cycle theme (" + ThemePrefs.currentLabel(requireContext()) + ")");
+        boolean blur = ThemePrefs.isBlurEnabled(requireContext());
+        String blurTxt = !GlassBlur.isSupported()
+                ? "Glass blur: N/A (API < 31)"
+                : (blur ? "Glass blur: On" : "Glass blur: Off");
+        binding.blurLabel.setText(blurTxt);
+        binding.btnBlur.setText(GlassBlur.isSupported() ? "Toggle glass blur" : "Blur unavailable");
     }
 
     private void setupBrowseList() {
@@ -288,7 +351,7 @@ public class TransferFragment extends Fragment {
                             binding.bandwidthHint.setText(
                                     String.format("Last transfer ~ %.1f KB/s (%d ms)", kbps, elapsed));
                         }
-                        binding.recentTransfersEmpty.setText("Last: ↓ " + name);
+                        recordSuccess(true, name, savePath);
                     }
                 });
             }
@@ -394,7 +457,7 @@ public class TransferFragment extends Fragment {
                             binding.bandwidthHint.setText(
                                     String.format("Last transfer ~ %.1f KB/s (%d ms)", kbps, elapsed));
                         }
-                        binding.recentTransfersEmpty.setText("Last: ↑ " + local.getName());
+                        recordSuccess(false, local.getName(), absolutePath);
                     }
                 });
             }
