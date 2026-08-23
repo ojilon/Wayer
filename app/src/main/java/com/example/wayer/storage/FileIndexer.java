@@ -3,51 +3,68 @@ package com.example.wayer.storage;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
- * Requirement 2 & 3: The Cache Engine.
- * This class maps the entire storage device once and stores everything in memory.
- * Keys = Folder Names. Values = Lists of absolute paths of items inside them.
+ * Cache engine for local storage paths.
+ * Maps folder paths → immediate children; maintains flat lists for global search.
+ *
+ * Singleton so Transfer, Files, and future screens share one cache.
+ * Call {@link #refreshCache()} (or {@link #rebuildCache(File)}) after permission grant / storage change.
  */
 public class FileIndexer {
 
-    // The primary cache structure
-    // Key: Absolute path of a folder
-    // Value: A list of absolute paths of everything directly inside that folder
-    private final Map<String, List<String>> folderContentsCache = new HashMap<>();
+    public static final String DEFAULT_ROOT = "/storage/emulated/0";
+    public static final String DEFAULT_DOWNLOADS = "/storage/emulated/0/Download";
 
-    // Secondary flat list of all folder paths for rapid skipping/jumping
+    private static volatile FileIndexer instance;
+
+    private final Map<String, List<String>> folderContentsCache = new HashMap<>();
     private final List<String> allFolderPaths = new ArrayList<>();
-    
-    // Flat list of all file paths for rapid global file selection
     private final List<String> allFilePaths = new ArrayList<>();
 
-    /**
-     * Clears old data and recursively crawls the entire storage tree.
-     * Call this via a command like 'refresh' to build your cache.
-     */
-    public void rebuildCache(File rootDir) {
-        folderContentsCache.clear();
-        allFolderPaths.clear();
-        allFilePaths.clear();
-        
-        // Start the deep background traversal loop
-        traverseAndIndex(rootDir);
+    private FileIndexer() {}
+
+    public static FileIndexer getInstance() {
+        if (instance == null) {
+            synchronized (FileIndexer.class) {
+                if (instance == null) {
+                    instance = new FileIndexer();
+                }
+            }
+        }
+        return instance;
     }
 
     /**
-     * Recursive function. It calls itself whenever it hits a new subfolder.
+     * Rebuild from DEFAULT_ROOT (internal storage). Safe to call from a background thread.
      */
+    public void refreshCache() {
+        rebuildCache(new File(DEFAULT_ROOT));
+    }
+
+    /**
+     * Clears old data and recursively crawls the tree under rootDir.
+     */
+    public synchronized void rebuildCache(File rootDir) {
+        folderContentsCache.clear();
+        allFolderPaths.clear();
+        allFilePaths.clear();
+        if (rootDir != null) {
+            traverseAndIndex(rootDir);
+        }
+    }
+
     private void traverseAndIndex(File currentFolder) {
         if (currentFolder == null || !currentFolder.exists() || !currentFolder.isDirectory()) {
             return;
         }
 
         File[] children = currentFolder.listFiles();
-        if (children == null) return; // Skip protected/system folders with access denied
+        if (children == null) return;
 
         String currentFolderPath = currentFolder.getAbsolutePath();
         allFolderPaths.add(currentFolderPath);
@@ -59,27 +76,22 @@ public class FileIndexer {
             contentsOfThisFolder.add(childPath);
 
             if (child.isDirectory()) {
-                // RECURSION: If it's a folder, dive down into it automatically
                 traverseAndIndex(child);
             } else {
-                // If it's a file, add it to our global file array
                 allFilePaths.add(childPath);
             }
         }
 
-        // Store this folder's immediate items inside our dictionary map
         folderContentsCache.put(currentFolderPath, contentsOfThisFolder);
     }
 
-    /**
-     * Searches through the CACHED folder paths using a simple text keyword.
-     * Returns a list of matching folder paths without touching the physical storage disk.
-     */
     public List<String> searchFoldersByKeyword(String keyword) {
+        if (keyword == null || keyword.isEmpty()) return Collections.emptyList();
+        String q = keyword.toLowerCase();
         List<String> matches = new ArrayList<>();
         for (String path : allFolderPaths) {
             File f = new File(path);
-            if (f.getName().toLowerCase().contains(keyword.toLowerCase())) {
+            if (f.getName().toLowerCase().contains(q)) {
                 matches.add(path);
             }
         }
@@ -87,25 +99,42 @@ public class FileIndexer {
     }
 
     /**
-     * Requirement 3 (Part 2): Searches cached files globally by keyword.
+     * Global file search over the cached flat list (no disk walk).
      */
     public List<String> searchFilesByKeyword(String keyword) {
+        if (keyword == null || keyword.isEmpty()) return Collections.emptyList();
+        String q = keyword.toLowerCase();
         List<String> matches = new ArrayList<>();
         for (String path : allFilePaths) {
             File f = new File(path);
-            if (f.getName().toLowerCase().contains(keyword.toLowerCase())) {
+            if (f.getName().toLowerCase().contains(q)) {
                 matches.add(path);
             }
         }
         return matches;
     }
 
-    // Getters to let other parts of the app read the map data smoothly
     public List<String> getContentsOfFolder(String folderPath) {
-        return folderContentsCache.get(folderPath);
+        List<String> list = folderContentsCache.get(folderPath);
+        return list != null ? list : Collections.emptyList();
     }
-    
+
     public boolean isCacheEmpty() {
         return allFolderPaths.isEmpty();
+    }
+
+    public int getIndexedFileCount() {
+        return allFilePaths.size();
+    }
+
+    public int getIndexedFolderCount() {
+        return allFolderPaths.size();
+    }
+
+    /** Default folder for downloads from PC → phone. */
+    public static String getDefaultSavePath() {
+        File dl = new File(DEFAULT_DOWNLOADS);
+        if (dl.exists() && dl.isDirectory()) return DEFAULT_DOWNLOADS;
+        return DEFAULT_ROOT;
     }
 }

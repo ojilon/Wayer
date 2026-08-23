@@ -14,20 +14,15 @@ import java.net.Socket;
  *
  * Commands:
  *   /ask <filename>   — ask PC for file, then pull bytes into workingDir
- *   /upload <filename> — push local file from workingDir to PC
+ *   /upload <filename> — push local file (from workingDir by name, or absolute path) to PC
  *
  * Callbacks are invoked from a background thread; UI must post to main thread.
  */
 public class NetworkManager {
 
-    public static void processProtocolCommand( final String rawInput, final File workingDir, final NetworkCallback callback) {
+    public static void processProtocolCommand(final String rawInput, final File workingDir, final NetworkCallback callback) {
 
         new Thread(() -> {
-            /*
-            rawInput -> can be "/ask filename" or "/upload filename"
-            parts -> ["/ask or /upload", "filename"]
-            protocol command -> either '/ask' or '/upload'
-            */
             String[] parts = rawInput.split(" ", 2);
             String protocolCommand = parts[0];
             String filename = parts.length > 1 ? parts[1].trim() : "";
@@ -46,6 +41,7 @@ public class NetworkManager {
                 if (protocolCommand.equalsIgnoreCase("/ask")) {
                     downloadFromPc(filename, workingDir, out, in, callback);
                 } else if (protocolCommand.equalsIgnoreCase("/upload")) {
+                    // filename may be a bare name (look in workingDir) or an absolute path
                     uploadToPc(filename, workingDir, out, in, callback);
                 } else {
                     callback.onOperationComplete("Unknown command: " + protocolCommand);
@@ -80,9 +76,12 @@ public class NetworkManager {
             long fileSize = Long.parseLong(responseHeader.split(" ")[1]);
             callback.onConsoleUpdate("File verified (" + fileSize + " bytes). Downloading…");
 
-            //out.write("/send".getBytes());
             out.flush();
 
+            if (workingDir != null && !workingDir.exists()) {
+                //noinspection ResultOfMethodCallIgnored
+                workingDir.mkdirs();
+            }
             File outputFile = new File(workingDir, filename);
             try (FileOutputStream fos = new FileOutputStream(outputFile)) {
                 long totalBytesRead = 0;
@@ -94,7 +93,7 @@ public class NetworkManager {
                 }
                 fos.flush();
             }
-            callback.onOperationComplete("Success: Saved " + outputFile.getName()
+            callback.onOperationComplete("Success: Saved " + outputFile.getAbsolutePath()
                     + " (" + fileSize + " bytes)");
         } else {
             callback.onOperationComplete("Server Error: " + responseHeader);
@@ -102,20 +101,21 @@ public class NetworkManager {
     }
 
     private static void uploadToPc(
-            String filename,
+            String filenameOrPath,
             File workingDir,
             DataOutputStream out,
             DataInputStream in,
             NetworkCallback callback) throws Exception {
 
-        File localFile = new File(workingDir, filename);
-        if (!localFile.exists() || localFile.isDirectory()) {
-            callback.onOperationComplete("Local Error: File '" + filename + "' not found in app files dir.");
+        File localFile = resolveLocalFile(filenameOrPath, workingDir);
+        if (localFile == null || !localFile.exists() || localFile.isDirectory()) {
+            callback.onOperationComplete("Local Error: File '" + filenameOrPath + "' not found.");
             return;
         }
 
+        String baseName = localFile.getName();
         long fileSize = localFile.length();
-        out.write(("/upload " + fileSize + " " + filename).getBytes());
+        out.write(("/upload " + fileSize + " " + baseName).getBytes());
         out.flush();
 
         byte[] buffer = new byte[1024];
@@ -136,9 +136,22 @@ public class NetworkManager {
                 }
                 out.flush();
             }
-            callback.onOperationComplete("Success: Upload completed (" + fileSize + " bytes)");
+            callback.onOperationComplete("Success: Upload completed (" + fileSize + " bytes) · " + baseName);
         } else {
             callback.onOperationComplete("Remote declined upload: " + pcResponse);
         }
+    }
+
+    /** Prefer absolute path when provided; otherwise resolve under workingDir. */
+    private static File resolveLocalFile(String filenameOrPath, File workingDir) {
+        if (filenameOrPath == null || filenameOrPath.isEmpty()) return null;
+        File asAbsolute = new File(filenameOrPath);
+        if (asAbsolute.isAbsolute() && asAbsolute.exists()) {
+            return asAbsolute;
+        }
+        if (workingDir != null) {
+            return new File(workingDir, filenameOrPath);
+        }
+        return asAbsolute;
     }
 }
