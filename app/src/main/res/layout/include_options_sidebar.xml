@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Shared appearance controls for Home / Storage (and pattern for others). -->
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/options_sidebar_root"
+    android:layout_width="280dp"
+    android:layout_height="match_parent"
+    android:layout_gravity="end"
+    android:orientation="vertical"
+    android:background="@drawable/bg_glass_sidebar"
+    android:padding="@dimen/spacing_md"
+    android:clickable="true"
+    android:focusable="true">
+
+    <TextView
+        android:id="@+id/sidebar_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Options"
+        android:textColor="@color/wayer_text_primary"
+        android:textSize="16sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/sidebar_subtitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/spacing_xs"
+        android:text="Appearance"
+        android:textColor="@color/wayer_text_secondary"
+        android:textSize="12sp" />
+
+    <TextView
+        android:id="@+id/theme_label"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/spacing_lg"
+        android:text="Theme: System"
+        android:textColor="@color/wayer_text_primary"
+        android:textSize="13sp" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_theme"
+        style="@style/Widget.Wayer.GlassButton.Outlined"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/spacing_sm"
+        android:text="Cycle theme" />
+
+    <TextView
+        android:id="@+id/blur_label"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/spacing_lg"
+        android:text="Glass blur: Off"
+        android:textColor="@color/wayer_text_primary"
+        android:textSize="13sp" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_blur"
+        style="@style/Widget.Wayer.GlassButton.Outlined"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/spacing_sm"
+        android:text="Toggle glass blur" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/spacing_sm"
+        android:text="Blur uses RenderEffect on Android 12+ (API 31). Older devices keep translucent panels only."
+        android:textColor="@color/wayer_text_disabled"
+        android:textSize="11sp" />
+
+</LinearLayout>

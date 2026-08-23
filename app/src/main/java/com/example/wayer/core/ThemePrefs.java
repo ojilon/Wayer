@@ -2,18 +2,20 @@ package com.example.wayer.core;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
 
 import androidx.appcompat.app.AppCompatDelegate;
 
 /**
  * App-wide appearance preference.
- * Modes: follow system, force dark, force light.
- * Apply once at process start (MainActivity) and whenever the user changes theme in a sidebar.
+ * Night mode: System / Dark / Light.
+ * Optional glass blur (API 31+) for side panels.
  */
 public final class ThemePrefs {
 
     private static final String PREFS = "wayer_prefs";
     private static final String KEY_MODE = "night_mode";
+    private static final String KEY_BLUR = "glass_blur";
 
     private ThemePrefs() {}
 
@@ -26,15 +28,10 @@ public final class ThemePrefs {
         AppCompatDelegate.setDefaultNightMode(mode);
     }
 
-    /** Apply stored mode without rewriting prefs (call from Activity.onCreate). */
     public static void applyStored(Context context) {
         AppCompatDelegate.setDefaultNightMode(getMode(context));
     }
 
-    /**
-     * Cycle: System → Dark → Light → System …
-     * @return human label for toast / UI
-     */
     public static String cycle(Context context) {
         int current = getMode(context);
         int next;
@@ -61,6 +58,30 @@ public final class ThemePrefs {
 
     public static String currentLabel(Context context) {
         return labelFor(getMode(context));
+    }
+
+    /** True when the active configuration is light (for status-bar icons). */
+    public static boolean isLightUi(Context context) {
+        int mode = getMode(context);
+        if (mode == AppCompatDelegate.MODE_NIGHT_NO) return true;
+        if (mode == AppCompatDelegate.MODE_NIGHT_YES) return false;
+        int night = context.getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK;
+        return night != Configuration.UI_MODE_NIGHT_YES;
+    }
+
+    public static boolean isBlurEnabled(Context context) {
+        return prefs(context).getBoolean(KEY_BLUR, false);
+    }
+
+    public static void setBlurEnabled(Context context, boolean enabled) {
+        prefs(context).edit().putBoolean(KEY_BLUR, enabled).apply();
+    }
+
+    /** Toggle blur; returns new enabled state. */
+    public static boolean toggleBlur(Context context) {
+        boolean next = !isBlurEnabled(context);
+        setBlurEnabled(context, next);
+        return next;
     }
 
     private static SharedPreferences prefs(Context context) {

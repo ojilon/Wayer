@@ -15,7 +15,6 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        // Theme before setContentView so first frame matches preference
         ThemePrefs.applyStored(this);
 
         super.onCreate(savedInstanceState);
@@ -24,6 +23,8 @@ public class MainActivity extends AppCompatActivity {
         
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+
+        UiChrome.apply(this);
 
         checkStoragePermissions();
         setupNavigation();
@@ -35,6 +36,12 @@ public class MainActivity extends AppCompatActivity {
         if (savedInstanceState == null) {
             showFragment(new HomeFragment());
         }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        UiChrome.apply(this);
     }
 
     private void checkStoragePermissions() {
