@@ -50,4 +50,13 @@
         </menu>
     </item>
 
+    <item android:title="Appearance">
+        <menu>
+            <item
+                android:id="@+id/nav_theme"
+                android:icon="@android:drawable/ic_menu_preferences"
+                android:title="Theme: System" />
+        </menu>
+    </item>
+
 </menu>

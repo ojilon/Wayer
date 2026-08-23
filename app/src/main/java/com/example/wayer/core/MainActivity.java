@@ -11,24 +11,23 @@ import com.example.wayer.ui.*;
 
 public class MainActivity extends AppCompatActivity {
     
-    // 1. Hold a reference to the UI struct
     private ActivityMainBinding binding;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        // Theme before setContentView so first frame matches preference
+        ThemePrefs.applyStored(this);
+
         super.onCreate(savedInstanceState);
 
-        //Initialize the native engine
         NativeEngine.initEngine();
         
-        // 2. Inflate the layout using the binding
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
         checkStoragePermissions();
         setupNavigation();
 
-        // Query files in root storage via C++ backend(Action ID 3)
         String rootPath = getFilesDir().getAbsolutePath();
         String filesJson = NativeEngine.processAction(3, rootPath);
         android.util.Log.i("WayerStorageTest", "Directory Listing: " + filesJson );
@@ -38,7 +37,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    // Procedural abstraction for OS requirements
     private void checkStoragePermissions() {
         if (checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED || 
             checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
@@ -49,9 +47,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    // Functional abstraction for UI routing
     private void setupNavigation() {
-        // Notice we don't use findViewById. We directly access bottomNavigation from the binding struct.
         binding.bottomNavigation.setOnItemSelectedListener(item -> {
             int itemId = item.getItemId();
             if (itemId == R.id.nav_home) return showFragment(new HomeFragment());
@@ -66,10 +62,9 @@ public class MainActivity extends AppCompatActivity {
         getSupportFragmentManager().beginTransaction()
             .replace(R.id.fragment_container, fragment)
             .commit();
-        return true; // Return true to satisfy the item selected listener
+        return true;
     }
 
-    // Public entry point so fragments can trigger nav without findViewById
     public void navigateTo(int itemId) {
         binding.bottomNavigation.setSelectedItemId(itemId);
     }
