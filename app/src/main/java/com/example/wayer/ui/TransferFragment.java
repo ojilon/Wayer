@@ -104,13 +104,19 @@ public class TransferFragment extends Fragment {
         }
 
         File workingDir = requireContext().getFilesDir();
+
+        /**Set the command to 'downlaod from pc' or 'upload to pc'
+         * Its is basing on which button is clicked: 'download' or 'upload'
+        */
         String command = (download ? "/ask " : "/upload ") + name;
 
         appendLog((download ? "Download" : "Upload") + ": " + name);
         setTransferButtonsEnabled(false);
 
         long started = System.currentTimeMillis();
-
+        
+        /*submit the command and working directory (where to pick files from or save to)
+        to the processProtocolCommand*/
         NetworkManager.processProtocolCommand(command, workingDir, new NetworkCallback() {
             @Override
             public void onConsoleUpdate(String outputText) {

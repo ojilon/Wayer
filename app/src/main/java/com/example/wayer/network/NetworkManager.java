@@ -20,12 +20,14 @@ import java.net.Socket;
  */
 public class NetworkManager {
 
-    public static void processProtocolCommand(
-            final String rawInput,
-            final File workingDir,
-            final NetworkCallback callback) {
+    public static void processProtocolCommand( final String rawInput, final File workingDir, final NetworkCallback callback) {
 
         new Thread(() -> {
+            /*
+            rawInput -> can be "/ask filename" or "/upload filename"
+            parts -> ["/ask or /upload", "filename"]
+            protocol command -> either '/ask' or '/upload'
+            */
             String[] parts = rawInput.split(" ", 2);
             String protocolCommand = parts[0];
             String filename = parts.length > 1 ? parts[1].trim() : "";
@@ -78,7 +80,7 @@ public class NetworkManager {
             long fileSize = Long.parseLong(responseHeader.split(" ")[1]);
             callback.onConsoleUpdate("File verified (" + fileSize + " bytes). Downloading…");
 
-            out.write("/send".getBytes());
+            //out.write("/send".getBytes());
             out.flush();
 
             File outputFile = new File(workingDir, filename);
