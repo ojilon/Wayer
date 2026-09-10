@@ -29,9 +29,9 @@ public class MainActivity extends AppCompatActivity {
         checkStoragePermissions();
         setupNavigation();
 
-        String rootPath = getFilesDir().getAbsolutePath();
-        String filesJson = NativeEngine.processAction(3, rootPath);
-        android.util.Log.i("WayerStorageTest", "Directory Listing: " + filesJson );
+        //String rootPath = getFilesDir().getAbsolutePath();
+        //String filesJson = NativeEngine.processAction(3, rootPath);
+        //android.util.Log.i("WayerStorageTest", "Directory Listing: " + filesJson );
 
         if (savedInstanceState == null) {
             showFragment(new HomeFragment());
