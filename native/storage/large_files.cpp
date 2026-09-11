@@ -1,4 +1,6 @@
+#include <cstddef>
 #include <filesystem>
+#include <iterator>
 #include <vector>
 #include <algorithm>
 #include <format>
@@ -34,6 +36,11 @@ namespace wayer::storage {
                 sz
             });
         }
+
+        auto mid = found.begin() + std::min<size_t>(max_results, found.size());
+        std::partial_sort(found.begin(), mid, found.end(), 
+            [](const auto& a, auto &b) {return  a.size > b.size; });
+        found.resize(std::distance(found.begin(), mid));
 
         std::sort(found.begin(), found.end(), [](const LargeEntry& a, const LargeEntry& b) {
                       return a.size > b.size;
