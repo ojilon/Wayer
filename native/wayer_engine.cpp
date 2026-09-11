@@ -3,7 +3,10 @@
 #include <string>
 #include <vector>
 #include <cstdlib>
-#include "storage/storage_engine.hpp"
+#include "storage/analyse_storage_space.hpp"
+#include "storage/large_files.hpp"
+#include "storage/list_files.hpp"
+#include "storage/file_search.hpp"
 #include "transfer/transfer_engine.hpp"
 #include "documents/document_engine.hpp"
 

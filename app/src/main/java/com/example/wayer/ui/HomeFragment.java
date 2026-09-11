@@ -87,6 +87,7 @@ public class HomeFragment extends Fragment {
             // Crucial: Push the UI rendering modifications safely back onto the Main UI Thread
             getActivity().runOnUiThread(() -> {
                 if (binding == null) return;
+
                 try {
                     JSONObject data = new JSONObject(rawJson);
 
@@ -108,16 +109,10 @@ public class HomeFragment extends Fragment {
                         if (binding.catAudio != null) binding.catAudio.setText(formatSize(b.optLong("audio", 0)));
                         if (binding.catDocuments != null) binding.catDocuments.setText(formatSize(b.optLong("documents", 0)));
                         if (binding.catOthers != null) binding.catOthers.setText(formatSize(b.optLong("others", 0)));
+                        if (binding.catForeign != null) binding.catForeign.setText(formatSize(b.optLong("foreign", 0)));
+                        if (binding.catSystem != null) binding.catSystem.setText(formatSize(b.optLong("system", 0)));
+
                         
-                        // Fixed spelling: changed from 'catForeing' to a safe programmatic fallback verification
-                        if (binding.catForeign != null) {
-                            binding.catForeign.setText(formatSize(b.optLong("foreign", 0)));
-                        }
-                        
-                        // Added System tracking binding safely
-                        if (binding.catSystem != null) {
-                            binding.catSystem.setText(formatSize(b.optLong("system", 0)));
-                        }
                     }
                 } catch (JSONException e) {
                     e.printStackTrace();
