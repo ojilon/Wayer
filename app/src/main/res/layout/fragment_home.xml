@@ -132,6 +132,14 @@
                                 <TextView android:id="@+id/cat_documents" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="—" android:textColor="@color/wayer_text_primary" android:textSize="13sp" />
                             </LinearLayout>
                             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:paddingTop="@dimen/spacing_xs" android:paddingBottom="@dimen/spacing_xs">
+                                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Foreign" android:textColor="@color/wayer_text_secondary" android:textSize="13sp" />
+                                <TextView android:id="@+id/cat_foreign" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="—" android:textColor="@color/wayer_text_primary" android:textSize="13sp" />
+                            </LinearLayout>
+                            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:paddingTop="@dimen/spacing_xs" android:paddingBottom="@dimen/spacing_xs">
+                                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="System" android:textColor="@color/wayer_text_secondary" android:textSize="13sp" />
+                                <TextView android:id="@+id/cat_system" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="—" android:textColor="@color/wayer_text_primary" android:textSize="13sp" />
+                            </LinearLayout>
+                            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:paddingTop="@dimen/spacing_xs" android:paddingBottom="@dimen/spacing_xs">
                                 <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Others" android:textColor="@color/wayer_text_secondary" android:textSize="13sp" />
                                 <TextView android:id="@+id/cat_others" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="—" android:textColor="@color/wayer_text_primary" android:textSize="13sp" />
                             </LinearLayout>

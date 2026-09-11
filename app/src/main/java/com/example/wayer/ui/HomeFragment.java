@@ -81,31 +81,49 @@ public class HomeFragment extends Fragment {
 
     private void setupUI() {
         NativeEngine.processActionAsync(7, "/storage/emulated/0", rawJson -> {
-            if (binding == null) return;
-            try {
-                JSONObject data = new JSONObject(rawJson);
+            // Safety check: ensure fragment context is still valid
+            if (binding == null || getActivity() == null) return;
 
-                int progress = data.getInt("progress_percent");
-                long usedBytes = data.getLong("used_bytes");
-                long totalBytes = data.getLong("total_bytes");
+            // Crucial: Push the UI rendering modifications safely back onto the Main UI Thread
+            getActivity().runOnUiThread(() -> {
+                if (binding == null) return;
+                try {
+                    JSONObject data = new JSONObject(rawJson);
 
-                binding.storageProgress.setProgress(progress);
-                binding.storageSummary.setText(
-                    formatSize(usedBytes) + " used of " + formatSize(totalBytes)
-                );
+                    int progress = data.getInt("progress_percent");
+                    long usedBytes = data.getLong("used_bytes");
+                    long totalBytes = data.getLong("total_bytes");
 
-                if (data.has("breakdown")) {
-                    JSONObject b = data.getJSONObject("breakdown");
-                    binding.catImages.setText(formatSize(b.optLong("images", 0)));
-                    binding.catVideos.setText(formatSize(b.optLong("videos", 0)));
-                    binding.catAudio.setText(formatSize(b.optLong("audio", 0)));
-                    binding.catDocuments.setText(formatSize(b.optLong("documents", 0)));
-                    binding.catOthers.setText(formatSize(b.optLong("others", 0)));
+                    binding.storageProgress.setProgress(progress);
+                    binding.storageSummary.setText(
+                        formatSize(usedBytes) + " used of " + formatSize(totalBytes)
+                    );
+
+                    if (data.has("breakdown")) {
+                        JSONObject b = data.getJSONObject("breakdown");
+                        
+                        // Safety Null Checks added to prevent missing XML views from breaking builds
+                        if (binding.catImages != null) binding.catImages.setText(formatSize(b.optLong("images", 0)));
+                        if (binding.catVideos != null) binding.catVideos.setText(formatSize(b.optLong("videos", 0)));
+                        if (binding.catAudio != null) binding.catAudio.setText(formatSize(b.optLong("audio", 0)));
+                        if (binding.catDocuments != null) binding.catDocuments.setText(formatSize(b.optLong("documents", 0)));
+                        if (binding.catOthers != null) binding.catOthers.setText(formatSize(b.optLong("others", 0)));
+                        
+                        // Fixed spelling: changed from 'catForeing' to a safe programmatic fallback verification
+                        if (binding.catForeign != null) {
+                            binding.catForeign.setText(formatSize(b.optLong("foreign", 0)));
+                        }
+                        
+                        // Added System tracking binding safely
+                        if (binding.catSystem != null) {
+                            binding.catSystem.setText(formatSize(b.optLong("system", 0)));
+                        }
+                    }
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                    binding.storageSummary.setText("Failed to load storage info");
                 }
-            } catch (JSONException e) {
-                e.printStackTrace();
-                binding.storageSummary.setText("Failed to load storage info");
-            }
+            });
         });
 
         binding.actionFiles.setOnClickListener(v ->
@@ -127,6 +145,13 @@ public class HomeFragment extends Fragment {
         refreshRecentTransfersHint();
     }
 
+    private String formatSize(long bytes) {
+        if (bytes < 1024) return bytes + " B";
+        if (bytes < 1024 * 1024) return String.format("%.1f KB", bytes / 1024.0);
+        if (bytes < 1024L * 1024 * 1024) return String.format("%.1f MB", bytes / (1024.0 * 1024));
+        return String.format("%.1f GB", bytes / (1024.0 * 1024 * 1024));
+    }
+
     private void refreshRecentTransfersHint() {
         List<RecentTransfersStore.Entry> list = RecentTransfersStore.load(requireContext());
         if (list.isEmpty()) {
@@ -136,13 +161,6 @@ public class HomeFragment extends Fragment {
             binding.recentTransfersEmpty.setText(
                     (e.download ? "↓ " : "↑ ") + e.name + " · and " + Math.max(0, list.size() - 1) + " more");
         }
-    }
-
-    private String formatSize(long bytes) {
-        if (bytes < 1024) return bytes + " B";
-        if (bytes < 1024 * 1024) return String.format("%.1f KB", bytes / 1024.0);
-        if (bytes < 1024L * 1024 * 1024) return String.format("%.1f MB", bytes / (1024.0 * 1024));
-        return String.format("%.1f GB", bytes / (1024.0 * 1024 * 1024));
     }
 
     @Override
