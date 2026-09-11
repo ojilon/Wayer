@@ -3,6 +3,7 @@
 #include <vector>
 #include <algorithm>
 #include <format>
+#include "../utils/json_util.hpp"
 
 namespace wayer::storage {
     namespace fs = std::filesystem;
@@ -29,7 +30,7 @@ namespace wayer::storage {
         for (const auto& entry : fs::recursive_directory_iterator(root_path, fs::directory_options::skip_permission_denied, ec)) {
             if (ec) break;
 
-            std::string name = entry.path().filename().string();
+            std::string name = json::escape(entry.path().filename().string());
             std::string name_lower = name;
             std::transform(name_lower.begin(), name_lower.end(), name_lower.begin(), ::tolower);
 

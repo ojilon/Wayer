@@ -1,6 +1,7 @@
 #include <filesystem>
 #include <string>
 #include <sstream>
+#include "../utils/json_util.hpp"
 
 namespace wayer::storage {
     namespace fs = std::filesystem;
@@ -19,7 +20,7 @@ namespace wayer::storage {
 
         for (const auto& entry : fs::directory_iterator(dir_path, ec)) {
             if (!first) json << ",";
-            json << "\"" << entry.path().filename().string() << "\"";
+            json << "\"" << json::escape(entry.path().filename().string()) << "\"";
             first = false;
         }
 
