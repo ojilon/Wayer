@@ -7,6 +7,9 @@
 #include "storage/large_files.hpp"
 #include "storage/list_files.hpp"
 #include "storage/file_search.hpp"
+#include "storage/duplicate_finder.hpp"
+#include "storage/file_organizer.hpp"
+#include "storage/storage_cache.hpp"
 #include "transfer/transfer_engine.hpp"
 #include "documents/document_engine.hpp"
 
@@ -23,6 +26,10 @@ constexpr int ACTION_START_LISTENER    = 6;
 constexpr int ACTION_GET_STORAGE_STATS = 7;
 constexpr int ACTION_SEARCH_FILES      = 8;
 constexpr int ACTION_FIND_LARGE_FILES  = 9;
+constexpr int ACTION_FIND_DUPLICATES = 10;
+constexpr int ACTION_PLAN_ORGANIZE   = 11;
+constexpr int ACTION_APPLY_ORGANIZE  = 12;
+constexpr int ACTION_GET_CACHED_STATS = 13;
 
 namespace {
 
@@ -85,6 +92,28 @@ std::string route_action(int action_id, std::string_view payload) {
             return wayer::storage::find_large_files(root, min_bytes, max_results);
         }
 
+        case ACTION_FIND_DUPLICATES:
+            return wayer::storage::find_duplicates(std::string(payload));
+
+        case ACTION_PLAN_ORGANIZE:
+            return wayer::storage::plan_organize(std::string(payload));
+
+        case ACTION_APPLY_ORGANIZE:
+            return wayer::storage::apply_organize(std::string(payload)); // pipe-delimited, not JSON
+
+        case ACTION_GET_CACHED_STATS: {
+            auto parts = split_payload(payload); // parts[0]=cache_path, parts[1]=root, parts[2]=max_age_seconds
+            if (parts.size() < 3) return R"({"error":"bad_payload"})";
+            int max_age = static_cast<int>(std::strtol(parts[2].c_str(), nullptr, 10));
+
+            std::string cached = wayer::storage::read_cache_if_fresh(parts[0], max_age);
+            if (!cached.empty()) return cached;
+
+            std::string fresh = wayer::storage::get_storage_stats(parts[1]);
+            wayer::storage::write_cache(parts[0], fresh);
+            return fresh;
+        }
+        
         default:
             LOGE("Unknown action_id: %d", action_id);
             return R"({"error": "unknown_action"})";

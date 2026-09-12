@@ -4,18 +4,10 @@
 #include <sys/statvfs.h>
 #include <algorithm>
 #include <format>
+#include "extension_map.hpp"
 
 namespace wayer::storage {
     namespace fs = std::filesystem;
-
-    //extension map
-    const std::unordered_map<std::string_view, std::string_view> EXTENSION_MAP = {
-        {".jpg", "images"}, {".jpeg", "images"}, {".png", "images"}, {".webp", "images"},
-        {".mp4", "videos"}, {".mkv", "videos"},   {".avi", "videos"}, {".webm", "videos"},
-        {".mp3", "audio"},  {".wav", "audio"},    {".flac", "audio"}, {".m4a", "audio"},
-        {".pdf", "documents"}, {".txt", "documents"}, {".docx", "documents"}, {".doc", "documents"},
-        {".apk", "foreign"}, {".obb", "foreign"}
-    };
 
     //Hardcoded retail sizes in bytes
     // 64GB = 64'000'000'000 bytes

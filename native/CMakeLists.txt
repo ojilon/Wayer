@@ -15,6 +15,9 @@ add_library(
     storage/large_files.cpp 
     storage/list_files.cpp
     storage/file_search.cpp
+    storage/duplicate_finder.cpp
+    storage/file_organizer.cpp
+    storage/storage_cache.cpp
     documents/document_engine.cpp
     transfer/transfer_engine.cpp
 )

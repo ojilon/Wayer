@@ -32,6 +32,8 @@ public class StorageFragment extends Fragment {
     private static final int ACTION_FIND_LARGE    = 9;
     private static final String ROOT = "/storage/emulated/0";
     private static final long MIN_BYTES = 10L * 1024 * 1024;
+    private static final int ACTION_GET_CACHED_STATS = 13;
+    private static final int STATS_MAX_AGE_SECONDS = 300; // 5 min
 
     private FragmentStorageBinding binding;
     private FileAdapter largeAdapter;
@@ -133,53 +135,60 @@ public class StorageFragment extends Fragment {
     }
 
     private void setupButtons() {
-        binding.btnRefreshStorage.setOnClickListener(v -> loadStats());
+        binding.btnRefreshStorage.setOnClickListener(v -> {
+            String payload = statsCachePath() + "|" + ROOT + "|0";
+            NativeEngine.processActionAsync(ACTION_GET_CACHED_STATS, payload, this::handleStatsResult);
+        });
+
         binding.btnScanLarge.setOnClickListener(v -> scanLargeFiles());
     }
 
     private void loadStats() {
         binding.storageSummary.setText("Calculating…");
 
-        NativeEngine.processActionAsync(ACTION_STORAGE_STATS, ROOT, rawJson -> {
-            if (binding == null) return;
+        String payload = statsCachePath() + "|" + ROOT + "|" + STATS_MAX_AGE_SECONDS;
+        NativeEngine.processActionAsync(ACTION_GET_CACHED_STATS, payload, this::handleStatsResult);
+    }
 
-            try {
-                JSONObject data = new JSONObject(rawJson);
-                if (data.has("error")) {
-                    binding.storageSummary.setText("Error loading storage");
-                    return;
-                }
+    private void handleStatsResult(String rawJson) {
+        if (binding == null) return;
 
-                long used = data.getLong("used_bytes");
-                long total = data.getLong("total_bytes");
-                long free = data.optLong("free_bytes", total - used);
-                int progress = data.getInt("progress_percent");
-
-                binding.storageProgress.setProgress(progress);
-                binding.storageSummary.setText(formatSize(used) + " used of " + formatSize(total));
-                binding.storageFree.setText(formatSize(free) + " free");
-
-                if (data.has("breakdown")) {
-                    JSONObject b = data.getJSONObject("breakdown");
-                    long images = b.optLong("images", 0);
-                    long videos = b.optLong("videos", 0);
-                    long audio = b.optLong("audio", 0);
-                    long docs = b.optLong("documents", 0);
-                    long others = b.optLong("others", 0);
-
-                    binding.catImages.setText(formatSize(images));
-                    binding.catVideos.setText(formatSize(videos));
-                    binding.catAudio.setText(formatSize(audio));
-                    binding.catDocuments.setText(formatSize(docs));
-                    binding.catOthers.setText(formatSize(others));
-
-                    updateBarWeights(images, videos, audio, docs, others);
-                }
-            } catch (JSONException e) {
-                e.printStackTrace();
-                binding.storageSummary.setText("Failed to parse storage data");
+        try {
+            JSONObject data = new JSONObject(rawJson);
+            if (data.has("error")) {
+                binding.storageSummary.setText("Error loading storage");
+                return;
             }
-        });
+
+            long used = data.getLong("used_bytes");
+            long total = data.getLong("total_bytes");
+            long free = data.optLong("free_bytes", total - used);
+            int progress = data.getInt("progress_percent");
+
+            binding.storageProgress.setProgress(progress);
+            binding.storageSummary.setText(formatSize(used) + " used of " + formatSize(total));
+            binding.storageFree.setText(formatSize(free) + " free");
+
+            if (data.has("breakdown")) {
+                JSONObject b = data.getJSONObject("breakdown");
+                long images = b.optLong("images", 0);
+                long videos = b.optLong("videos", 0);
+                long audio = b.optLong("audio", 0);
+                long docs = b.optLong("documents", 0);
+                long others = b.optLong("others", 0);
+
+                binding.catImages.setText(formatSize(images));
+                binding.catVideos.setText(formatSize(videos));
+                binding.catAudio.setText(formatSize(audio));
+                binding.catDocuments.setText(formatSize(docs));
+                binding.catOthers.setText(formatSize(others));
+
+                updateBarWeights(images, videos, audio, docs, others);
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+            binding.storageSummary.setText("Failed to parse storage data");
+        }
     }
 
     private void scanLargeFiles() {
@@ -261,6 +270,10 @@ public class StorageFragment extends Fragment {
         if (bytes < 1024 * 1024) return String.format("%.1f KB", bytes / 1024.0);
         if (bytes < 1024L * 1024 * 1024) return String.format("%.1f MB", bytes / (1024.0 * 1024));
         return String.format("%.1f GB", bytes / (1024.0 * 1024 * 1024));
+    }
+
+    private String statsCachePath() {
+        return requireContext().getCacheDir().getPath() + "/storage_snapshot.json";
     }
 
     @Override
