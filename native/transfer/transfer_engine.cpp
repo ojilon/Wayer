@@ -2,11 +2,32 @@
 #include <string>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <unistd.h> 
+#include <unistd.h>
 #include <arpa/inet.h>
-#include <format>       //  C++20: Replaces <sstream> for fast, modern string formatting
-#include <cstdint>      //  Modern C++: Standard fixed-width integer types (std::uint16_t)
+#include <format>       // C++20: Replaces <sstream> for fast, modern string formatting
+#include <cstdint>      // Modern C++: Standard fixed-width integer types (std::uint16_t)
 
+/**
+ * Provides transfer/network information and socket listener functionality.
+ * Uses POSIX sockets for network operations.
+ * Uses std::format (C++20) for efficient string formatting.
+ *
+ * Functions:
+ * - get_network_info(): Returns current transfer status as JSON
+ * - start_listener(int port): Creates and binds a TCP socket listener on the given port
+ *
+ * STL usage:
+ * - std::format: formats JSON strings efficiently (C++20)
+ * - std::uint16_t: standard fixed-width integer type for port numbers
+ *
+ * Socket operations use POSIX APIs:
+ * - socket(): Creates a socket file descriptor
+ * - setsockopt(): Sets socket options (SO_REUSEADDR)
+ * - bind(): Binds the socket to a network address
+ * - close(): Closes the socket
+ *
+ * Example: start_listener(8080) returns {"status": "socket_bound", "port": 8080}
+ */
 namespace wayer::transfer {
 
     std::string get_network_info() {
@@ -29,7 +50,7 @@ namespace wayer::transfer {
         address.sin_family = AF_INET;
         address.sin_addr.s_addr = INADDR_ANY; // Bind to all available network interfaces
         
-        //  Modern C++: Use standard std::uint16_t instead of short/uint16_t aliases
+        // Modern C++: Use standard std::uint16_t instead of short/uint16_t aliases
         address.sin_port = htons(static_cast<std::uint16_t>(port));
 
         // Modern C++: Instead of dangerous raw 'reinterpret_cast<sockaddr*>', 

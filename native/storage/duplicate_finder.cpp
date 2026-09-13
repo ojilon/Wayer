@@ -1,4 +1,30 @@
 // duplicate_finder.cpp
+/**
+ * Finds duplicate files in the specified root directory.
+ * Uses a multi-stage approach: group by size, then by partial hash,
+ * and finally confirm with full hash to avoid collisions.
+ * 
+ * Algorithm stages:
+ * Step 1: Group files by size using std::unordered_map<uint64_t, std::vector<fs::path>>
+ * Step 2: Within each size group, group by partial hash (first 4096 bytes + size)
+ * Step 3: Confirm duplicates with full file hash only for partial-hash collisions
+ * 
+ * Uses std::hash for computing file hashes.
+ * Uses std::ifstream for reading file contents.
+ * Uses json::escape() from json_util.hpp for JSON-safe string escaping.
+ * 
+ * @param root_path The root directory path to search for duplicates.
+ * @return JSON string with duplicate groups, e.g., {"duplicate_groups":[["file1.txt","file2.txt"]]}
+ * 
+ * STL usage:
+ * - std::unordered_map: groups files by size and hash values
+ * - std::vector: stores path collections within each group
+ * - std::ifstream: reads file binary content for hashing
+ * - std::hash: computes hash values for string_views and strings
+ * 
+ * Example: find_duplicates("/storage/emulated/0") may return:
+ * {"duplicate_groups":[["photo1.jpg","photo2.jpg"],["doc1.pdf","doc2.pdf"]]}
+ */
 #include "duplicate_finder.hpp"
 #include "dir_walker.hpp"
 #include <unordered_map>

@@ -5,6 +5,37 @@
 #include <format>
 #include "../utils/json_util.hpp"
 
+/**
+ * Searches for files in the specified root directory matching the given query.
+ * Uses std::filesystem::recursive_directory_iterator to traverse directories.
+ * Performs case-insensitive matching against file names.
+ * Returns exact matches (exact name match) and related matches (name contains query).
+ * 
+ * @param root_path The root directory path to search in.
+ * @param query The search query string to match against file names.
+ * @return JSON string with exact_matches and related_matches arrays.
+ * 
+ * Search results structure:
+ * - exact_matches: files where the name exactly matches the query (case-insensitive)
+ * - related_matches: files where the query is contained within the name (case-insensitive)
+ * 
+ * Each result contains:
+ * - name: filename (JSON-escaped)
+ * - path: full file path
+ * - is_dir: whether the entry is a directory
+ * - match_score: 100 for exact match, 50 for related match
+ * 
+ * STL usage:
+ * - std::vector<SearchResult>: stores exact and related matches separately
+ * - std::filesystem::recursive_directory_iterator: traverses all files/dirs recursively
+ * - std::transform: converts query and file names to lowercase for comparison
+ * - std::string::find: checks if query is contained in filename
+ * - std::format: modern string formatting (C++20) for JSON output
+ * 
+ * Example: search_files("/storage/emulated/0", "photo") returns:
+ * {"exact_matches":[{"name":"photo.jpg","path":"/storage/emulated/0/photo.jpg","is_dir":false,"match_score":100}],
+ *  "related_matches":[{"name":"myphoto.png","path":"/storage/emulated/0/myphoto.png","is_dir":false,"match_score":50}]}
+ */
 namespace wayer::storage {
     namespace fs = std::filesystem;
 

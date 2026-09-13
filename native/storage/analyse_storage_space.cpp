@@ -6,6 +6,32 @@
 #include <format>
 #include "extension_map.hpp"
 
+/**
+ * Gets storage statistics for the specified root path.
+ * Uses std::filesystem::recursive_directory_iterator to traverse directories.
+ * Uses std::unordered_map to categorize files by extension.
+ * Uses statvfs to get partition-level storage metrics (total, free, used).
+ * Uses std::format (C++20) for modern string formatting.
+ * 
+ * Categorizes files into: images, videos, audio, documents, foreign, system, others.
+ * Uses EXTENSION_MAP (from extension_map.hpp) to match file extensions to categories.
+ * Files not in the map are categorized as "others".
+ * 
+ * @param root_path The root directory path to analyze.
+ * @return JSON string with storage statistics including total_bytes, used_bytes,
+ *         free_bytes, progress_percent, and breakdown by category.
+ * 
+ * STL usage:
+ * - std::unordered_map<std::string, uint64_t>: map to accumulate sizes by category
+ * - fs::recursive_directory_iterator: traverses all files and directories recursively
+ * - std::format: formats the JSON output string efficiently (C++20)
+ * - statvfs: system struct for getting filesystem statistics
+ * 
+ * Example: get_storage_stats("/storage/emulated/0") returns:
+ * {"total_bytes":1073741824,"used_bytes":536870912,"free_bytes":536870912,
+ *  "progress_percent":50,"breakdown":{"images":1073741824,"videos":0,"audio":0,
+ *  "documents":0,"foreign":0,"system":0,"others":0}}
+ */
 namespace wayer::storage {
     namespace fs = std::filesystem;
 

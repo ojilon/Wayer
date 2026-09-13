@@ -1,4 +1,28 @@
 // file_organizer.cpp (plan portion)
+/**
+ * Plans organization of files in the specified root directory.
+ * Uses dir_walker to traverse files, extension_map to categorize by type,
+ * and chrono for date-based bucketing (year-month).
+ * 
+ * The plan consists of move operations: each entry specifies "from" and "to" paths.
+ * Images are excluded from the plan by default (camera roll handling needed later).
+ * Date buckets use format YYYY-MM based on file modification time.
+ * 
+ * @param root_path The root directory path to plan organization for.
+ * @return JSON string with move operations, e.g., {"moves":[{"from":"path1","to":"path2"}...]}
+ * 
+ * STL usage:
+ * - std::filesystem::path: file path manipulation
+ * - std::filesystem::directory_entry: directory traversal entries
+ * - std::chrono::file_clock / std::chrono::system_clock: file time conversion
+ * - std::chrono::year_month_day: date formatting (YYYY-MM)
+ * - std::format: modern string formatting (C++20)
+ * - std::vector: stores move operation pairs
+ * - std::unordered_map: extension to category mapping via EXTENSION_MAP
+ * 
+ * Example: plan_organize("/storage/emulated/0") may return:
+ * {"moves":[{"from":"/storage/emulated/0/DCIM/img1.jpg","to":"/storage/emulated/0/Pictures/2024-01/img1.jpg"}]}
+ */
 #include "file_organizer.hpp"
 #include "dir_walker.hpp"
 #include "extension_map.hpp"
