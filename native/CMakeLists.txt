@@ -11,8 +11,13 @@ include(CompilerFlags)
 add_library(
     wayer_core
     STATIC
-    storage/storage_engine.cpp
+    storage/analyse_storage_space.cpp
+    storage/large_files.cpp 
+    storage/list_files.cpp
     storage/file_search.cpp
+    storage/duplicate_finder.cpp
+    storage/file_organizer.cpp
+    storage/storage_cache.cpp
     documents/document_engine.cpp
     transfer/transfer_engine.cpp
 )

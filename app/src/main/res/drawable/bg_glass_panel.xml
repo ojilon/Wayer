@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Soft glass panel: translucent body + light top edge hint -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/wayer_glass" />
+            <corners android:radius="@dimen/radius_md" />
+            <stroke
+                android:width="1dp"
+                android:color="@color/wayer_outline_glass" />
+        </shape>
+    </item>
+    <item
+        android:top="0dp"
+        android:bottom="-1000dp"
+        android:left="0dp"
+        android:right="0dp">
+        <shape android:shape="rectangle">
+            <gradient
+                android:angle="270"
+                android:startColor="@color/wayer_glass_highlight"
+                android:endColor="#00FFFFFF"
+                android:type="linear" />
+            <corners
+                android:topLeftRadius="@dimen/radius_md"
+                android:topRightRadius="@dimen/radius_md" />
+        </shape>
+    </item>
+</layer-list>

@@ -29,8 +29,8 @@ No chart library. A horizontal `LinearLayout` with five coloured `View`s.
 Java sets each child’s `layout_weight` proportional to bytes.
 
 ### Next for Storage
-- C++ action to return **large files** (bulk JSON)
 - Multi-select + delete via `FileMutator.delete`
+- Optional share of `FileIndexer` for large-file path resolution
 
 ---
 
@@ -42,9 +42,10 @@ Connect the phone to **WayerPC** over hotspot, test link, download/upload files.
 ### Files
 | File | Role |
 |------|------|
-| `fragment_transfer.xml` | Connection, filename field, Download/Upload, session, log |
-| `TransferFragment.java` | UI + test + calls NetworkManager |
-| `network/NetworkManager.java` | Socket protocol `/ask` and `/upload` |
+| `fragment_transfer.xml` | DrawerLayout (right options) + ViewFlipper (transfer \| browse save) |
+| `TransferFragment.java` | UI, indexer search/confirm, save path, NetworkManager |
+| `storage/FileIndexer.java` | Singleton path cache; default Downloads save path |
+| `network/NetworkManager.java` | Socket protocol `/ask` and `/upload` (absolute path OK) |
 | `network/NetworkCallback.java` | Progress + completion (background thread) |
 | `transfer/TransferController.java` | C++ listener wrapper (Action 6) |
 | `core/Config.java` | `HOST` + `PORT` |
@@ -56,30 +57,36 @@ Connect the phone to **WayerPC** over hotspot, test link, download/upload files.
 ### How to transfer
 1. Set `Config.HOST` / `Config.PORT` to your PC hotspot address.
 2. Open **Transfer** tab → **Test connection**.
-3. Enter a **file name** (not full path).
-4. **Download** runs `/ask <name>` → file lands in app `filesDir`.
-5. **Upload** runs `/upload <name>` → file must already exist in app `filesDir`.
+3. Enter a **file name** (keyword, not necessarily full path).
+4. **Download** runs `/ask <name>` → file lands in **save folder** (default `/storage/emulated/0/Download`). Change via right sidebar → **Change save folder** (browse tab) or **Refresh file index**.
+5. **Upload** searches `FileIndexer` cache → **Confirm** (single hit) or **pick** (multiple) → `/upload` with absolute path to PC.
 
 Activity log shows handshake and result. Session counters update on success; bandwidth is estimated from elapsed time.
+
+### Right sidebar (transfer-specific)
+- **Change save folder** — switches ViewFlipper to folder browser (similar spirit to Files drawer).
+- **Refresh file index** — rebuilds `FileIndexer` map from `/storage/emulated/0`.
+- Placeholder for future global theme/scale options shared by all windows.
 
 ### Protocol (phone ↔ WayerPC)
 ```
 Download:
   phone → /ask <filename>
   pc    → FOUND <size>
-  phone → /send
+  phone → (flush)
   pc    → <raw bytes>
 
 Upload:
-  phone → /upload <size> <filename>
+  phone → /upload <size> <basename>
   pc    → READY  (or /send)
   phone → <raw bytes>
 ```
 
 ### Next for Transfer
 - Folder transfer (list of files)
-- Pick file from storage UI instead of typing name
 - Persist recent transfers list
+- Theme toggle in shared sidebar section
+- Native actions 10/11 for index (see `storage/FUTURE_JNI_AND_CPP23.md`)
 
 ---
 
@@ -105,6 +112,9 @@ Used from Files long-press and path long-press; reuse from Storage cleanup later
 | 6  | START_LISTENER | Transfer |
 | 7  | STORAGE_STATS | Home, Storage |
 | 8  | SEARCH_FILES | Files |
+| 9  | FIND_LARGE | Storage |
+| 10 | REBUILD_INDEX | *planned* |
+| 11 | SEARCH_INDEX | *planned* |
 
 ---
 

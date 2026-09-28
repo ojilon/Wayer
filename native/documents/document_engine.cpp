@@ -7,6 +7,31 @@
 #include <string_view>
 #include <system_error>
 
+/**
+ * Filters documents in the specified directory based on target extensions.
+ * Uses C++23 std::ranges::any_of to check extensions against the target list.
+ * Supported document extensions: .pdf, .epub, .docx, .txt, .md
+ *
+ * @param path The directory path to search for documents.
+ * @return JSON string with document information including name, path, and size.
+ *
+ * Target extensions (C++20 std::array):
+ * - .pdf: Portable Document Format
+ * - .epub: Electronic Publication
+ * - .docx: Microsoft Word Document
+ * - .txt: Plain text files
+ * - .md: Markdown files
+ *
+ * STL usage:
+ * - std::filesystem::recursive_directory_iterator: traverses directories recursively
+ * - std::string_view: non-owning string reference for extension comparison
+ * - std::ranges::any_of: C++23 range algorithm to check if extension is in target list
+ * - std::array: fixed-size array of target extensions
+ * - std::format: modern string formatting (C++20) for JSON output
+ *
+ * Example: filter_documents("/storage/emulated/0") may return:
+ * {"path":"/storage/emulated/0","documents":[{"name":"doc1.pdf","path":"/storage/emulated/0/doc1.pdf","size":1024}]}
+ */
 namespace wayer::documents {
     namespace fs = std::filesystem;
 

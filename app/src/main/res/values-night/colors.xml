@@ -1,18 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <!--
-  Light theme colors for Wayer.
-  Android automatically switches to these when the system is in light mode
-  (because Theme.Wayer parent is DayNight).
+  Light theme tokens (used when night mode is OFF).
+  Naming follows DayNight: values = dark default, values-night = light variant.
 -->
 
 <resources>
 
     <!-- Core surfaces -->
-    <color name="wayer_background">#F5F6F8</color>
-    <color name="wayer_surface">#FFFFFF</color>
-    <color name="wayer_surface_variant">#E8EBF0</color>
-    <color name="wayer_surface_elevated">#FFFFFF</color>
+    <color name="wayer_background">#EEF0F5</color>
+    <color name="wayer_surface">#E6FFFFFF</color>
+    <color name="wayer_surface_solid">#FFFFFF</color>
+    <color name="wayer_surface_variant">#E4E8F0</color>
+    <color name="wayer_surface_elevated">#F2FFFFFF</color>
+    <color name="wayer_glass">#B3FFFFFF</color>
+    <color name="wayer_glass_highlight">#66FFFFFF</color>
 
     <!-- Brand -->
     <color name="wayer_primary">#3B5BDB</color>
@@ -31,9 +33,10 @@
     <color name="wayer_error">#D1434B</color>
     <color name="wayer_info">#1A9BB5</color>
 
-    <!-- Borders / dividers -->
-    <color name="wayer_outline">#D0D5E0</color>
-    <color name="wayer_outline_variant">#E0E4ED</color>
+    <!-- Borders -->
+    <color name="wayer_outline">#C5CAD6</color>
+    <color name="wayer_outline_variant">#DCE0E8</color>
+    <color name="wayer_outline_glass">#66A0A8B8</color>
 
     <!-- Category accents -->
     <color name="wayer_cat_images">#E85D3C</color>

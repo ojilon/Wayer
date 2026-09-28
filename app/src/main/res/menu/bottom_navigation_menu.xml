@@ -22,4 +22,10 @@
         android:icon="@drawable/ic_nav_transfer"
         android:title="Transfer" />
 
+    <item
+        android:id="@+id/nav_duplicate"
+        android:icon="@drawable/ic_nav_duplicate"
+        android:title="Transfer" />
+
+
 </menu>

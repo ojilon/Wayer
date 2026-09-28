@@ -14,11 +14,17 @@ public class StorageController {
 
     public static void fetchDirectoryListing(String path, StorageCallback callback) {
         NativeEngine.processActionAsync(3, path, rawJson -> {
+
+            //Create a new list to capture the results
             List<StorageItem> result = new ArrayList<>();
+
             try {
                 JSONObject obj = new JSONObject(rawJson);
+
                 if (obj.has("items")) {
+
                     JSONArray arr = obj.getJSONArray("items");
+
                     for (int i = 0; i < arr.length(); i++) {
                         JSONObject item = arr.getJSONObject(i);
                         result.add(new StorageItem(
@@ -28,6 +34,7 @@ public class StorageController {
                             item.optLong("size")
                         ));
                     }
+                    
                 }
             } catch (Exception e) {
                 android.util.Log.e("StorageController", "JSON Parse Error", e);

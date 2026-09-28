@@ -8,10 +8,14 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
+import androidx.core.view.GravityCompat;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
+import com.example.wayer.core.GlassBlur;
 import com.example.wayer.core.NativeEngine;
+import com.example.wayer.core.ThemePrefs;
+import com.example.wayer.core.UiChrome;
 import com.example.wayer.databinding.FragmentStorageBinding;
 import com.example.wayer.storage.FileMutator;
 
@@ -22,17 +26,14 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Storage overview + large-file cleanup.
- * Stats: Action 7 · Large files: Action 9 (C++ bulk JSON).
- */
 public class StorageFragment extends Fragment {
 
     private static final int ACTION_STORAGE_STATS = 7;
     private static final int ACTION_FIND_LARGE    = 9;
     private static final String ROOT = "/storage/emulated/0";
-    // 10 MB default threshold
     private static final long MIN_BYTES = 10L * 1024 * 1024;
+    private static final int ACTION_GET_CACHED_STATS = 13;
+    private static final int STATS_MAX_AGE_SECONDS = 300; // 5 min
 
     private FragmentStorageBinding binding;
     private FileAdapter largeAdapter;
@@ -42,8 +43,52 @@ public class StorageFragment extends Fragment {
         binding = FragmentStorageBinding.inflate(inflater, container, false);
         setupLargeList();
         setupButtons();
+        setupSidebar();
         loadStats();
         return binding.getRoot();
+    }
+
+    private void setupSidebar() {
+        binding.btnOpenStorageDrawer.setOnClickListener(v ->
+                binding.storageDrawerLayout.openDrawer(GravityCompat.END));
+
+        View panel = binding.storageOptionsSidebar.getRoot();
+        binding.storageOptionsSidebar.sidebarTitle.setText("Storage options");
+        refreshAppearanceLabels();
+        GlassBlur.applyFromPrefs(panel, requireContext());
+
+        binding.storageOptionsSidebar.btnTheme.setOnClickListener(v -> {
+            String label = ThemePrefs.cycle(requireContext());
+            refreshAppearanceLabels();
+            if (getActivity() != null) UiChrome.apply(getActivity());
+            Toast.makeText(getContext(), "Theme: " + label, Toast.LENGTH_SHORT).show();
+        });
+
+        binding.storageOptionsSidebar.btnBlur.setOnClickListener(v -> {
+            if (!GlassBlur.isSupported()) {
+                Toast.makeText(getContext(), "Blur needs Android 12+", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            boolean on = ThemePrefs.toggleBlur(requireContext());
+            GlassBlur.applyFromPrefs(panel, requireContext());
+            refreshAppearanceLabels();
+            Toast.makeText(getContext(), on ? "Glass blur on" : "Glass blur off", Toast.LENGTH_SHORT).show();
+        });
+    }
+
+    private void refreshAppearanceLabels() {
+        if (binding == null) return;
+        String theme = ThemePrefs.currentLabel(requireContext());
+        binding.storageOptionsSidebar.themeLabel.setText("Theme: " + theme);
+        binding.storageOptionsSidebar.btnTheme.setText("Cycle theme (" + theme + ")");
+
+        boolean blur = ThemePrefs.isBlurEnabled(requireContext());
+        String blurTxt = !GlassBlur.isSupported()
+                ? "Glass blur: N/A (API < 31)"
+                : (blur ? "Glass blur: On" : "Glass blur: Off");
+        binding.storageOptionsSidebar.blurLabel.setText(blurTxt);
+        binding.storageOptionsSidebar.btnBlur.setText(
+                GlassBlur.isSupported() ? "Toggle glass blur" : "Blur unavailable");
     }
 
     private void setupLargeList() {
@@ -90,58 +135,65 @@ public class StorageFragment extends Fragment {
     }
 
     private void setupButtons() {
-        binding.btnRefreshStorage.setOnClickListener(v -> loadStats());
+        binding.btnRefreshStorage.setOnClickListener(v -> {
+            String payload = statsCachePath() + "|" + ROOT + "|0";
+            NativeEngine.processActionAsync(ACTION_GET_CACHED_STATS, payload, this::handleStatsResult);
+        });
+
         binding.btnScanLarge.setOnClickListener(v -> scanLargeFiles());
     }
 
     private void loadStats() {
         binding.storageSummary.setText("Calculating…");
 
-        NativeEngine.processActionAsync(ACTION_STORAGE_STATS, ROOT, rawJson -> {
-            if (binding == null) return;
-
-            try {
-                JSONObject data = new JSONObject(rawJson);
-                if (data.has("error")) {
-                    binding.storageSummary.setText("Error loading storage");
-                    return;
-                }
-
-                long used = data.getLong("used_bytes");
-                long total = data.getLong("total_bytes");
-                long free = data.optLong("free_bytes", total - used);
-                int progress = data.getInt("progress_percent");
-
-                binding.storageProgress.setProgress(progress);
-                binding.storageSummary.setText(formatSize(used) + " used of " + formatSize(total));
-                binding.storageFree.setText(formatSize(free) + " free");
-
-                if (data.has("breakdown")) {
-                    JSONObject b = data.getJSONObject("breakdown");
-                    long images = b.optLong("images", 0);
-                    long videos = b.optLong("videos", 0);
-                    long audio = b.optLong("audio", 0);
-                    long docs = b.optLong("documents", 0);
-                    long others = b.optLong("others", 0);
-
-                    binding.catImages.setText(formatSize(images));
-                    binding.catVideos.setText(formatSize(videos));
-                    binding.catAudio.setText(formatSize(audio));
-                    binding.catDocuments.setText(formatSize(docs));
-                    binding.catOthers.setText(formatSize(others));
-
-                    updateBarWeights(images, videos, audio, docs, others);
-                }
-            } catch (JSONException e) {
-                e.printStackTrace();
-                binding.storageSummary.setText("Failed to parse storage data");
-            }
-        });
+        String payload = statsCachePath() + "|" + ROOT + "|" + STATS_MAX_AGE_SECONDS;
+        NativeEngine.processActionAsync(ACTION_GET_CACHED_STATS, payload, this::handleStatsResult);
     }
 
-    /**
-     * Payload: root|min_bytes|max_results
-     */
+    private void handleStatsResult(String rawJson) {
+        if (binding == null) return;
+
+        try {
+            JSONObject data = new JSONObject(rawJson);
+            if (data.has("error")) {
+                binding.storageSummary.setText("Error loading storage");
+                return;
+            }
+
+            int progress = data.getInt("progress_percent");
+            long used = data.getLong("used_bytes");
+            long total = data.getLong("total_bytes");
+            long free = data.optLong("free_bytes", total - used);
+            
+
+            binding.storageProgress.setProgress(progress);
+            binding.storageSummary.setText(formatSize(used) + " used of " + formatSize(total));
+            binding.storageFree.setText(formatSize(free) + " free");
+
+            if (data.has("breakdown")) {
+                JSONObject b = data.getJSONObject("breakdown");
+                long images = b.optLong("images", 0);
+                long videos = b.optLong("videos", 0);
+                long audio = b.optLong("audio", 0);
+                long docs = b.optLong("documents", 0);
+                long sys = b.optLong("system", 0);
+                long others = b.optLong("others", 0);
+
+                if(binding.catImages != null) binding.catImages.setText(formatSize(images));
+                if(binding.catVideos != null) binding.catVideos.setText(formatSize(videos));
+                if(binding.catAudio != null) binding.catAudio.setText(formatSize(audio));
+                if(binding.catDocuments != null) binding.catDocuments.setText(formatSize(docs));
+                if(binding.catSystem != null) binding.catSystem.setText(formatSize(sys));
+                if(binding.catOthers != null) binding.catOthers.setText(formatSize(others));
+
+                updateBarWeights(images, videos, audio, docs, sys, others);
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+            binding.storageSummary.setText("Failed to parse storage data");
+        }
+    }
+
     private void scanLargeFiles() {
         binding.largeFilesEmpty.setText("Scanning…");
         binding.largeFilesEmpty.setVisibility(View.VISIBLE);
@@ -194,14 +246,15 @@ public class StorageFragment extends Fragment {
         return result;
     }
 
-    private void updateBarWeights(long images, long videos, long audio, long docs, long others) {
-        long sum = images + videos + audio + docs + others;
+    private void updateBarWeights(long images, long videos, long audio, long docs,long sys, long others) {
+        long sum = images + videos + audio + docs + sys +  others;
         if (sum <= 0) sum = 1;
 
         setWeight(binding.barImages, images, sum);
         setWeight(binding.barVideos, videos, sum);
         setWeight(binding.barAudio, audio, sum);
         setWeight(binding.barDocs, docs, sum);
+        setWeight(binding.barSys, sys, sum);
         setWeight(binding.barOthers, others, sum);
     }
 
@@ -221,6 +274,10 @@ public class StorageFragment extends Fragment {
         if (bytes < 1024 * 1024) return String.format("%.1f KB", bytes / 1024.0);
         if (bytes < 1024L * 1024 * 1024) return String.format("%.1f MB", bytes / (1024.0 * 1024));
         return String.format("%.1f GB", bytes / (1024.0 * 1024 * 1024));
+    }
+
+    private String statsCachePath() {
+        return requireContext().getCacheDir().getPath() + "/storage_snapshot.json";
     }
 
     @Override
