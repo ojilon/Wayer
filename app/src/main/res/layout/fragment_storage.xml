@@ -143,9 +143,15 @@
                             android:background="@color/wayer_surface_variant">
 
                             <View android:id="@+id/bar_images" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:background="@color/wayer_cat_images" />
+
                             <View android:id="@+id/bar_videos" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:background="@color/wayer_cat_videos" />
+
                             <View android:id="@+id/bar_audio" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:background="@color/wayer_cat_audio" />
+
                             <View android:id="@+id/bar_docs" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:background="@color/wayer_cat_docs" />
+
+                            <View android:id="@+id/bar_sys" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:background="@color/wayer_cat_sys" />
+
                             <View android:id="@+id/bar_others" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:background="@color/wayer_cat_others" />
                         </LinearLayout>
 
@@ -171,6 +177,12 @@
                             <View android:layout_width="10dp" android:layout_height="10dp" android:background="@color/wayer_cat_docs" />
                             <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="8dp" android:text="Documents" android:textColor="@color/wayer_text_secondary" android:textSize="13sp" />
                             <TextView android:id="@+id/cat_documents" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="—" android:textColor="@color/wayer_text_primary" android:textSize="13sp" />
+                        </LinearLayout>
+
+                        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/spacing_xs" android:orientation="horizontal" android:gravity="center_vertical">
+                            <View android:layout_width="10dp" android:layout_height="10dp" android:background="@color/wayer_cat_sys" />
+                            <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="8dp" android:text="System" android:textColor="@color/wayer_text_secondary" android:textSize="13sp" />
+                            <TextView android:id="@+id/cat_system" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="—" android:textColor="@color/wayer_text_primary" android:textSize="13sp" />
                         </LinearLayout>
 
                         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/spacing_xs" android:orientation="horizontal" android:gravity="center_vertical">

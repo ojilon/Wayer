@@ -43,6 +43,7 @@
     <color name="wayer_cat_videos">#4FC3F7</color>
     <color name="wayer_cat_audio">#BA68C8</color>
     <color name="wayer_cat_docs">#81C784</color>
+    <color name="wayer_cat_sys">#FFD54F</color>
     <color name="wayer_cat_others">#90A4AE</color>
 
 </resources>

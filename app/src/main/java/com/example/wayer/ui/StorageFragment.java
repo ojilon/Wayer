@@ -160,10 +160,11 @@ public class StorageFragment extends Fragment {
                 return;
             }
 
+            int progress = data.getInt("progress_percent");
             long used = data.getLong("used_bytes");
             long total = data.getLong("total_bytes");
             long free = data.optLong("free_bytes", total - used);
-            int progress = data.getInt("progress_percent");
+            
 
             binding.storageProgress.setProgress(progress);
             binding.storageSummary.setText(formatSize(used) + " used of " + formatSize(total));
@@ -175,15 +176,17 @@ public class StorageFragment extends Fragment {
                 long videos = b.optLong("videos", 0);
                 long audio = b.optLong("audio", 0);
                 long docs = b.optLong("documents", 0);
+                long sys = b.optLong("system", 0);
                 long others = b.optLong("others", 0);
 
-                binding.catImages.setText(formatSize(images));
-                binding.catVideos.setText(formatSize(videos));
-                binding.catAudio.setText(formatSize(audio));
-                binding.catDocuments.setText(formatSize(docs));
-                binding.catOthers.setText(formatSize(others));
+                if(binding.catImages != null) binding.catImages.setText(formatSize(images));
+                if(binding.catVideos != null) binding.catVideos.setText(formatSize(videos));
+                if(binding.catAudio != null) binding.catAudio.setText(formatSize(audio));
+                if(binding.catDocuments != null) binding.catDocuments.setText(formatSize(docs));
+                if(binding.catSystem != null) binding.catSystem.setText(formatSize(sys));
+                if(binding.catOthers != null) binding.catOthers.setText(formatSize(others));
 
-                updateBarWeights(images, videos, audio, docs, others);
+                updateBarWeights(images, videos, audio, docs, sys, others);
             }
         } catch (JSONException e) {
             e.printStackTrace();
@@ -243,14 +246,15 @@ public class StorageFragment extends Fragment {
         return result;
     }
 
-    private void updateBarWeights(long images, long videos, long audio, long docs, long others) {
-        long sum = images + videos + audio + docs + others;
+    private void updateBarWeights(long images, long videos, long audio, long docs,long sys, long others) {
+        long sum = images + videos + audio + docs + sys +  others;
         if (sum <= 0) sum = 1;
 
         setWeight(binding.barImages, images, sum);
         setWeight(binding.barVideos, videos, sum);
         setWeight(binding.barAudio, audio, sum);
         setWeight(binding.barDocs, docs, sum);
+        setWeight(binding.barSys, sys, sum);
         setWeight(binding.barOthers, others, sum);
     }
 
