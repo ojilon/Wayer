@@ -3,6 +3,11 @@ project("wayer_engine")
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+# Emit compile_commands.json for clangd (lands in the active build dir;
+# under Gradle: app/.cxx/<variant>/<hash>/<abi>/).
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(CompilerFlags)
