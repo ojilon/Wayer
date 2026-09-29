@@ -1,18 +1,41 @@
 #pragma once
-// TARGET: move implementation from native/utils/json_util.hpp here.
-// During migration, storage/documents may still include the legacy header.
-// Prefer: #include <wayer/core/json_util.hpp>
+// wayer_core — JSON output helpers (header-only).
+// Migrated from native/utils/json_util.hpp. New code must include this file:
+//   #include <wayer/core/json_util.hpp>
+// and call wayer::core::json::escape().
 
+#include <cstdio>
 #include <string>
+#include <string_view>
 
 namespace wayer::core::json {
 
-// Declarations only until utils/json_util.hpp body is moved + .cpp if needed.
-// Legacy file is header-only — copy its contents into this header or a .cpp.
-
-inline std::string escape_placeholder(const std::string& s) {
-    // Replace by real escape() from utils/json_util.hpp during migration.
-    return s;
+inline std::string escape(std::string_view s) {
+    std::string out;
+    out.reserve(s.size() + 8);
+    for (unsigned char c : s) {
+        switch (c) {
+            case '"':  out += "\\\""; break;
+            case '\\': out += "\\\\"; break;
+            case '\n': out += "\\n";  break;
+            case '\r': out += "\\r";  break;
+            case '\t': out += "\\t";  break;
+            default:
+                if (c < 0x20) {
+                    char buf[8]{};
+                    std::snprintf(buf, sizeof(buf), "\\u%04x", c);
+                    out += buf;
+                } else {
+                    out += static_cast<char>(c);
+                }
+        }
+    }
+    return out;
 }
 
 } // namespace wayer::core::json
+
+// Back-compat alias for any out-of-tree call sites still on wayer::json::escape.
+namespace wayer::json {
+using wayer::core::json::escape;
+} // namespace wayer::json

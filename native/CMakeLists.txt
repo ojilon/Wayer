@@ -10,9 +10,7 @@ include(CompilerFlags)
 # ---------------------------------------------------------------------------
 # Modular native layout (refactor/native-modules)
 # See native/MODULES.md and each module's MIGRATION.md.
-#
-# Until migration is complete, module CMakeLists may still compile sources
-# from legacy locations (flat storage/*.cpp, root wayer_engine.cpp, etc.).
+# All sources live under their module's include/ + src/; JNI lives in jni/.
 # ---------------------------------------------------------------------------
 
 add_subdirectory(core)

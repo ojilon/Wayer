@@ -71,9 +71,9 @@ Rules:
 
 ## Build status on this branch
 
-- Modular CMake targets exist.
-- **Legacy sources still compile from their current paths** (listed in each module `CMakeLists.txt`) so the Android app can keep building while files move.
-- After a file is moved into `include/` + `src/`, update that module’s `CMakeLists.txt` and remove the legacy path entry.
+- Modular CMake targets exist and own their sources (`include/` + `src/`).
+- Legacy flat sources (`storage/*.cpp`, root `wayer_engine.cpp`, `utils/`) are removed.
+- JNI resolves everything via `<wayer/...>` through module targets (no parent-dir include hacks).
 
 ## Ordered migration for agents
 

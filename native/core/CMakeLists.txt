@@ -1,10 +1,8 @@
 # wayer_core — shared foundation (no domain logic, no JNI)
 
 add_library(wayer_core STATIC
-    src/core_placeholder.cpp
-    # After migration, add:
-    # src/paths.cpp
-    # src/logging.cpp
+    src/paths.cpp
+    src/logging.cpp
 )
 
 target_include_directories(wayer_core

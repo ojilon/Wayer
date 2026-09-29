@@ -5,9 +5,8 @@ namespace wayer::core {
 
 /**
  * App-owned directories under the path Java passes at init (filesDir / subdir).
- * Implementation: migrate into src/paths.cpp (see MIGRATION.md).
  *
- * Layout (target):
+ * Layout:
  *   <root>/cache/   storage_stats, index, search results
  *   <root>/temp/    transfer staging, organize dry-runs
  *   <root>/logs/    native.log
@@ -24,5 +23,6 @@ struct AppPaths {
 // Call once from JNI after Java supplies files dir.
 void set_app_paths(const AppPaths& paths);
 const AppPaths& app_paths();
+bool app_paths_initialized();
 
 } // namespace wayer::core
