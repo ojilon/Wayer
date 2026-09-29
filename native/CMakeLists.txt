@@ -7,37 +7,27 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(CompilerFlags)
 
-# 1. Static library for reusable cross-platform core
-add_library(
+# ---------------------------------------------------------------------------
+# Modular native layout (refactor/native-modules)
+# See native/MODULES.md and each module's MIGRATION.md.
+#
+# Until migration is complete, module CMakeLists may still compile sources
+# from legacy locations (flat storage/*.cpp, root wayer_engine.cpp, etc.).
+# ---------------------------------------------------------------------------
+
+add_subdirectory(core)
+add_subdirectory(storage)
+add_subdirectory(documents)
+add_subdirectory(transfer)
+add_subdirectory(media)
+add_subdirectory(jni)
+
+# Optional: keep a convenience alias matching older docs
+add_library(wayer_native_modules INTERFACE)
+target_link_libraries(wayer_native_modules INTERFACE
     wayer_core
-    STATIC
-    storage/analyse_storage_space.cpp
-    storage/large_files.cpp 
-    storage/list_files.cpp
-    storage/file_search.cpp
-    storage/duplicate_finder.cpp
-    storage/file_organizer.cpp
-    storage/storage_cache.cpp
-    documents/document_engine.cpp
-    transfer/transfer_engine.cpp
-)
-
-target_include_directories(wayer_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(wayer_core PRIVATE project_warnings)
-
-# 2. Shared JNI library wrapper for Android
-add_library(
-    wayer_engine
-    SHARED
-    wayer_engine.cpp
-)
-
-find_library(log-lib log)
-
-target_link_libraries(
-    wayer_engine
-    PRIVATE
-    wayer_core
-    ${log-lib}
-    project_warnings
+    wayer_storage
+    wayer_documents
+    wayer_transfer
+    wayer_media
 )
