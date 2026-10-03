@@ -1,15 +1,15 @@
 # storage/modules/cleaner
 
-**Target:** `wayer_storage_cleaner` (currently INTERFACE)
+**Target:** `wayer_storage_cleaner` (STATIC)
 
-## Migrate
+## Migrate — done
 
 | Legacy | Destination |
 |--------|-------------|
-| `duplicate_finder.cpp/.hpp` | `src/` + `include/wayer/storage/cleaner.hpp` (or dedicated headers) |
+| `duplicate_finder.cpp/.hpp` | `src/` + `include/wayer/storage/cleaner.hpp` |
 | `large_files.cpp/.hpp` | same module |
 
-Switch CMake from INTERFACE → STATIC; remove those files from parent `wayer_storage` sources.
+CMake is STATIC; those files are not in the parent `wayer_storage` sources.
 
 ## Improvements
 

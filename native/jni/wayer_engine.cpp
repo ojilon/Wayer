@@ -11,10 +11,11 @@
 #include <wayer/storage/storage.hpp>
 #include <wayer/transfer/transfer.hpp>
 
+#include <algorithm>
+#include <cstddef>
+#include <cstdint>
 #include <cstdlib>
-#include <filesystem>
 #include <format>
-#include <fstream>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -42,6 +43,8 @@ constexpr int ACTION_GET_CACHED_STATS = 13;
 constexpr int ACTION_INIT_APP_PATHS = 14;
 constexpr int ACTION_BUILD_INDEX = 15;
 constexpr int ACTION_INVALIDATE_CACHE = 16;
+constexpr int ACTION_INDEX_META = 17;
+constexpr int ACTION_SEARCH_INDEX = 18;
 
 std::vector<std::string> split_payload(std::string_view payload, char sep = '|') {
     std::vector<std::string> parts;
@@ -80,36 +83,8 @@ std::string init_app_paths(std::string_view app_root_raw) {
         wayer::core::json::escape(paths.temp), wayer::core::json::escape(paths.logs));
 }
 
-// BUILD_INDEX: walk once, spill the listing to a file under app cache,
-// return only {path, count}. Java reads the file (never a giant JNI string).
-std::string build_index(const std::string& root) {
-    if (!wayer::core::app_paths_initialized()) {
-        return R"({"error":"paths_not_initialized"})";
-    }
-    const std::string& cache_dir = wayer::core::app_paths().cache;
-    std::error_code ec;
-    std::filesystem::create_directories(cache_dir + "/index", ec);
-
-    const std::string index_path = cache_dir + "/index/files.json";
-    std::ofstream out(index_path, std::ios::binary | std::ios::trunc);
-    if (!out) return R"({"error":"index_write_failed"})";
-
-    size_t count = 0;
-    out << R"({"root":")"
-        << wayer::core::json::escape(root) << R"(","files":[)";
-    bool first = true;
-    wayer::storage::walk_files(root, [&](const std::filesystem::directory_entry& e) {
-        if (!first) out << ",";
-        first = false;
-        out << "\"" << wayer::core::json::escape(e.path().string()) << "\"";
-        ++count;
-    });
-    out << "]})";
-    out.close();
-
-    return std::format(R"({{"path":"{}","count":{}}})",
-                       wayer::core::json::escape(index_path), count);
-}
+// BUILD_INDEX lives in wayer_storage (see storage/index.hpp) so this file stays
+// a thin router: split helpers + action dispatch only, no domain logic.
 
 std::string route_action(int action_id, std::string_view payload) {
     using namespace wayer;
@@ -162,21 +137,48 @@ std::string route_action(int action_id, std::string_view payload) {
         case ACTION_APPLY_ORGANIZE:
             return storage::apply_organize(std::string(payload)); // pipe-delimited, not JSON
         case ACTION_GET_CACHED_STATS: {
-            auto parts = split_payload(payload); // parts[0]=cache_path, parts[1]=root, parts[2]=max_age
+            // parts[0]=cache_path, parts[1]=root, parts[2]=max_age,
+            // parts[3]=known_device_bytes (optional; 0/absent = legacy floor).
             if (parts.size() < 3) return R"({"error":"bad_payload"})";
             int max_age = static_cast<int>(std::strtol(parts[2].c_str(), nullptr, 10));
 
             std::string cached = storage::read_cache_if_fresh(parts[0], max_age);
             if (!cached.empty()) return cached;
 
-            std::string fresh = storage::get_storage_stats(parts[1]);
+            uint64_t known_bytes = 0;
+            if (parts.size() > 3 && !parts[3].empty()) {
+                known_bytes = std::strtoull(parts[3].c_str(), nullptr, 10);
+            }
+            std::string fresh = storage::get_storage_stats(parts[1], known_bytes);
             storage::write_cache(parts[0], fresh);
             return fresh;
         }
         case ACTION_INIT_APP_PATHS:
             return init_app_paths(payload);
         case ACTION_BUILD_INDEX:
-            return build_index(std::string(payload));
+            return storage::build_index(std::string(payload));
+        case ACTION_INDEX_META:
+            (void)payload;
+            return storage::index_meta();
+        case ACTION_SEARCH_INDEX: {
+            // Payload "query|max_results" (max optional, default 50). Queries may
+            // legally contain '|', so the cap is split off the LAST separator and
+            // only when the tail is all digits.
+            std::string query(payload);
+            std::size_t max_results = 50;
+            auto pos = query.find_last_of('|');
+            if (pos != std::string::npos) {
+                std::string tail = query.substr(pos + 1); // owned: strtoull needs NUL
+                bool numeric = !tail.empty() &&
+                               std::all_of(tail.begin(), tail.end(),
+                                           [](char ch) { return ch >= '0' && ch <= '9'; });
+                if (numeric && pos > 0) {
+                    max_results = static_cast<std::size_t>(std::strtoull(tail.c_str(), nullptr, 10));
+                    query.resize(pos);
+                }
+            }
+            return storage::search_index(query, max_results);
+        }
         case ACTION_INVALIDATE_CACHE:
             return storage::invalidate_cache(std::string(payload))
                        ? R"({"status":"invalidated"})"

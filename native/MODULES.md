@@ -69,21 +69,28 @@ Rules:
 3. Large results → files under app cache (see `core` AppPaths); JNI returns paths + metadata.
 4. Do not rename `native/` to `backend/` unless Gradle `externalNativeBuild` is updated in the same change.
 
-## Build status on this branch
+## Build status
 
-- Modular CMake targets exist and own their sources (`include/` + `src/`).
+- Modular CMake targets own their sources (`include/` + `src/`).
 - Legacy flat sources (`storage/*.cpp`, root `wayer_engine.cpp`, `utils/`) are removed.
 - JNI resolves everything via `<wayer/...>` through module targets (no parent-dir include hacks).
+- Storage submodules (`search`, `cleaner`, `organizer`) are STATIC libs owning their `.cpp`.
+- File-backed index is complete: `BUILD_INDEX` / `INDEX_META` / `SEARCH_INDEX`
+  (`storage/index.hpp`); Java passes app files dir once and real device capacity
+  per stats call; caches are invalidated after mutations.
 
 ## Ordered migration for agents
 
 1. Read this file + `core/MIGRATION.md`.
-2. Finish **core** (json_util, paths, logging stubs).
-3. **storage** (walk, list, stats, cache) — largest; then split search/cleaner/organizer if needed.
-4. **documents** and **transfer**.
-5. Move `wayer_engine.cpp` → `jni/` and drop legacy root `wayer_engine.cpp`.
-6. Delete empty legacy paths; ensure `#include <wayer/...>` works; remove parent-dir include hacks.
-7. Java: pass app files dir into native once; use file-backed index (see storage MIGRATION).
+2. Finish **core** (json_util, paths, logging stubs). — done
+3. **storage** (walk, list, stats, cache) — largest; then split search/cleaner/organizer if needed. — done
+4. **documents** and **transfer**. — done
+5. Move `wayer_engine.cpp` → `jni/` and drop legacy root `wayer_engine.cpp`. — done
+6. Delete empty legacy paths; ensure `#include <wayer/...>` works; remove parent-dir include hacks. — done
+7. Java: pass app files dir into native once; use file-backed index (see storage MIGRATION). — done
+
+Remaining open items: nlohmann/json if payloads need nesting (flags.md),
+media metadata extraction, transfer transports behind the same facade.
 
 ## Gradle
 

@@ -23,6 +23,7 @@ import com.example.wayer.core.NativeEngine;
 import com.example.wayer.core.ThemePrefs;
 import com.example.wayer.databinding.FragmentFilesBinding;
 import com.example.wayer.storage.FileMutator;
+import com.example.wayer.storage.NativeCache;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -186,7 +187,10 @@ public class FilesFragment extends Fragment {
                 .setPositiveButton("Delete", (d, w) -> {
                     FileMutator.Result r = FileMutator.delete(item.getPath());
                     Toast.makeText(getContext(), r.message, Toast.LENGTH_SHORT).show();
-                    if (r.ok) loadDirectory(currentPath);
+                    if (r.ok) {
+                        NativeCache.invalidateStatsSnapshot(getContext());
+                        loadDirectory(currentPath);
+                    }
                 })
                 .setNegativeButton("Cancel", null)
                 .show();

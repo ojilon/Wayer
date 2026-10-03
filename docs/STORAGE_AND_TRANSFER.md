@@ -18,11 +18,15 @@ Show clear storage statistics and prepare cleanup (large files, delete).
 ### Data flow
 ```
 StorageFragment
-    → NativeEngine.processActionAsync(7, "/storage/emulated/0")
-    → C++ get_storage_stats()
+    → NativeEngine.processActionAsync(13, "<cache>|<root>|<max_age>|<device_bytes>")
+    → C++ read_cache_if_fresh() or get_storage_stats(root, known_device_bytes)
     → JSON: total/used/free + breakdown{images,videos,audio,documents,others}
     → Java updates text + LinearLayout weights on the stacked bar
 ```
+
+Device capacity comes from `StorageCapacity.queryDeviceBytes`
+(`StorageStatsManager`, `StatFs` fallback); native falls back to its retail
+floor when Java passes 0.
 
 ### Category “graph”
 No chart library. A horizontal `LinearLayout` with five coloured `View`s.  
@@ -86,7 +90,7 @@ Upload:
 - Folder transfer (list of files)
 - Persist recent transfers list
 - Theme toggle in shared sidebar section
-- Native actions 10/11 for index (see `storage/FUTURE_JNI_AND_CPP23.md`)
+- Point `FileIndexer` at native actions 15/18 for index (see `storage/FUTURE_JNI_AND_CPP23.md`)
 
 ---
 
@@ -110,11 +114,18 @@ Used from Files long-press and path long-press; reuse from Storage cleanup later
 |----|------|---------|
 | 3  | LIST_FILES | Files |
 | 6  | START_LISTENER | Transfer |
-| 7  | STORAGE_STATS | Home, Storage |
+| 7  | STORAGE_STATS | Home, Storage (`root\|device_bytes`) |
 | 8  | SEARCH_FILES | Files |
 | 9  | FIND_LARGE | Storage |
-| 10 | REBUILD_INDEX | *planned* |
-| 11 | SEARCH_INDEX | *planned* |
+| 10 | FIND_DUPLICATES | Duplicates |
+| 11 | PLAN_ORGANIZE | Organize |
+| 12 | APPLY_ORGANIZE | Organize |
+| 13 | GET_CACHED_STATS | Storage (`cache\|root\|max_age[\|device_bytes]`) |
+| 14 | INIT_APP_PATHS | MainActivity (once at startup) |
+| 15 | BUILD_INDEX | planned UI (Transfer refresh / Files) |
+| 16 | INVALIDATE_CACHE | delete / organize flows via `NativeCache` |
+| 17 | INDEX_META | planned UI |
+| 18 | SEARCH_INDEX | planned UI (`query\|max_results`) |
 
 ---
 

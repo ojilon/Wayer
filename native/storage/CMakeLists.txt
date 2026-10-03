@@ -7,6 +7,7 @@ add_subdirectory(modules/organizer)
 
 add_library(wayer_storage STATIC
     src/analyse_storage_space.cpp
+    src/index.cpp
     src/list_files.cpp
     src/storage_cache.cpp
     src/storage_placeholder.cpp

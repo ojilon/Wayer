@@ -16,6 +16,23 @@ real capacity via `StorageManager`/`StatFs` (native `statvfs` can't see
 past the app-visible partition) and pass it in, rather than C++ guessing.
 **Status**: signature updated, Java-side query not yet wired up.
 
+### Storage cache invalidation was time-only
+`storage_cache.cpp`'s `read_cache_if_fresh` only checked file age
+(`max_age_seconds`), not whether the underlying filesystem actually
+changed. A user deleting a large file and immediately checking the
+Storage screen could see stale numbers for up to `STATS_MAX_AGE_SECONDS`
+(currently 300s / 5 min in `StorageFragment.java`).
+**Status**: resolved — `invalidate_cache` (native, action 16) plus Java
+`NativeCache.invalidateStatsSnapshot`, called after delete confirmations
+(Files/Storage/Duplicates) and `OrganizeHelper.apply(Context, ...)`.
+Time-based freshness remains as a backstop.
+
+### Device capacity now wired from Java
+`StorageCapacity.queryDeviceBytes` (`StorageStatsManager.getTotalBytes`,
+`StatFs` fallback, 0 on failure) feeds action 7 (`root|bytes`) and action 13
+(`cache|root|max_age|bytes`). Native keeps the retail floor when Java passes 0.
+**Status**: resolved.
+
 ---
 
 ## OPEN
@@ -62,15 +79,14 @@ app's own cache dir before descending into them. This is the *design*
 for avoiding permission-denied churn and irrelevant scanning, but hasn't
 been profiled on a real device with a large `Android/data` tree yet.
 
-### Storage cache invalidation is time-only
+### Storage cache invalidation is time-only (backstop)
 `storage_cache.cpp`'s `read_cache_if_fresh` only checks file age
 (`max_age_seconds`), not whether the underlying filesystem actually
-changed. A user deleting a large file and immediately checking the
-Storage screen could see stale numbers for up to `STATS_MAX_AGE_SECONDS`
-(currently 300s / 5 min in `StorageFragment.java`). Acceptable for now;
-if this becomes annoying, consider invalidating the cache explicitly
-after any native mutation (`FileMutator.delete`, `apply_organize`)
-rather than only on a timer.
+changed. Explicit invalidation now happens after native mutations
+(`FileMutator.delete`, `apply_organize` — see RESOLVED above); the timer
+remains for external changes (other apps, MTP). If staleness from outside
+the app becomes annoying, shorten `STATS_MAX_AGE_SECONDS` rather than
+adding watchers.
 
 ### Duplicate finder: no external JSON library, nested arrays by hand
 `find_duplicates` builds nested JSON arrays (`groups of groups of paths`)

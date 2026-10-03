@@ -17,6 +17,7 @@ import com.example.wayer.core.NativeEngine;
 import com.example.wayer.core.ThemePrefs;
 import com.example.wayer.core.UiChrome;
 import com.example.wayer.databinding.FragmentHomeBinding;
+import com.example.wayer.storage.StorageCapacity;
 import com.example.wayer.transfer.RecentTransfersStore;
 
 import org.json.JSONException;
@@ -80,7 +81,9 @@ public class HomeFragment extends Fragment {
     }
 
     private void setupUI() {
-        NativeEngine.processActionAsync(7, "/storage/emulated/0", rawJson -> {
+        String payload = "/storage/emulated/0"
+                + "|" + StorageCapacity.queryDeviceBytes(getContext());
+        NativeEngine.processActionAsync(7, payload, rawJson -> {
             // Safety check: ensure fragment context is still valid
             if (binding == null || getActivity() == null) return;
 

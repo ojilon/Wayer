@@ -24,6 +24,8 @@ public class NativeEngine {
     public static final int ACTION_INIT_APP_PATHS = 14;
     public static final int ACTION_BUILD_INDEX = 15;
     public static final int ACTION_INVALIDATE_CACHE = 16;
+    public static final int ACTION_INDEX_META = 17;
+    public static final int ACTION_SEARCH_INDEX = 18;
 
     private static final ExecutorService executor = Executors.newSingleThreadExecutor();
     private static final Handler mainHandler = new Handler(Looper.getMainLooper());
@@ -44,6 +46,26 @@ public class NativeEngine {
         java.io.File filesDir = context.getFilesDir();
         String root = filesDir != null ? filesDir.getAbsolutePath() : "";
         processActionAsync(ACTION_INIT_APP_PATHS, root, callback);
+    }
+
+    /** Walk root once, spill the listing to the native index file; returns {path, count}. */
+    public static void buildIndexAsync(String root, Callback callback) {
+        processActionAsync(ACTION_BUILD_INDEX, root != null ? root : "", callback);
+    }
+
+    /** Metadata about the native index file ({status, path, bytes, modified_unix}). */
+    public static void indexMetaAsync(Callback callback) {
+        processActionAsync(ACTION_INDEX_META, "", callback);
+    }
+
+    /** Case-insensitive substring search over the native index (no full tree walk). */
+    public static void searchIndexAsync(String query, int maxResults, Callback callback) {
+        processActionAsync(ACTION_SEARCH_INDEX, (query != null ? query : "") + "|" + maxResults, callback);
+    }
+
+    /** Remove a native cache file written by an earlier action (stats snapshot, etc.). */
+    public static void invalidateCacheAsync(String cachePath, Callback callback) {
+        processActionAsync(ACTION_INVALIDATE_CACHE, cachePath != null ? cachePath : "", callback);
     }
 
     // Asynchronous wrapper: executes JNI call on background thread and posts back to UI thread

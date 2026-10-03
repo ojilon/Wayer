@@ -26,18 +26,28 @@ Sockets/hotspot protocol remain **Java** (`NetworkManager`) by project rule; nat
 - Prefer `std::filesystem`, ranges, `string_view`, `optional`, `expected`-style error returns inside engines.
 - Document each new action ID in `docs/STORAGE_AND_TRANSFER.md` when added.
 
-## Action ID roadmap (proposal)
+## Action ID roadmap
 
 | ID | Name | Notes |
 |----|------|--------|
 | 3 | LIST_FILES | exists |
 | 6 | START_LISTENER | exists |
-| 7 | STORAGE_STATS | exists |
-| 8 | SEARCH_FILES | exists |
+| 7 | STORAGE_STATS | exists (`root\|known_device_bytes`) |
+| 8 | SEARCH_FILES | exists (full-tree walk; prefer 18 over an index when one is built) |
 | 9 | FIND_LARGE | exists |
-| 10 | REBUILD_INDEX | move FileIndexer walk here |
-| 11 | SEARCH_INDEX | global name search over native cache |
+| 10 | FIND_DUPLICATES | exists |
+| 11 | PLAN_ORGANIZE | exists |
+| 12 | APPLY_ORGANIZE | exists |
+| 13 | GET_CACHED_STATS | exists (`cache_path\|root\|max_age[\|known_device_bytes]`) |
+| 14 | INIT_APP_PATHS | exists — Java passes files dir once |
+| 15 | BUILD_INDEX | exists — writes `cache/index/files.json`, returns `{path, count}` |
+| 16 | INVALIDATE_CACHE | exists — drops a cache file after mutations |
+| 17 | INDEX_META | exists — `{status, path, bytes, modified_unix}`, never the listing |
+| 18 | SEARCH_INDEX | exists — substring search over the index file, capped matches |
 
 ## Facade pattern
 
-Java `FileIndexer` can become a thin wrapper calling actions 10/11 so Transfer/Files keep stable APIs while the implementation shifts.
+Java `FileIndexer` can become a thin wrapper calling actions 15 (`BUILD_INDEX`) /
+18 (`SEARCH_INDEX`) so Transfer/Files keep stable APIs while the implementation
+shifts. Kept as a follow-up: `FileIndexer` still owns the Java walk until the
+native index path is proven on-device.

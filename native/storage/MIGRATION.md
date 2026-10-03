@@ -30,14 +30,21 @@ Also update includes in `jni` / `wayer_engine.cpp` from `"storage/foo.hpp"` to `
 
 ## Improvements (product)
 
-- [ ] **File-backed index:** `BUILD_INDEX` action writes under `app_paths().cache/index/`; JNI returns `{path, created_at, count}` only; Java reads the file (do not hold full index in JNI string).
-- [ ] Invalidate cache after organize/delete (not only time-based — see flags.md).
-- [ ] Wire real device capacity from Java into `get_storage_stats`.
+- [x] **File-backed index:** `BUILD_INDEX` writes under `app_paths().cache/index/`;
+  `INDEX_META` returns `{path, bytes, modified_unix}` and `SEARCH_INDEX` searches
+  the file (see `include/wayer/storage/index.hpp`). JNI returns paths + metadata
+  only; Java reads the file for the full listing.
+- [x] Invalidate cache after organize/delete: `invalidate_cache` (action 16) plus
+  Java `NativeCache.invalidateStatsSnapshot`, called from delete confirmations and
+  `OrganizeHelper.apply(Context, ...)`.
+- [x] Wire real device capacity from Java into `get_storage_stats`
+  (`StorageCapacity.queryDeviceBytes` → `root|bytes`; 4th field on cached-stats).
 - [ ] Consider nlohmann/json when pipe-delimited payloads become nested.
 
 ## Agent checklist
 
-- [ ] All storage sources compile only via `wayer_storage` (no duplicate listing in jni)
-- [ ] Public headers under `include/wayer/storage/`
-- [ ] Submodules either own their .cpp or stay INTERFACE with a note
-- [ ] App cache root comes from core AppPaths
+- [x] All storage sources compile only via `wayer_storage` (no duplicate listing in jni)
+- [x] Public headers under `include/wayer/storage/`
+- [x] Submodules own their .cpp as STATIC libs (search, cleaner, organizer)
+- [x] App cache root comes from core AppPaths (`index.*`; cached-stats keeps an
+  explicit path for backward compat)

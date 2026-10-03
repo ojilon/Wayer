@@ -19,5 +19,5 @@ Update `documents/CMakeLists.txt` source list; remove `../` include once include
 
 ## Agent checklist
 
-- [ ] Legacy files moved; JNI includes updated
-- [ ] Links only core + storage
+- [x] Legacy files moved; JNI includes updated
+- [x] Links only core + storage

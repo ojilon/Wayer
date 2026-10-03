@@ -1,14 +1,14 @@
 # storage/modules/search
 
-**Target:** `wayer_storage_search` (currently INTERFACE)
+**Target:** `wayer_storage_search` (STATIC)
 
-## Migrate
+## Migrate — done
 
-1. Move `native/storage/file_search.cpp` → `modules/search/src/file_search.cpp`
-2. Move API to `include/wayer/storage/search.hpp` (namespace `wayer::storage::search` or keep `wayer::storage` for less churn)
-3. Change this `CMakeLists.txt` from INTERFACE to STATIC and list the `.cpp`
-4. Remove `file_search.cpp` from parent `storage/CMakeLists.txt`
-5. Update JNI includes / calls
+1. [x] `file_search.cpp` lives in `modules/search/src/file_search.cpp`
+2. [x] API in `include/wayer/storage/search.hpp` (namespace `wayer::storage`)
+3. [x] STATIC library listing the `.cpp`
+4. [x] `file_search.cpp` removed from parent `storage/CMakeLists.txt`
+5. [x] JNI includes / calls updated
 
 ## Improvements
 

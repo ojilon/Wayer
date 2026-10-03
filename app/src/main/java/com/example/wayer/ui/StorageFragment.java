@@ -18,6 +18,8 @@ import com.example.wayer.core.ThemePrefs;
 import com.example.wayer.core.UiChrome;
 import com.example.wayer.databinding.FragmentStorageBinding;
 import com.example.wayer.storage.FileMutator;
+import com.example.wayer.storage.NativeCache;
+import com.example.wayer.storage.StorageCapacity;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -126,6 +128,7 @@ public class StorageFragment extends Fragment {
                     FileMutator.Result r = FileMutator.delete(item.getPath());
                     Toast.makeText(getContext(), r.message, Toast.LENGTH_SHORT).show();
                     if (r.ok) {
+                        NativeCache.invalidateStatsSnapshot(getContext());
                         scanLargeFiles();
                         loadStats();
                     }
@@ -136,7 +139,8 @@ public class StorageFragment extends Fragment {
 
     private void setupButtons() {
         binding.btnRefreshStorage.setOnClickListener(v -> {
-            String payload = statsCachePath() + "|" + ROOT + "|0";
+            String payload = statsCachePath() + "|" + ROOT + "|0"
+                    + "|" + StorageCapacity.queryDeviceBytes(getContext());
             NativeEngine.processActionAsync(ACTION_GET_CACHED_STATS, payload, this::handleStatsResult);
         });
 
@@ -146,7 +150,8 @@ public class StorageFragment extends Fragment {
     private void loadStats() {
         binding.storageSummary.setText("Calculating…");
 
-        String payload = statsCachePath() + "|" + ROOT + "|" + STATS_MAX_AGE_SECONDS;
+        String payload = statsCachePath() + "|" + ROOT + "|" + STATS_MAX_AGE_SECONDS
+                + "|" + StorageCapacity.queryDeviceBytes(getContext());
         NativeEngine.processActionAsync(ACTION_GET_CACHED_STATS, payload, this::handleStatsResult);
     }
 
@@ -277,7 +282,7 @@ public class StorageFragment extends Fragment {
     }
 
     private String statsCachePath() {
-        return requireContext().getCacheDir().getPath() + "/storage_snapshot.json";
+        return NativeCache.statsSnapshotPath(requireContext());
     }
 
     @Override

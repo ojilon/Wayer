@@ -3,6 +3,7 @@
 #include <wayer/storage/analyse_storage_space.hpp>
 #include <wayer/storage/cleaner.hpp>
 #include <wayer/storage/extension_map.hpp>
+#include <wayer/storage/index.hpp>
 #include <wayer/storage/list_files.hpp>
 #include <wayer/storage/organizer.hpp>
 #include <wayer/storage/safety.hpp>

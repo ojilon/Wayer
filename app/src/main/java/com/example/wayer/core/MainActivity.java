@@ -38,6 +38,10 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
 
         NativeEngine.initEngine();
+        // Give native its app-owned dirs once (cache/temp/logs); required before
+        // BUILD_INDEX / SEARCH_INDEX, otherwise they report paths_not_initialized.
+        NativeEngine.initAppPathsAsync(this,
+                result -> android.util.Log.i("WayerNative", "initAppPaths: " + result));
         
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());

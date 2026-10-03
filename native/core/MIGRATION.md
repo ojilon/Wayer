@@ -25,14 +25,16 @@ No filesystem domain logic, no transfer, no JNI.
 
 ## Improvements to implement
 
-- [ ] Java calls a new JNI init action that passes `context.getFilesDir()` (or `.../wayer`) once.
-- [ ] All cache file paths go through `wayer::core::app_paths()`, not hard-coded strings in storage.
-- [ ] Prefer `std::string_view`, `std::filesystem` in new code (C++23 already enabled).
+- [x] Java calls a new JNI init action that passes `context.getFilesDir()` (or `.../wayer`) once
+  (`MainActivity.onCreate` → `NativeEngine.initAppPathsAsync`).
+- [x] All cache file paths go through `wayer::core::app_paths()`, not hard-coded strings in storage
+  (index paths do; `ACTION_GET_CACHED_STATS` keeps an explicit path for backward compat).
+- [x] Prefer `std::string_view`, `std::filesystem` in new code (C++23 already enabled).
 - [ ] Do not parse complex JSON here until a library is chosen (see `storage/flags.md`).
 
 ## Agent checklist
 
-- [ ] `json_util` fully moved; zero includes of `utils/json_util.hpp`
-- [ ] `AppPaths` implemented and tested from JNI
-- [ ] `core_placeholder.cpp` removed or reduced
-- [ ] `native/MODULES.md` dependency graph still valid
+- [x] `json_util` fully moved; zero includes of `utils/json_util.hpp`
+- [x] `AppPaths` implemented and tested from JNI
+- [x] `core_placeholder.cpp` removed or reduced
+- [x] `native/MODULES.md` dependency graph still valid

@@ -19,5 +19,5 @@
 
 ## Agent checklist
 
-- [ ] Sources under src/ + public include
-- [ ] JNI only calls into this module from `jni/`
+- [x] Sources under src/ + public include
+- [x] JNI only calls into this module from `jni/`

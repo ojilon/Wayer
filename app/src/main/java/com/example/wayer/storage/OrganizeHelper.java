@@ -48,5 +48,18 @@ public final class OrganizeHelper {
         NativeEngine.processActionAsync(ACTION_APPLY_ORGANIZE, sb.toString(), rawJson -> onDone.run());
     }
 
+    /**
+     * Same as {@link #apply(List, List, Runnable)} but drops the stats snapshot
+     * afterwards: moved files would otherwise keep the Storage screen stale
+     * until the time-based cache expires (see storage/flags.md).
+     */
+    public static void apply(android.content.Context context,
+                             List<String> fromPaths, List<String> toPaths, Runnable onDone) {
+        apply(fromPaths, toPaths, () -> {
+            NativeCache.invalidateStatsSnapshot(context);
+            onDone.run();
+        });
+    }
+
     private OrganizeHelper() {}
 }

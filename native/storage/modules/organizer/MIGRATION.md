@@ -1,12 +1,12 @@
 # storage/modules/organizer
 
-**Target:** `wayer_storage_organizer` (currently INTERFACE)
+**Target:** `wayer_storage_organizer` (STATIC)
 
-## Migrate
+## Migrate — done
 
-1. Move `file_organizer.cpp/.hpp` into this module.
-2. STATIC library; parent links it.
-3. Keep pipe-delimited `apply_organize` until JSON parser exists (flags.md).
+1. [x] `file_organizer.cpp` lives in this module; API in `include/wayer/storage/organizer.hpp`
+2. [x] STATIC library; parent links it
+3. [x] Pipe-delimited `apply_organize` kept until JSON parser exists (flags.md)
 
 ## Improvements
 
