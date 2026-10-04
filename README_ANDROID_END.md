@@ -2,7 +2,7 @@
 
 Android app for local file management and transfers with **WayerPC** over hotspot.
 
-This document matches the **current** codebase on branch `ui_home_files_work`.
+This document matches the **current** codebase on branch `refactor/native-modules`.
 
 ---
 
@@ -24,7 +24,7 @@ Min SDK **26**, compile SDK **36**, target SDK **34**.
 ```bash
 git clone https://github.com/ojilon/Wayer.git
 cd Wayer
-git checkout ui_home_files_work
+git checkout refactor/native-modules
 ```
 
 ---
@@ -72,30 +72,42 @@ See [docs/RELEASE_AND_BUILD.md](docs/RELEASE_AND_BUILD.md).
 
 ## App screens
 
+Six destinations in a scrollable bottom bar (`MainActivity` + toggle group):
+
 ### Home
-- Storage used/total from C++ (**Action 7**)
-- Category breakdown
+- Storage used/total from the shared snapshot file (`bridge/Stats` → C++ Action 13)
+- Category breakdown + top folders (new `folders` array in the snapshot)
 - Shortcuts to Files / Storage / Transfer
 
 ### Files
-- Left drawer (Downloads, DCIM, Movies, Documents, …)
-- List directory (**Action 3**)
-- Search exact + related (**Action 8**)
-- Long-press item → open / rename / delete  
-- Long-press path bar → new file / folder  
+- Left drawer (Downloads, DCIM, Movies, Documents, …) — paths via `bridge/AppDirs`
+- Remembers its folder + explicit Up button (process-scoped `BrowseSession`)
+- List directory (**Action 3**), live scoped search with previous-list-first (**Action 8**, file-backed)
+- Long-press item → open / rename / delete; long-press path bar → new file / folder
 - Open routes via `FileOpenHelper` → Image / Video / Document activity
 
 ### Storage
-- Same stats as Home + visual category bars
-- **Scan for large files** (**Action 9**, default ≥ 10 MB)
-- Long-press → open or delete (`FileMutator`)
+- Same snapshot as Home + visual category bars + Refresh (forces recompute)
+- Large-file scanning moved to the **Cleaner** tab
 
 ### Transfer
-- Test TCP connection to `Config.HOST:PORT`
-- Optional C++ listener (**Action 6**)
-- **Download** = `/ask <name>` → app `filesDir`
-- **Upload** = `/upload <name>` from app `filesDir`
-- Activity log + rough session stats
+Sideways tabs (Guide | Transfer | Search | Browse | Network):
+- **Guide** — connection steps as a static page
+- **Transfer** — file-transfer card: `/ask` download, `/upload` send, session summary
+- **Search** — global index search with multi-select send; folders open inline with Up
+- **Browse** — save-folder picker with filter + Up (remembers folder)
+- **Network** — test connection, listener, session stats, activity log, recents
+- Multi-select queue (`modules/transfer/queue.json`) uploads one file per `/upload`;
+  upload basenames are space-sanitized for the protocol (local files untouched)
+
+### Cleaner
+- Card grid (Duplicates, Large files, extensible per `docs/CLEANER_IDEAS.md`)
+- Sideways utility tabs; each utility scans into its result file under lease
+
+### Internals
+- Read-only browser of the private app home (`files/wayer/`): index, cache,
+  `paths.json` manifest, logs. Files open in `DocumentActivity` via the C++
+  preview module (**Action 19**, capped, binary refused).
 
 ---
 
@@ -107,47 +119,69 @@ See [docs/RELEASE_AND_BUILD.md](docs/RELEASE_AND_BUILD.md).
 └─────────────────┬───────────────────┘
                   │ display only
 ┌─────────────────▼───────────────────┐
-│  Java: navigation, dialogs, sockets │
-│  NetworkManager → WayerPC           │
-│  FileMutator → local create/rename/ │
-│                delete                 │
+│  bridge/: single doorway to native  │
+│  PathRegistry (paths.json) · leases │
+│  result-path cache (PathCache)      │
 └─────────────────┬───────────────────┘
-                  │ JNI bulk JSON
+                  │ paths in, files out, {status} back
 ┌─────────────────▼───────────────────┐
-│  native/ C++23  (NativeEngine)      │
-│  list, search, stats, large files   │
+│  native/ C++23 modules + JNI router │
+│  files under files/wayer/ (private) │
 └─────────────────────────────────────┘
+Java sockets (NetworkManager) stay on the Java side.
 ```
 
 ### Native action IDs
 
-| ID | Purpose |
-|----|---------|
-| 3 | List directory |
-| 6 | Start listener |
-| 7 | Storage stats |
-| 8 | Search files |
-| 9 | Find large files |
+| ID | Purpose | Shape |
+|----|---------|-------|
+| 3 | List directory | path → JSON list |
+| 4 | Network info | tiny JSON |
+| 5 | Filter documents | path → JSON list |
+| 6 | Start listener | port → status |
+| 8 | Search files | `root\|out\|query…` → `{status,path}` |
+| 9 | Find large files | `root\|min\|max\|out` → `{status,path}` |
+| 10 | Find duplicates | `root\|out` → `{status,path}` |
+| 11 | Plan organize | `root\|out` → `{status,path}` |
+| 12 | Apply organize | `plan\|report` → `{status,path}` |
+| 13 | Cached stats | `cache\|root\|age[\|bytes]` → `{status,path}` (age ≤ 0 forces recompute) |
+| 14 | Init app paths | root → manifest + `all_ready` |
+| 15 | Build index | root → `{path,count}` |
+| 16 | Invalidate cache | path → status |
+| 17 | Index meta | → `{status,path,bytes,modified_unix}` |
+| 18 | Search index | `out\|max\|query…` → `{status,path}` |
+| 19 | Read text file | `path\|bytes` → capped lines (read-only) |
+
+Action 7 (inline stats) was retired into 13. See `native/FUTURE_JNI_AND_CPP23.md`
+for the roadmap and `docs/BRIDGE_PLAN.md` for the file-backed protocol.
 
 ### Main source map
 
 ```text
 app/src/main/java/com/example/wayer/
-  core/          MainActivity, NativeEngine, Config
-  ui/            Home/Files/Storage/Transfer fragments,
-                 Document/Image/Video activities, FileAdapter, FileOpenHelper
+  bridge/        NativeEngine (moved), Bridge, PathRegistry, PathCache,
+                 FileLeases, Stats, AppDirs, NativeCache, StorageCapacity
+  core/          MainActivity, Config, ThemePrefs, GlassBlur, UiChrome
+  ui/            Home/Files/Storage/Transfer/Cleaner/Internal fragments,
+                 Document/Image/Video activities, adapters, BrowseSession
   network/       NetworkManager, NetworkCallback
-  storage/       FileMutator, StorageController, …
-  transfer/      TransferController, NetworkStatus
+  storage/       FileMutator, FileIndexer (paths), OrganizeHelper, …
+  transfer/      TransferController, TransferQueue, RecentTransfersStore
   utils/         TextSanitizer
 
 native/
-  wayer_engine.cpp          JNI router
-  storage/storage_engine.*  list, stats, search, large files
-  transfer/                 listener / network info stubs
-  documents/                document filter stub
-  third_party/              external C++ libs (local only)
+  jni/            wayer_engine.cpp — sole JNI boundary (thin router)
+  core/           paths (+manifest), logging, json helpers, text helpers
+  storage/        walk/stats/cache/list + search/cleaner/organizer submodules
+  documents/      document filter
+  transfer/       listener / network info helpers
+  media/          placeholder for later
+  preview/        read-only text preview for the in-app viewer
+  third_party/    nlohmann/json + SQLite (vendored locally, gitignored)
 ```
+
+C++ style for the tree (structs + free functions, headers declare / `.cpp`
+defines, no `class`/`inline`/macros): see `native/MODULES.md`.
 
 ---
 
@@ -166,7 +200,12 @@ Upload:
   phone → <bytes>
 ```
 
-File names for Transfer UI are **names only** relative to the app files directory (download destination / upload source), not full phone paths.
+Upload basenames are space-sanitized for the protocol token only
+(`file name` → `file_name`); the local file is never renamed.
+
+File names for Transfer UI are **absolute paths** for upload (index search /
+browse / queue) and land in the public save folder (default `Download/`) for
+downloads.
 
 ---
 
@@ -176,8 +215,9 @@ File names for Transfer UI are **names only** relative to the app files director
 ./gradlew :app:testDebugUnitTest
 ```
 
-- Unit tests: `TextSanitizer`, `FileMutator`, `FileItem`  
-- CI: `.github/workflows/android-ci.yml`  
+- Unit tests: `TextSanitizer`, `FileMutator`, `FileItem`, `NetworkManager`
+  (upload token spacing)
+- CI: `.github/workflows/android-ci.yml`
 - How to write more: [docs/TESTING.md](docs/TESTING.md)
 
 ---
@@ -193,6 +233,10 @@ File names for Transfer UI are **names only** relative to the app files director
 | [docs/TESTING.md](docs/TESTING.md) | Tests |
 | [docs/XML_UI_GUIDE.md](docs/XML_UI_GUIDE.md) | Learn / improve XML UI |
 | [docs/ICONS.md](docs/ICONS.md) | Vector launcher & nav icons |
+| [docs/BRIDGE_PLAN.md](docs/BRIDGE_PLAN.md) | File-backed Java ↔ C++ plan |
+| [docs/TRANSFER_CLEANER_PLAN.md](docs/TRANSFER_CLEANER_PLAN.md) | Transfer + Cleaner rework |
+| [docs/CLEANER_IDEAS.md](docs/CLEANER_IDEAS.md) | Cleaner utility backlog |
+| [docs/ADB_GUIDE.md](docs/ADB_GUIDE.md) | Install / logcat / inspect |
 
 ---
 
@@ -201,9 +245,9 @@ File names for Transfer UI are **names only** relative to the app files director
 Declared in `AndroidManifest.xml`:
 
 - `INTERNET`
-- `READ_EXTERNAL_STORAGE` / `WRITE_EXTERNAL_STORAGE` (legacy flag enabled for broader file access on older patterns)
-
-On newer Android versions you may still need runtime grants or scoped-storage adjustments depending on paths you open.
+- `READ_EXTERNAL_STORAGE` / `WRITE_EXTERNAL_STORAGE` (+ `requestLegacyExternalStorage`)
+- At runtime the app requests **Manage all files access** (`isExternalStorageManager`)
+  for full shared-storage browsing on Android 11+.
 
 ---
 
@@ -215,13 +259,17 @@ On newer Android versions you may still need runtime grants or scoped-storage ad
 | App only on your phone | Ensure device ABI is in `aurora.abiFilters` |
 | Transfer fails | Same hotspot; WayerPC running; correct `Config.HOST`/`PORT` |
 | Empty file list | Storage permission; path exists (`/storage/emulated/0/...`) |
-| Large scan slow | Expected on full tree; threshold is 10 MB in StorageFragment |
+| Large scan slow | Expected on full tree; threshold is 10 MB in the Cleaner tab |
 | Release unsigned | Add `keystore.properties` or `WAYER_*` env |
+| clangd red in `native/` | Build once, then `:app:copyCompileCommands` refreshes `build/compile_commands.json` (see `.clangd`) |
 
 ---
 
 ## Status notes
 
-- **Usable** for browse, search, local file ops, storage overview, basic PC transfer  
-- **Document rendering** (PDF/office) is a placeholder until libraries are added under `native/third_party/`  
-- Terminal-style `ls`/`cd` UI is not the primary surface anymore; Files UI + Transfer UI replace that workflow  
+- **Usable** for browse, search, local file ops, storage overview, PC transfer
+  queue, duplicates + large-file cleanup
+- **Document rendering**: text preview via the C++ `preview` module; rich
+  formats (PDF/office) wait on engines under `native/third_party/`
+- Cleaner utilities grow per `docs/CLEANER_IDEAS.md`; bridge follow-ups per
+  `docs/BRIDGE_PLAN.md` (only Steps 0–7 coded; device passes pending per step)

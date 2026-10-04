@@ -5,6 +5,10 @@ Android client for browsing local storage and transferring files with **WayerPC*
 | Doc | Purpose |
 |-----|---------|
 | [README_ANDROID_END.md](README_ANDROID_END.md) | Full Android setup, structure, usage |
+| [docs/BRIDGE_PLAN.md](docs/BRIDGE_PLAN.md) | Java ↔ C++ file-backed bridge plan (7 steps) |
+| [docs/TRANSFER_CLEANER_PLAN.md](docs/TRANSFER_CLEANER_PLAN.md) | Transfer + Cleaner rework plan |
+| [docs/CLEANER_IDEAS.md](docs/CLEANER_IDEAS.md) | Cleaner utility backlog |
+| [docs/ADB_GUIDE.md](docs/ADB_GUIDE.md) | Install, logcat, inspect via adb |
 | [docs/](docs/) | Feature guides (Home, Files, Storage, Transfer, tests, icons, XML) |
 
 ---
@@ -26,15 +30,18 @@ Set the PC address in `app/.../core/Config.java` (`HOST` / `PORT`) before Transf
 
 | Tab | Role |
 |-----|------|
-| **Home** | Storage summary (C++ Action 7), shortcuts into other tabs |
-| **Files** | Browse, search (C++), create/rename/delete, open image/video/document |
-| **Storage** | Stats + category bars, large-file scan (C++ Action 9), delete to free space |
-| **Transfer** | Test link to WayerPC, download (`/ask`) / upload (`/upload`) via Java sockets |
+| **Home** | Storage summary (shared snapshot file), shortcuts into other tabs |
+| **Files** | Browse (remembers folder + Up), live search, create/rename/delete, open image/video/document |
+| **Storage** | Stats summary + category bars, refresh forces recompute |
+| **Transfer** | Guide / Transfer / Search / Browse / Network tabs; multi-select queue, one-by-one upload, session UI |
+| **Cleaner** | Utility card grid + sideways tabs: Duplicates, Large files (more planned) |
+| **Internals** | Read-only browser of the private app home (index, cache, logs, manifest) |
 
 **Architecture idea**
 
-- **Java + XML** → UI, navigation, sockets to PC  
-- **C++ (JNI)** → heavy local work (list, search, storage stats, large files) via bulk JSON  
+- **Java + XML** → UI, navigation, sockets to PC
+- **`bridge/` package** → single doorway to native: path registry, leases, result-path cache
+- **C++ (JNI)** → computes into files under the private app home; JNI carries only `{status, path}`
 - **Networking** stays on the Java side (`NetworkManager`)
 
 ---
@@ -46,15 +53,17 @@ Wayer/
 ├── app/                    # Android application (UI + Java)
 │   └── src/main/
 │       ├── java/.../wayer/
-│       │   ├── core/       # MainActivity, NativeEngine, Config
-│       │   ├── ui/         # Fragments, viewers, FileAdapter
+│       │   ├── bridge/     # NativeEngine, Bridge, PathRegistry, leases, caches
+│       │   ├── core/       # MainActivity, Config, theme/blur/chrome
+│       │   ├── ui/         # Fragments, viewers, adapters
 │       │   ├── network/    # Hotspot protocol to WayerPC
-│       │   ├── storage/    # FileMutator, StorageController
-│       │   └── transfer/
-│       └── res/            # Layouts, menus, vectors, themes
-├── native/                 # C++23 engine (storage, transfer, documents)
-│   └── third_party/        # Local external libs (gitignored)
-├── docs/                   # Learning / feature documentation
+│       │   ├── storage/    # FileMutator, FileIndexer (paths), OrganizeHelper
+│       │   └── transfer/   # Controllers, upload queue
+│       └── res/            # Layouts, menus, vectors, themes, strings
+├── native/                 # C++23 modules (core, storage, documents,
+│                           transfer, media, preview) + JNI boundary in jni/
+│   └── third_party/        # Local external libs: nlohmann/json, SQLite (gitignored)
+├── docs/                   # Learning / feature / plan documentation
 ├── gradle.properties       # versionCode, versionName, ABI list
 └── .github/workflows/      # Unit-test CI
 ```
@@ -68,6 +77,8 @@ Wayer/
 | Version / multi-ABI / signing | [docs/RELEASE_AND_BUILD.md](docs/RELEASE_AND_BUILD.md) |
 | Unit tests + how to add more | [docs/TESTING.md](docs/TESTING.md) |
 | Icons | [docs/ICONS.md](docs/ICONS.md) |
+| Install / logcat / inspect on device | [docs/ADB_GUIDE.md](docs/ADB_GUIDE.md) |
+| Native modules + C++ style | [native/MODULES.md](native/MODULES.md) |
 
 Default native ABIs (edit `aurora.abiFilters` in `gradle.properties`):
 

@@ -18,14 +18,28 @@ To use a custom PNG later: put `ic_launcher.png` under `mipmap-hdpi` / `mipmap-x
 
 ## Navigation & lists
 
+Bottom bar is a scrollable toggle group (max-5 `BottomNavigationView` limit);
+icons are shared with tabs and cards:
+
 | Drawable | Used for |
 |----------|----------|
-| `ic_nav_home` | Bottom nav Home |
-| `ic_nav_files` | Bottom nav Files |
-| `ic_nav_storage` | Bottom nav Storage |
-| `ic_nav_transfer` | Bottom nav Transfer |
+| `ic_nav_home` | Home destination |
+| `ic_nav_files` | Files destination |
+| `ic_nav_storage` | Storage destination |
+| `ic_nav_transfer` | Transfer destination |
+| `ic_nav_cleaner` | Cleaner destination (was Duplicates) |
+| `ic_nav_debug` | Internals destination + terminal glyph |
 | `ic_folder` | Folder rows in lists |
-| `ic_file` | File rows in lists |
+| `ic_file` | File rows in lists (+ audio/doc/image/video variants) |
+
+## Adding downloaded artwork (rule)
+
+- **Vectors** (icons, glyphs): `res/drawable/ic_<what>.xml`
+  (VectorDrawable, any density, tiny).
+- **Raster art** (photos, rich images): single copy in
+  `res/drawable-nodpi/img_<what>.webp` (WebP, never multi-density PNGs
+  by hand). Launcher icons stay in `mipmap-*`.
+- Each change names its exact files; nothing lands anywhere else.
 
 ## How to change an icon
 

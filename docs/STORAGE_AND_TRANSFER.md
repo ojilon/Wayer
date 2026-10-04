@@ -7,13 +7,13 @@ Guide for the Storage tab, Transfer tab, and the shared `FileMutator` used acros
 ## Storage screen
 
 ### Purpose
-Show clear storage statistics and prepare cleanup (large files, delete).
+Show clear storage statistics. Cleanup moved to the **Cleaner** tab.
 
 ### Files
 | File | Role |
 |------|------|
-| `fragment_storage.xml` | Summary, progress, stacked category bars, large-files list, buttons |
-| `StorageFragment.java` | Calls C++ Action **7**, fills UI, sets bar weights |
+| `fragment_storage.xml` | Summary, progress, stacked category bars, refresh |
+| `StorageFragment.java` | `bridge/Stats.requestSnapshot`, fills UI, sets bar weights |
 
 ### Data flow
 ```
@@ -33,8 +33,8 @@ No chart library. A horizontal `LinearLayout` with five coloured `View`s.
 Java sets each child’s `layout_weight` proportional to bytes.
 
 ### Next for Storage
-- Multi-select + delete via `FileMutator.delete`
-- Optional share of `FileIndexer` for large-file path resolution
+- Per-folder drill-down from the new `folders` array in snapshots
+- Storage trend graph from `cache/stats/stats.db` (see `CLEANER_IDEAS.md`)
 
 ---
 
@@ -46,9 +46,10 @@ Connect the phone to **WayerPC** over hotspot, test link, download/upload files.
 ### Files
 | File | Role |
 |------|------|
-| `fragment_transfer.xml` | DrawerLayout (right options) + ViewFlipper (transfer \| browse save) |
-| `TransferFragment.java` | UI, indexer search/confirm, save path, NetworkManager |
-| `storage/FileIndexer.java` | Singleton path cache; default Downloads save path |
+| `fragment_transfer.xml` | DrawerLayout + tab strip + ViewFlipper (guide \| transfer \| search \| browse \| network) |
+| `TransferFragment.java` | UI, index search/confirm, save path, queue, NetworkManager |
+| `storage/FileIndexer.java` | Shared-storage roots + default Downloads save path (walk retired) |
+| `transfer/TransferQueue.java` | `modules/transfer/queue.json` with per-file status |
 | `network/NetworkManager.java` | Socket protocol `/ask` and `/upload` (absolute path OK) |
 | `network/NetworkCallback.java` | Progress + completion (background thread) |
 | `transfer/TransferController.java` | C++ listener wrapper (Action 6) |
@@ -60,17 +61,18 @@ Connect the phone to **WayerPC** over hotspot, test link, download/upload files.
 
 ### How to transfer
 1. Set `Config.HOST` / `Config.PORT` to your PC hotspot address.
-2. Open **Transfer** tab → **Test connection**.
+2. Open **Transfer** tab → **Network** tab → **Test connection**.
 3. Enter a **file name** (keyword, not necessarily full path).
-4. **Download** runs `/ask <name>` → file lands in **save folder** (default `/storage/emulated/0/Download`). Change via right sidebar → **Change save folder** (browse tab) or **Refresh file index**.
-5. **Upload** searches `FileIndexer` cache → **Confirm** (single hit) or **pick** (multiple) → `/upload` with absolute path to PC.
+4. **Download** runs `/ask <name>` → file lands in **save folder** (default `/storage/emulated/0/Download`). Change via right sidebar → **Select save folder** (browse tab) or **Refresh file index**.
+5. **Upload** searches the native index → **Confirm** (single hit) or **pick** (multiple) → `/upload` with absolute path to PC. Or tick files in **Browse**/**Search** → **Send** for a one-by-one queue.
+6. Upload basenames are space-sanitized for the protocol (`file name` → `file_name`); local files are never renamed.
 
-Activity log shows handshake and result. Session counters update on success; bandwidth is estimated from elapsed time.
+Activity log shows handshake and result. Session counters update on success; bandwidth is estimated from elapsed time. The session section tracks queue rows with live status; Cancel stops between files.
 
 ### Right sidebar (transfer-specific)
-- **Change save folder** — switches ViewFlipper to folder browser (similar spirit to Files drawer).
-- **Refresh file index** — rebuilds `FileIndexer` map from `/storage/emulated/0`.
-- Placeholder for future global theme/scale options shared by all windows.
+- **Select save folder** — switches ViewFlipper to folder browser (similar spirit to Files drawer).
+- **Refresh file index** — rebuilds the native index (`BUILD_INDEX`), shared by upload search.
+- Appearance: theme / blur controls shared by all windows.
 
 ### Protocol (phone ↔ WayerPC)
 ```
@@ -88,9 +90,8 @@ Upload:
 
 ### Next for Transfer
 - Folder transfer (list of files)
-- Persist recent transfers list
-- Theme toggle in shared sidebar section
-- Point `FileIndexer` at native actions 15/18 for index (see `storage/FUTURE_JNI_AND_CPP23.md`)
+- Queue append/dedupe across sends (currently replaced per send)
+- Per-file retry on failure
 
 ---
 
