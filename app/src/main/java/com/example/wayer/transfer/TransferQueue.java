@@ -78,6 +78,38 @@ public final class TransferQueue {
         }
     }
 
+    /** Queue entries in order (B5 session UI reads this same file). */
+    public static List<Entry> entries(Context context) {
+        List<Entry> out = new ArrayList<>();
+        try {
+            String content = readRaw(queuePath(context));
+            if (content == null) return out;
+            JSONArray items = new JSONObject(content).optJSONArray("queue");
+            if (items == null) return out;
+            for (int i = 0; i < items.length(); i++) {
+                JSONObject item = items.optJSONObject(i);
+                if (item != null) {
+                    out.add(new Entry(
+                            item.optString("path", ""),
+                            item.optString("status", "pending")));
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return out;
+    }
+
+    /** One row of the queue file. */
+    public static final class Entry {
+        public final String path;
+        public final String status;
+
+        public Entry(String path, String status) {
+            this.path = path != null ? path : "";
+            this.status = status != null ? status : "pending";
+        }
+    }
     /** Paths currently in the queue file, in order. Empty when none. */
     public static List<String> loadPaths(Context context) {
         List<String> paths = new ArrayList<>();

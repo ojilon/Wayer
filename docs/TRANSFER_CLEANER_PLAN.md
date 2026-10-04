@@ -17,9 +17,7 @@ tap-through. Check boxes only after the device confirms.
 - [x] **B2 · Multi-select + one-by-one queue.** Browse list gains selection (done: checkbox selection in shared row layout, folder filter, queue.json with per-file status, sequential uploader with session log lines; queue is replaced per send (append/dedupe moves to the B5 session UI))
 - [x] **B3 · Space-in-filename upload fix (bug).** Root cause: the `/upload` (done: protocol token sanitized, local file untouched, pure builder + 3 unit tests, suite green)
 - [x] **B4 · Browse memory + refresh + Up.** Browsing remembers its folder (done: process-scoped `BrowseSession`, Up button, disk-fresh refresh into the remembered folder)
-- [ ] **B5 · Session UI.** Below the transfer controls: the queue with per-file
-  status rows + session totals. One uploader, sequential, cancellable
-  between files (never mid-file).
+- [x] **B5 · Session UI.** (done: queue rows with live pending/sending/done/failed status read from the same queue file, session status line, cancel-between-files flag, totals in the Network session card)
 
 ## C — Files tab session memory
 

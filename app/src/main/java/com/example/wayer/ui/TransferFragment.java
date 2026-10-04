@@ -55,6 +55,8 @@ public class TransferFragment extends Fragment {
     private FileAdapter browseAdapter;
     private FileAdapter recentAdapter;
     private FileAdapter searchAdapter;
+    private FileAdapter sessionAdapter;
+    private volatile boolean queueCancelled = false;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -110,11 +112,56 @@ public class TransferFragment extends Fragment {
         setupBrowseList();
         setupSearchTab();
         setupRecentList();
+        setupSessionList();
         setupTabs();
         GlassBlur.applyFromPrefs(binding.transferSidebarRoot, requireContext());
         binding.transferTabs.check(R.id.tab_transfer);
     }
 
+    private void setupSessionList() {
+        sessionAdapter = new FileAdapter();
+        binding.sessionQueueList.setLayoutManager(new LinearLayoutManager(requireContext()));
+        binding.sessionQueueList.setAdapter(sessionAdapter);
+        sessionAdapter.setOnItemClickListener(new FileAdapter.OnItemClickListener() {
+            @Override
+            public void onItemClick(FileItem item) {
+                Toast.makeText(getContext(), item.getDetails(), Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onItemLongClick(FileItem item) {
+                // no-op
+            }
+        });
+        binding.btnCancelQueue.setOnClickListener(v -> {
+            queueCancelled = true;
+            Toast.makeText(getContext(), "Finishing current file…", Toast.LENGTH_SHORT).show();
+        });
+        renderSessionQueue();
+    }
+
+    /** Session rows straight from the queue file — the same file the uploader writes. */
+    private void renderSessionQueue() {
+        if (binding == null) return;
+        List<FileItem> rows = new ArrayList<>();
+        for (TransferQueue.Entry entry : TransferQueue.entries(requireContext())) {
+            File f = new File(entry.path);
+            rows.add(new FileItem(f.getName(), entry.path, entry.status, false, 0));
+        }
+        sessionAdapter.submitList(rows);
+        binding.sessionQueueEmpty.setVisibility(rows.isEmpty() ? View.VISIBLE : View.GONE);
+        binding.sessionQueueList.setVisibility(rows.isEmpty() ? View.GONE : View.VISIBLE);
+    }
+
+    private void setQueueActive(boolean active) {
+        if (binding == null) return;
+        binding.btnCancelQueue.setVisibility(active ? View.VISIBLE : View.GONE);
+    }
+
+    private void setQueueStatus(String text) {
+        if (binding == null) return;
+        binding.sessionQueueStatus.setText(text);
+    }
     private void setupRecentList() {
         recentAdapter = new FileAdapter();
         binding.recentTransfersList.setLayoutManager(new LinearLayoutManager(requireContext()));
@@ -712,24 +759,42 @@ public class TransferFragment extends Fragment {
             Toast.makeText(getContext(), "Cannot save queue", Toast.LENGTH_SHORT).show();
             return;
         }
+        queueCancelled = false;
+        setQueueActive(true);
         setTransferButtonsEnabled(false);
         appendLog("Queue: " + files.size() + " file(s)");
+        renderSessionQueue();
         uploadNext(0, files, 0);
     }
 
     private void uploadNext(int index, List<String> paths, int sent) {
         if (binding == null) return;
+        if (queueCancelled) {
+            queueCancelled = false;
+            setQueueActive(false);
+            setTransferButtonsEnabled(true);
+            appendLog("Queue cancelled · " + sent + "/" + paths.size() + " sent");
+            setQueueStatus("Queue: cancelled (" + sent + "/" + paths.size() + ")");
+            renderSessionQueue();
+            return;
+        }
         if (index >= paths.size()) {
+            setQueueActive(false);
             setTransferButtonsEnabled(true);
             appendLog("Queue done · " + sent + "/" + paths.size() + " sent");
+            setQueueStatus("Queue: done (" + sent + "/" + paths.size() + ")");
             Toast.makeText(getContext(), "Sent " + sent + "/" + paths.size(), Toast.LENGTH_SHORT).show();
+            renderSessionQueue();
             return;
         }
         String path = paths.get(index);
+        setQueueStatus("Queue: sending " + (index + 1) + "/" + paths.size());
         appendLog("[" + (index + 1) + "/" + paths.size() + "] " + new File(path).getName());
         TransferQueue.setStatus(requireContext(), path, "sending");
+        renderSessionQueue();
         performUpload(path, ok -> {
             TransferQueue.setStatus(requireContext(), path, ok ? "done" : "failed");
+            renderSessionQueue();
             uploadNext(index + 1, paths, ok ? sent + 1 : sent);
         });
     }
