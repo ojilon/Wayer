@@ -13,13 +13,13 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.example.wayer.core.GlassBlur;
-import com.example.wayer.core.NativeEngine;
+import com.example.wayer.bridge.NativeCache;
+import com.example.wayer.bridge.NativeEngine;
+import com.example.wayer.bridge.StorageCapacity;
 import com.example.wayer.core.ThemePrefs;
 import com.example.wayer.core.UiChrome;
 import com.example.wayer.databinding.FragmentStorageBinding;
 import com.example.wayer.storage.FileMutator;
-import com.example.wayer.storage.NativeCache;
-import com.example.wayer.storage.StorageCapacity;
 
 import org.json.JSONArray;
 import org.json.JSONException;

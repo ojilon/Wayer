@@ -10,9 +10,9 @@ import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
-import com.example.wayer.core.NativeEngine;
+import com.example.wayer.bridge.AppDirs;
+import com.example.wayer.bridge.NativeEngine;
 import com.example.wayer.databinding.FragmentInternalBinding;
-import com.example.wayer.storage.AppDirs;
 
 import java.io.File;
 import java.util.ArrayList;

@@ -211,12 +211,12 @@ std::string route_action(int action_id, std::string_view payload) {
 
 extern "C" {
 JNIEXPORT void JNICALL
-Java_com_example_wayer_core_NativeEngine_initEngine(JNIEnv* /* env */, jclass /* clazz */) {
+Java_com_example_wayer_bridge_NativeEngine_initEngine(JNIEnv* /* env */, jclass /* clazz */) {
     wayer::core::log::info("WayerEngine", "C++ engine initialized");
 }
 
 JNIEXPORT jstring JNICALL
-Java_com_example_wayer_core_NativeEngine_processAction(
+Java_com_example_wayer_bridge_NativeEngine_processAction(
     JNIEnv* env, jclass /* clazz */, jint action_id, jstring payload) {
     const char* native_str = env->GetStringUTFChars(payload, nullptr);
     if (!native_str) return env->NewStringUTF("");

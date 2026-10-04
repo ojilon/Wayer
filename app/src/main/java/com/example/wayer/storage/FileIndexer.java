@@ -1,6 +1,8 @@
 // File path: com/example/wayer/storage/FileIndexer.java
 package com.example.wayer.storage;
 
+import com.example.wayer.bridge.AppDirs;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;

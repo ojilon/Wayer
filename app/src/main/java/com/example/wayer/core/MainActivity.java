@@ -10,6 +10,7 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import com.example.wayer.R;
+import com.example.wayer.bridge.NativeEngine;
 import com.example.wayer.databinding.ActivityMainBinding;
 import com.example.wayer.ui.*;
 

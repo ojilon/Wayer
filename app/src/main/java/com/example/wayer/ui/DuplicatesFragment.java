@@ -17,10 +17,10 @@ import androidx.core.view.GravityCompat;
 import com.example.wayer.core.GlassBlur;
 import com.example.wayer.core.ThemePrefs;
 import com.example.wayer.core.UiChrome;
-import com.example.wayer.core.NativeEngine;
+import com.example.wayer.bridge.NativeCache;
+import com.example.wayer.bridge.NativeEngine;
 import com.example.wayer.databinding.FragmentDuplicatesBinding;
 import com.example.wayer.storage.FileMutator;
-import com.example.wayer.storage.NativeCache;
 
 import org.json.JSONArray;
 import org.json.JSONException;

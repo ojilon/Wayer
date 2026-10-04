@@ -19,12 +19,12 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.example.wayer.R;
-import com.example.wayer.core.NativeEngine;
+import com.example.wayer.bridge.AppDirs;
+import com.example.wayer.bridge.NativeCache;
+import com.example.wayer.bridge.NativeEngine;
 import com.example.wayer.core.ThemePrefs;
 import com.example.wayer.databinding.FragmentFilesBinding;
 import com.example.wayer.storage.FileMutator;
-import com.example.wayer.storage.AppDirs;
-import com.example.wayer.storage.NativeCache;
 
 import org.json.JSONArray;
 import org.json.JSONException;

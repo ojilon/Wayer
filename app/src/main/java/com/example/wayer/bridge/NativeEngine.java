@@ -1,9 +1,4 @@
-package com.example.wayer.core;
-
-import android.os.Handler;
-import android.os.Looper;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+package com.example.wayer.bridge;
 
 public class NativeEngine {
 
@@ -28,13 +23,6 @@ public class NativeEngine {
     public static final int ACTION_SEARCH_INDEX = 18;
     public static final int ACTION_READ_TEXT_FILE = 19;
 
-    private static final ExecutorService executor = Executors.newSingleThreadExecutor();
-    private static final Handler mainHandler = new Handler(Looper.getMainLooper());
-
-    static {
-        System.loadLibrary("wayer_engine");
-    }
-
     public interface Callback {
         void onResult(String result);
     }
@@ -42,11 +30,15 @@ public class NativeEngine {
     public static native void initEngine();
     public static native String processAction(int actionId, String payload);
 
+    static {
+        System.loadLibrary("wayer_engine");
+    }
+
     /** Pass the private app root once so native cache/temp/logs stay off shared storage. */
     public static void initAppPathsAsync(android.content.Context context, Callback callback) {
         String root = "";
         try {
-            root = com.example.wayer.storage.AppDirs.privateRoot(context).getAbsolutePath();
+            root = AppDirs.privateRoot(context).getAbsolutePath();
         } catch (Exception ignored) {
             java.io.File filesDir = context.getFilesDir();
             root = filesDir != null ? filesDir.getAbsolutePath() : "";
@@ -79,11 +71,9 @@ public class NativeEngine {
         processActionAsync(ACTION_READ_TEXT_FILE, (path != null ? path : "") + "|" + maxBytes, callback);
     }
 
-    // Asynchronous wrapper: executes JNI call on background thread and posts back to UI thread
+    // Every call runs through Bridge's single executor: one native file job
+    // at a time, callback back on the UI thread.
     public static void processActionAsync(int actionId, String payload, Callback callback) {
-        executor.execute(() -> {
-            String result = processAction(actionId, payload);
-            mainHandler.post(() -> callback.onResult(result));
-        });
+        Bridge.run(actionId, payload, callback);
     }
 }

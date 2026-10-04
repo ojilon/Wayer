@@ -13,11 +13,11 @@ import androidx.fragment.app.Fragment;
 import com.example.wayer.R;
 import com.example.wayer.core.GlassBlur;
 import com.example.wayer.core.MainActivity;
-import com.example.wayer.core.NativeEngine;
+import com.example.wayer.bridge.NativeEngine;
+import com.example.wayer.bridge.StorageCapacity;
 import com.example.wayer.core.ThemePrefs;
 import com.example.wayer.core.UiChrome;
 import com.example.wayer.databinding.FragmentHomeBinding;
-import com.example.wayer.storage.StorageCapacity;
 import com.example.wayer.transfer.RecentTransfersStore;
 
 import org.json.JSONException;

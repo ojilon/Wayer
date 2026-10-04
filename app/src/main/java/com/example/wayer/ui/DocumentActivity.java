@@ -9,7 +9,7 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.wayer.databinding.ActivityDocumentBinding;
-import com.example.wayer.core.NativeEngine;
+import com.example.wayer.bridge.NativeEngine;
 
 import org.json.JSONArray;
 import org.json.JSONException;
