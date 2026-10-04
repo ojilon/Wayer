@@ -11,12 +11,9 @@ tap-through. Check boxes only after the device confirms.
 - [x] **A2 · Move large-files scan into Cleaner.** (done: scan + list + delete
   moved verbatim into `CleanerFragment`, converted to the file-backed
   `find_large_files_to_file` on the way; Storage keeps summary + bars)
-- [ ] **A3 · Cleaner home grid.** Cleaner opens on a 2-column vertical grid
-  of **square cards** (icon top, label + status line below), not buttons:
-  Duplicates, Large files (+ future cards from `CLEANER_IDEAS.md`, each a
-  one-line addition to the card list). New `item_cleaner_card.xml` +
-  `CleanerCardAdapter`. Card status lines come from result files where they
-  exist ("1.2 GB in 34 files"), plain labels where not yet.
+- [x] **A3 · Cleaner home grid.** (done: 2-column square-card grid with live
+  status lines; cards scroll-to + run their utility; disabled "More soon"
+  card proves the one-line extension pattern)
 - [ ] **A4 · Sideways utility tabs inside Cleaner.** Below a horizontally
   scrollable tab strip (same `ToggleGroup`-in-`HorizontalScrollView` pattern
   as the bottom bar): tapping a card opens its utility as a tab —

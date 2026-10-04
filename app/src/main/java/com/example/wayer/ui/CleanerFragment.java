@@ -12,10 +12,12 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.core.view.GravityCompat;
 
 
+import com.example.wayer.R;
 import com.example.wayer.core.GlassBlur;
 import com.example.wayer.core.ThemePrefs;
 import com.example.wayer.core.UiChrome;
@@ -45,6 +47,8 @@ public class CleanerFragment extends Fragment {
     // groups[i] = list of full paths that are duplicates of each other
     private final List<List<String>> groups = new ArrayList<>();
     private FileAdapter largeAdapter;
+    private CleanerCardAdapter cardAdapter;
+    private final List<CleanerCardAdapter.Card> cards = new ArrayList<>();
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle saved) {
@@ -67,6 +71,8 @@ public class CleanerFragment extends Fragment {
         });
 
         setupSidebar();
+
+        setupCardGrid();
 
         binding.btnScanDuplicates.setOnClickListener(v -> scan());
         scan();
@@ -157,10 +163,41 @@ public class CleanerFragment extends Fragment {
                 binding.duplicatesEmpty.setVisibility(View.GONE);
                 adapter.submitList(flat);
             }
+            updateCardStatus();
     }
 
     // add this method to CleanerFragment.java, called from onCreateView
     // (add `setupSidebar();` right after the adapter/RecyclerView setup, before `scan();`)
+    private void setupCardGrid() {
+        cards.add(new CleanerCardAdapter.Card(
+                "Duplicates", R.drawable.ic_nav_cleaner, "Find repeated files", true));
+        cards.add(new CleanerCardAdapter.Card(
+                "Large files", R.drawable.ic_file, "Files over 10 MB", true));
+        cards.add(new CleanerCardAdapter.Card(
+                "More soon", android.R.drawable.ic_menu_add, "New utilities land here", false));
+
+        cardAdapter = new CleanerCardAdapter();
+        binding.cleanerGrid.setLayoutManager(new GridLayoutManager(requireContext(), 2));
+        binding.cleanerGrid.setAdapter(cardAdapter);
+        cardAdapter.submitCards(cards);
+        cardAdapter.setOnCardClickListener(position -> {
+            if (position == 0) {
+                scrollTo(binding.duplicatesList);
+                scan();
+            } else if (position == 1) {
+                scrollTo(binding.largeFilesList);
+                scanLargeFiles();
+            } else {
+                Toast.makeText(getContext(), "More utilities coming", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void scrollTo(View target) {
+        if (binding == null || target == null) return;
+        binding.cleanerScroll.post(() -> binding.cleanerScroll.smoothScrollTo(0, target.getTop()));
+    }
+
     private void setupSidebar() {
         binding.btnOpenDuplicatesDrawer.setOnClickListener(v ->
                 binding.duplicatesDrawerLayout.openDrawer(GravityCompat.END));
@@ -282,6 +319,20 @@ public class CleanerFragment extends Fragment {
             binding.largeFilesEmpty.setVisibility(View.GONE);
             largeAdapter.submitList(items);
         }
+        updateCardStatus();
+    }
+
+    private void updateCardStatus() {
+        if (cardAdapter == null) return;
+        int dupFiles = 0;
+        for (List<String> group : groups) dupFiles += group.size();
+        cardAdapter.setStatus(0, groups.isEmpty()
+                ? "No duplicates"
+                : groups.size() + " groups · " + dupFiles + " files");
+        int largeCount = largeAdapter != null ? largeAdapter.getItemCount() : 0;
+        cardAdapter.setStatus(1, largeCount == 0
+                ? "Files over 10 MB"
+                : largeCount + " files ≥ 10 MB");
     }
 
     private void confirmDeleteLarge(FileItem item) {

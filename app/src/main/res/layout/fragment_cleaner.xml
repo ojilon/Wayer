@@ -39,7 +39,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/spacing_xs"
-                    android:text="Find and clean up repeated files"
+                    android:text="Free up space, safely"
                     android:textColor="@color/wayer_text_secondary"
                     android:textSize="14sp" />
             </LinearLayout>
@@ -55,6 +55,7 @@
         </LinearLayout>
 
         <ScrollView
+            android:id="@+id/cleaner_scroll"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
@@ -69,6 +70,30 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:text="Pick a utility to run it"
+                    android:textColor="@color/wayer_text_secondary"
+                    android:textSize="13sp" />
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/cleaner_grid"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/spacing_sm"
+                    android:nestedScrollingEnabled="false" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/spacing_lg"
+                    android:text="Duplicates"
+                    android:textColor="@color/wayer_text_primary"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/spacing_xs"
                     android:text="Long-press a file to delete that copy"
                     android:textColor="@color/wayer_text_secondary"
                     android:textSize="13sp" />
