@@ -19,7 +19,10 @@ void write_cache(const std::string& cache_path, const std::string& json) {
 }
 
 // Returns "" if missing or older than max_age_seconds.
+// max_age_seconds <= 0 forces recompute: refresh always re-runs C++ and
+// rewrites the file, since storage can change even seconds after a snapshot.
 std::string read_cache_if_fresh(const std::string& cache_path, int max_age_seconds) {
+    if (max_age_seconds <= 0) return "";
     std::error_code ec;
     if (!fs::exists(cache_path, ec)) return "";
 

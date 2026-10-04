@@ -8,7 +8,10 @@ Vision owner: you. This file is the shared checklist; check boxes as we land ste
   `wayer_sqlite3`, missing-install fails fast at configure).
 - [x] Step 1 — bridge package live on device, behavior identical
   (`NativeEngine` moved, `Bridge` owns the executor, imports re-pointed).
-- [ ] Step 2 — PathRegistry + module scratch folders (code done, needs device pass).
+- [x] Step 2 — PathRegistry + module scratch folders (code done, needs device pass).
+- [ ] Step 3 — Leases (code done: `bridge/FileLeases` + `Bridge.run` lease
+  overload; Storage refresh/load serialize on the snapshot file, refused jobs
+  keep old numbers; needs device pass: hammer refresh, watch `WayerBridge` tags).
 
 ## Vision (what we are building)
 

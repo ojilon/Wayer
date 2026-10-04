@@ -13,6 +13,7 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.example.wayer.core.GlassBlur;
+import com.example.wayer.bridge.Bridge;
 import com.example.wayer.bridge.NativeCache;
 import com.example.wayer.bridge.NativeEngine;
 import com.example.wayer.bridge.StorageCapacity;
@@ -141,7 +142,7 @@ public class StorageFragment extends Fragment {
         binding.btnRefreshStorage.setOnClickListener(v -> {
             String payload = statsCachePath() + "|" + ROOT + "|0"
                     + "|" + StorageCapacity.queryDeviceBytes(getContext());
-            NativeEngine.processActionAsync(ACTION_GET_CACHED_STATS, payload, this::handleStatsResult);
+            requestStats(payload);
         });
 
         binding.btnScanLarge.setOnClickListener(v -> scanLargeFiles());
@@ -152,7 +153,20 @@ public class StorageFragment extends Fragment {
 
         String payload = statsCachePath() + "|" + ROOT + "|" + STATS_MAX_AGE_SECONDS
                 + "|" + StorageCapacity.queryDeviceBytes(getContext());
-        NativeEngine.processActionAsync(ACTION_GET_CACHED_STATS, payload, this::handleStatsResult);
+        requestStats(payload);
+    }
+
+    /**
+     * Both stats calls share one snapshot file, so they run under its lease:
+     * a refresh landing mid-load waits its turn instead of tearing the file.
+     * A refused ("busy") job keeps the numbers already on screen.
+     */
+    private void requestStats(String payload) {
+        Bridge.run(ACTION_GET_CACHED_STATS, payload, statsCachePath(), "stats", rawJson -> {
+            if (binding == null) return;
+            if (rawJson != null && rawJson.contains("\"busy\"")) return;
+            handleStatsResult(rawJson);
+        });
     }
 
     private void handleStatsResult(String rawJson) {
