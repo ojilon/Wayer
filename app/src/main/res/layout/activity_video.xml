@@ -50,7 +50,7 @@
             android:layout_gravity="center"
             android:padding="@dimen/spacing_lg"
             android:gravity="center"
-            android:text="Preparing video…"
+            android:text="@string/placeholder_3"
             android:textColor="@color/wayer_text_secondary"
             android:textSize="14sp" />
     </FrameLayout>
@@ -62,6 +62,6 @@
         android:layout_height="wrap_content"
         android:layout_gravity="end"
         android:layout_margin="@dimen/spacing_sm"
-        android:text="Close" />
+        android:text="@string/btn_close" />
 
 </LinearLayout>

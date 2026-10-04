@@ -28,7 +28,8 @@ Keep Java UI functional (OOP where required). Deeper storage layers should stay 
 
 ## Suggested migration steps (do not rush)
 
-1. Expose action e.g. `10 = REBUILD_INDEX`, `11 = SEARCH_INDEX` returning the same JSON shape Files already expects.
+1. Native side ready: `15 = BUILD_INDEX`, `17 = INDEX_META`, `18 = SEARCH_INDEX`
+   (see `native/storage/MIGRATION.md`; Java wrappers in `NativeEngine`).
 2. Point `FileIndexer` methods at those actions (facade) while keeping the Java cache as fallback.
 3. Delete duplicate Java walk once native path is stable on device storage permissions.
 4. Wire Transfer upload search to the same native search so Files and Transfer share one index.

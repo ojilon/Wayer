@@ -1,6 +1,6 @@
 package com.example.wayer.transfer;
 
-import com.example.wayer.core.NativeEngine;
+import com.example.wayer.bridge.NativeEngine;
 import org.json.JSONObject;
 
 public class TransferController {

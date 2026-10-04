@@ -19,7 +19,11 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.example.wayer.R;
-import com.example.wayer.core.NativeEngine;
+import com.example.wayer.bridge.AppDirs;
+import com.example.wayer.bridge.NativeCache;
+import com.example.wayer.bridge.NativeEngine;
+import com.example.wayer.bridge.PathCache;
+import com.example.wayer.bridge.PathRegistry;
 import com.example.wayer.core.ThemePrefs;
 import com.example.wayer.databinding.FragmentFilesBinding;
 import com.example.wayer.storage.FileMutator;
@@ -40,17 +44,18 @@ import java.util.List;
 public class FilesFragment extends Fragment {
 
     private static final int ACTION_LIST_FILES   = 3;
-    private static final int ACTION_SEARCH_FILES = 8;
+    private static final String SEARCH_JOB = "search";
 
     private FragmentFilesBinding binding;
     private FileAdapter adapter;
 
-    private String currentPath = "/storage/emulated/0";
+    private String currentPath = BrowseSession.filesCurrentPath;
     private boolean showingSearchResults = false;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         binding = FragmentFilesBinding.inflate(inflater, container, false);
+        if (currentPath == null) currentPath = AppDirs.externalRoot().getPath();
         setupRecycler();
         setupDrawer();
         setupSearch();
@@ -87,6 +92,16 @@ public class FilesFragment extends Fragment {
         binding.currentPath.setOnLongClickListener(v -> {
             showCreateMenu();
             return true;
+        });
+        binding.btnFilesUp.setOnClickListener(v -> {
+            java.io.File parent = new java.io.File(currentPath).getParentFile();
+            if (parent != null) {
+                showingSearchResults = false;
+                binding.searchResultsHeader.setVisibility(View.GONE);
+                loadDirectory(parent.getAbsolutePath());
+            } else {
+                Toast.makeText(getContext(), "Already at the top", Toast.LENGTH_SHORT).show();
+            }
         });
     }
 
@@ -186,7 +201,10 @@ public class FilesFragment extends Fragment {
                 .setPositiveButton("Delete", (d, w) -> {
                     FileMutator.Result r = FileMutator.delete(item.getPath());
                     Toast.makeText(getContext(), r.message, Toast.LENGTH_SHORT).show();
-                    if (r.ok) loadDirectory(currentPath);
+                    if (r.ok) {
+                        NativeCache.invalidateStatsSnapshot(getContext());
+                        loadDirectory(currentPath);
+                    }
                 })
                 .setNegativeButton("Cancel", null)
                 .show();
@@ -214,15 +232,15 @@ public class FilesFragment extends Fragment {
             binding.searchResultsHeader.setVisibility(View.GONE);
 
             if (id == R.id.nav_browse || id == R.id.nav_internal) {
-                loadDirectory("/storage/emulated/0");
+                loadDirectory(AppDirs.externalRoot().getPath());
             } else if (id == R.id.nav_downloads) {
-                loadDirectory("/storage/emulated/0/Download");
+                loadDirectory(AppDirs.downloadDir().getPath());
             } else if (id == R.id.nav_images) {
-                loadDirectory("/storage/emulated/0/DCIM");
+                loadDirectory(AppDirs.dcimDir().getPath());
             } else if (id == R.id.nav_videos) {
-                loadDirectory("/storage/emulated/0/Movies");
+                loadDirectory(AppDirs.moviesDir().getPath());
             } else if (id == R.id.nav_documents) {
-                loadDirectory("/storage/emulated/0/Documents");
+                loadDirectory(AppDirs.documentsDir().getPath());
             } else if (id == R.id.nav_refresh) {
                 loadDirectory(currentPath);
             } else if (id == R.id.nav_external) {
@@ -264,27 +282,73 @@ public class FilesFragment extends Fragment {
     }
 
     private void performSearch(String query) {
-        String payload = currentPath + "|" + query;
+        String dir = PathRegistry.moduleDir(getContext(), "search");
+        if (dir.isEmpty()) {
+            Toast.makeText(getContext(), "Storage not ready", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        String out = dir + "/results.json";
+        PathCache.remember(SEARCH_JOB, out);
+
+        // Show the previous results instantly while the fresh scan builds.
+        renderSearchFile(PathCache.previous(SEARCH_JOB), query, true);
 
         binding.searchResultsHeader.setVisibility(View.VISIBLE);
         binding.searchResultsHeader.setText("Searching…");
         showEmpty(false);
 
-        NativeEngine.processActionAsync(ACTION_SEARCH_FILES, payload, rawJson -> {
+        runSearch(query, out, true);
+    }
+
+    private void runSearch(final String query, final String out, final boolean mayRetry) {
+        NativeEngine.searchFilesAsync(currentPath, query, out, rawJson -> {
             if (binding == null) return;
-
-            List<FileItem> items = parseSearchResults(rawJson);
-            showingSearchResults = true;
-
-            if (items.isEmpty()) {
-                binding.searchResultsHeader.setText("No results for \"" + query + "\"");
-                showEmpty(true);
-            } else {
-                binding.searchResultsHeader.setText("Results for \"" + query + "\"");
-                showEmpty(false);
-                adapter.submitList(items);
+            if ("busy".equals(PathCache.reason(rawJson))) {
+                // A scan is still running — retry once shortly; the user is
+                // usually still typing, so this resolves on its own.
+                if (mayRetry) {
+                    binding.searchResultsHeader.postDelayed(() -> {
+                        if (binding == null) return;
+                        String now = binding.searchInput.getText() != null
+                                ? binding.searchInput.getText().toString().trim() : "";
+                        if (now.equals(query)) runSearch(query, out, false);
+                    }, 400);
+                }
+                return;
             }
+            String content = PathCache.readFile(PathCache.envelopePath(rawJson));
+            if (content == null) {
+                Toast.makeText(getContext(), "Search failed", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            renderSearchContent(content, query);
         });
+    }
+
+    private void renderSearchFile(String path, String query, boolean cached) {
+        String content = PathCache.readFile(path);
+        if (content == null) return;
+        List<FileItem> items = parseSearchResults(content);
+        if (items.isEmpty()) return;
+        showingSearchResults = true;
+        binding.searchResultsHeader.setVisibility(View.VISIBLE);
+        binding.searchResultsHeader.setText("Results for \"" + query + "\"" + (cached ? " (cached)" : ""));
+        showEmpty(false);
+        adapter.submitList(items);
+    }
+
+    private void renderSearchContent(String content, String query) {
+        List<FileItem> items = parseSearchResults(content);
+        showingSearchResults = true;
+
+        if (items.isEmpty()) {
+            binding.searchResultsHeader.setText("No results for \"" + query + "\"");
+            showEmpty(true);
+        } else {
+            binding.searchResultsHeader.setText("Results for \"" + query + "\"");
+            showEmpty(false);
+            adapter.submitList(items);
+        }
     }
 
     private List<FileItem> parseSearchResults(String rawJson) {
@@ -330,6 +394,7 @@ public class FilesFragment extends Fragment {
 
     private void loadDirectory(String path) {
         currentPath = path;
+        BrowseSession.filesCurrentPath = path;
         binding.currentPath.setText(path);
         showingSearchResults = false;
         binding.searchResultsHeader.setVisibility(View.GONE);

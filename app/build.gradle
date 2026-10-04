@@ -43,6 +43,7 @@ android {
         externalNativeBuild {
             cmake {
                 cppFlags "-std=c++23"
+                arguments "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
             }
         }
     }
@@ -117,4 +118,39 @@ dependencies {
 
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+}
+
+
+// Copies the freshest NDK compile_commands.json to a stable, gitignored path
+// (repo-root build/) so clangd finds it without digging through app/.cxx
+// hashes (see .clangd). Runs automatically after every native build.
+//
+// NOTE: this must stay a plain task with a doLast + project.copy. The earlier
+// Copy-task version called from() inside doFirst, which configures the copy
+// spec too late — the task "succeeded" while copying nothing.
+tasks.register("copyCompileCommands") {
+    doLast {
+        // NOTE: AGP keeps .cxx next to the module (app/.cxx), not under build/.
+        def cxxDir = file("${projectDir}/.cxx")
+        def dbs = fileTree(cxxDir) { include "**/compile_commands.json" }.files
+        if (dbs.isEmpty()) {
+            throw new GradleException("No compile_commands.json found under ${cxxDir}")
+        }
+        // Prefer the on-device ABI (newest of those); fall back to newest overall.
+        def arm64 = dbs.findAll { it.path.contains("arm64-v8a") }
+        def pool = arm64.isEmpty() ? dbs : arm64
+        def found = pool.max { it.lastModified() }
+        copy {
+            from(found)
+            into(rootProject.file("build"))
+            rename { "compile_commands.json" }
+        }
+        logger.lifecycle("compile_commands.json <- ${found}")
+    }
+}
+
+afterEvaluate {
+    tasks.matching { it.name.startsWith("externalNativeBuild") }.configureEach {
+        finalizedBy "copyCompileCommands"
+    }
 }

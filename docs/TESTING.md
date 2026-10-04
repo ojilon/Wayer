@@ -20,6 +20,7 @@ app/build/reports/tests/testDebugUnitTest/index.html
 | `TextSanitizerTest` | Space → underscore |
 | `FileMutatorTest` | Create / rename / delete in a temp folder |
 | `FileItemTest` | Data class fields |
+| `NetworkManagerTest` | Upload token has no spaces |
 
 ---
 

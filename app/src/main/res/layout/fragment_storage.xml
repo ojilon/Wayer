@@ -30,7 +30,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Storage"
+                    android:text="@string/nav_storage"
                     android:textColor="@color/wayer_text_primary"
                     android:textSize="24sp"
                     android:textStyle="bold" />
@@ -39,18 +39,18 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/spacing_xs"
-                    android:text="Overview and cleanup tools"
+                    android:text="@string/layout_fragment_storage_text_22"
                     android:textColor="@color/wayer_text_secondary"
                     android:textSize="14sp" />
             </LinearLayout>
 
             <ImageButton
                 android:id="@+id/btn_open_storage_drawer"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:src="@android:drawable/ic_menu_more"
-                android:contentDescription="Open options"
+                android:contentDescription="@string/btn_open_duplicates_drawer_desc"
                 app:tint="@color/wayer_text_primary" />
         </LinearLayout>
 
@@ -85,7 +85,7 @@
                             android:id="@+id/storage_summary"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:text="Calculating…"
+                            android:text="@string/storage_summary_2"
                             android:textColor="@color/wayer_text_primary"
                             android:textSize="16sp"
                             android:textStyle="bold" />
@@ -114,7 +114,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/spacing_lg"
-                    android:text="By type"
+                    android:text="@string/layout_fragment_storage_text_23"
                     android:textColor="@color/wayer_text_primary"
                     android:textSize="18sp"
                     android:textStyle="bold" />
@@ -157,75 +157,42 @@
 
                         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/spacing_md" android:orientation="horizontal" android:gravity="center_vertical">
                             <View android:layout_width="10dp" android:layout_height="10dp" android:background="@color/wayer_cat_images" />
-                            <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="8dp" android:text="Images" android:textColor="@color/wayer_text_secondary" android:textSize="13sp" />
-                            <TextView android:id="@+id/cat_images" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="—" android:textColor="@color/wayer_text_primary" android:textSize="13sp" />
+                            <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="8dp" android:text="@string/layout_fragment_home_text_9" android:textColor="@color/wayer_text_secondary" android:textSize="13sp" />
+                            <TextView android:id="@+id/cat_images" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/cat_images" android:textColor="@color/wayer_text_primary" android:textSize="13sp" />
                         </LinearLayout>
 
                         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/spacing_xs" android:orientation="horizontal" android:gravity="center_vertical">
                             <View android:layout_width="10dp" android:layout_height="10dp" android:background="@color/wayer_cat_videos" />
-                            <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="8dp" android:text="Videos" android:textColor="@color/wayer_text_secondary" android:textSize="13sp" />
-                            <TextView android:id="@+id/cat_videos" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="—" android:textColor="@color/wayer_text_primary" android:textSize="13sp" />
+                            <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="8dp" android:text="@string/layout_fragment_home_text_10" android:textColor="@color/wayer_text_secondary" android:textSize="13sp" />
+                            <TextView android:id="@+id/cat_videos" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/cat_images" android:textColor="@color/wayer_text_primary" android:textSize="13sp" />
                         </LinearLayout>
 
                         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/spacing_xs" android:orientation="horizontal" android:gravity="center_vertical">
                             <View android:layout_width="10dp" android:layout_height="10dp" android:background="@color/wayer_cat_audio" />
-                            <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="8dp" android:text="Audio" android:textColor="@color/wayer_text_secondary" android:textSize="13sp" />
-                            <TextView android:id="@+id/cat_audio" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="—" android:textColor="@color/wayer_text_primary" android:textSize="13sp" />
+                            <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="8dp" android:text="@string/layout_fragment_home_text_11" android:textColor="@color/wayer_text_secondary" android:textSize="13sp" />
+                            <TextView android:id="@+id/cat_audio" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/cat_images" android:textColor="@color/wayer_text_primary" android:textSize="13sp" />
                         </LinearLayout>
 
                         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/spacing_xs" android:orientation="horizontal" android:gravity="center_vertical">
                             <View android:layout_width="10dp" android:layout_height="10dp" android:background="@color/wayer_cat_docs" />
-                            <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="8dp" android:text="Documents" android:textColor="@color/wayer_text_secondary" android:textSize="13sp" />
-                            <TextView android:id="@+id/cat_documents" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="—" android:textColor="@color/wayer_text_primary" android:textSize="13sp" />
+                            <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="8dp" android:text="@string/layout_fragment_home_text_12" android:textColor="@color/wayer_text_secondary" android:textSize="13sp" />
+                            <TextView android:id="@+id/cat_documents" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/cat_images" android:textColor="@color/wayer_text_primary" android:textSize="13sp" />
                         </LinearLayout>
 
                         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/spacing_xs" android:orientation="horizontal" android:gravity="center_vertical">
                             <View android:layout_width="10dp" android:layout_height="10dp" android:background="@color/wayer_cat_sys" />
-                            <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="8dp" android:text="System" android:textColor="@color/wayer_text_secondary" android:textSize="13sp" />
-                            <TextView android:id="@+id/cat_system" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="—" android:textColor="@color/wayer_text_primary" android:textSize="13sp" />
+                            <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="8dp" android:text="@string/layout_fragment_home_text_14" android:textColor="@color/wayer_text_secondary" android:textSize="13sp" />
+                            <TextView android:id="@+id/cat_system" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/cat_images" android:textColor="@color/wayer_text_primary" android:textSize="13sp" />
                         </LinearLayout>
 
                         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/spacing_xs" android:orientation="horizontal" android:gravity="center_vertical">
                             <View android:layout_width="10dp" android:layout_height="10dp" android:background="@color/wayer_cat_others" />
-                            <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="8dp" android:text="Others" android:textColor="@color/wayer_text_secondary" android:textSize="13sp" />
-                            <TextView android:id="@+id/cat_others" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="—" android:textColor="@color/wayer_text_primary" android:textSize="13sp" />
+                            <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="8dp" android:text="@string/layout_fragment_home_text_15" android:textColor="@color/wayer_text_secondary" android:textSize="13sp" />
+                            <TextView android:id="@+id/cat_others" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/cat_images" android:textColor="@color/wayer_text_primary" android:textSize="13sp" />
                         </LinearLayout>
 
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/spacing_lg"
-                    android:text="Large files"
-                    android:textColor="@color/wayer_text_primary"
-                    android:textSize="18sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/spacing_xs"
-                    android:text="Long-press a file to delete"
-                    android:textColor="@color/wayer_text_secondary"
-                    android:textSize="13sp" />
-
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/large_files_list"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/spacing_sm"
-                    android:nestedScrollingEnabled="false" />
-
-                <TextView
-                    android:id="@+id/large_files_empty"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/spacing_sm"
-                    android:text="No large files found yet"
-                    android:textColor="@color/wayer_text_secondary"
-                    android:textSize="14sp" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btn_refresh_storage"
@@ -233,15 +200,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/spacing_lg"
-                    android:text="Refresh storage stats" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btn_scan_large"
-                    style="@style/Widget.Wayer.GlassButton.Outlined"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/spacing_sm"
-                    android:text="Scan for large files" />
+                    android:text="@string/btn_refresh_storage" />
 
             </LinearLayout>
         </ScrollView>

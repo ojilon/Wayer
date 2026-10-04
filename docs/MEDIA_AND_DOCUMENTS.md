@@ -44,9 +44,9 @@ Device codecs decide what plays. Advanced decoding can move to C++ + `native/thi
 
 | Piece | Role |
 |-------|------|
-| `activity_document.xml` | Toolbar, path, placeholder container |
-| `DocumentActivity.java` | Receives path; placeholder until libraries chosen |
-| `native/documents/` | Future C++ document engine |
+| `activity_document.xml` | Toolbar, path, scrollable monospace content |
+| `DocumentActivity.java` | Receives path; renders via C++ preview (Action 19) |
+| `native/preview/` | Read-only text reader (capped, binary refused) |
 
 **Do not** add document libraries to C++ until they live under `native/third_party/` (see that README).
 
@@ -72,7 +72,7 @@ Git ignores the binaries; the README stays tracked. Switching branches on the sa
 
 ## Template C++ (documents – no external includes yet)
 
-`native/documents/document_engine.hpp` already exposes:
+`native/documents/include/wayer/documents/document_engine.hpp` exposes:
 
 ```cpp
 namespace wayer::documents {
@@ -85,9 +85,10 @@ When you pick a library:
 1. Put it in `native/third_party/<name>/`
 2. Link from `native/CMakeLists.txt`
 3. Add an Action ID in `wayer_engine.cpp` (e.g. open document → return page count / text / base64 preview)
-4. Call from `DocumentActivity` via `NativeEngine.processActionAsync`
+4. Call from `DocumentActivity` via `bridge/NativeEngine` wrappers
 
-Until then, DocumentActivity only shows the path and placeholder text.
+Text preview already works today through `native/preview/` (Action 19) —
+rich rendering is what waits on libraries.
 
 ---
 

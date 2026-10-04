@@ -16,7 +16,7 @@
         android:id="@+id/sidebar_title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Options"
+        android:text="@string/sidebar_title"
         android:textColor="@color/wayer_text_primary"
         android:textSize="16sp"
         android:textStyle="bold" />
@@ -26,7 +26,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/spacing_xs"
-        android:text="Appearance"
+        android:text="@string/layout_fragment_transfer_text_38"
         android:textColor="@color/wayer_text_secondary"
         android:textSize="12sp" />
 
@@ -35,7 +35,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/spacing_lg"
-        android:text="Theme: System"
+        android:text="@string/theme_label"
         android:textColor="@color/wayer_text_primary"
         android:textSize="13sp" />
 
@@ -45,14 +45,14 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/spacing_sm"
-        android:text="Cycle theme" />
+        android:text="@string/btn_theme_2" />
 
     <TextView
         android:id="@+id/blur_label"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/spacing_lg"
-        android:text="Glass blur: Off"
+        android:text="@string/blur_label"
         android:textColor="@color/wayer_text_primary"
         android:textSize="13sp" />
 
@@ -62,13 +62,13 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/spacing_sm"
-        android:text="Toggle glass blur" />
+        android:text="@string/btn_blur" />
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/spacing_sm"
-        android:text="Blur uses RenderEffect on Android 12+ (API 31). Older devices keep translucent panels only."
+        android:text="@string/layout_include_options_sidebar_text_40"
         android:textColor="@color/wayer_text_disabled"
         android:textSize="11sp" />
 

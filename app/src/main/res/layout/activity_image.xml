@@ -41,7 +41,7 @@
             android:id="@+id/image_view"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:contentDescription="Image preview"
+            android:contentDescription="@string/image_view_desc"
             android:scaleType="fitCenter" />
 
         <TextView
@@ -51,7 +51,7 @@
             android:layout_gravity="center"
             android:padding="@dimen/spacing_lg"
             android:gravity="center"
-            android:text="Loading image…"
+            android:text="@string/placeholder_2"
             android:textColor="@color/wayer_text_secondary"
             android:textSize="14sp" />
     </FrameLayout>
@@ -63,6 +63,6 @@
         android:layout_height="wrap_content"
         android:layout_gravity="end"
         android:layout_margin="@dimen/spacing_sm"
-        android:text="Close" />
+        android:text="@string/btn_close" />
 
 </LinearLayout>

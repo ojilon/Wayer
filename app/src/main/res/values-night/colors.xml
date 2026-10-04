@@ -44,5 +44,6 @@
     <color name="wayer_cat_audio">#8E24AA</color>
     <color name="wayer_cat_docs">#43A047</color>
     <color name="wayer_cat_others">#607D8B</color>
+    <color name="wayer_cat_sys">#FFD54F</color>
 
 </resources>

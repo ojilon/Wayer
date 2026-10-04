@@ -1,6 +1,6 @@
 package com.example.wayer.storage;
 
-import com.example.wayer.core.NativeEngine;
+import com.example.wayer.bridge.NativeEngine;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import java.util.ArrayList;

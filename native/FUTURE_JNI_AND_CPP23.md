@@ -26,18 +26,30 @@ Sockets/hotspot protocol remain **Java** (`NetworkManager`) by project rule; nat
 - Prefer `std::filesystem`, ranges, `string_view`, `optional`, `expected`-style error returns inside engines.
 - Document each new action ID in `docs/STORAGE_AND_TRANSFER.md` when added.
 
-## Action ID roadmap (proposal)
+## Action ID roadmap
 
 | ID | Name | Notes |
 |----|------|--------|
 | 3 | LIST_FILES | exists |
 | 6 | START_LISTENER | exists |
-| 7 | STORAGE_STATS | exists |
-| 8 | SEARCH_FILES | exists |
-| 9 | FIND_LARGE | exists |
-| 10 | REBUILD_INDEX | move FileIndexer walk here |
-| 11 | SEARCH_INDEX | global name search over native cache |
+| 7 | STORAGE_STATS | retired — merged into 13 (file-backed) |
+| 8 | SEARCH_FILES | file-out (`root\|out\|query…`) |
+| 9 | FIND_LARGE | file-out (`root\|min\|max\|out`) |
+| 10 | FIND_DUPLICATES | exists |
+| 11 | PLAN_ORGANIZE | file-out (`root\|out`) |
+| 12 | APPLY_ORGANIZE | file-in/out (`plan\|report`, JSON via lib) |
+| 13 | GET_CACHED_STATS | file-backed (`cache\|root\|max_age[\|bytes]` → `{status,path}`; max_age ≤ 0 forces recompute) |
+| 14 | INIT_APP_PATHS | exists — Java passes files dir once |
+| 15 | BUILD_INDEX | exists — writes `cache/index/files.json`, returns `{path, count}` |
+| 16 | INVALIDATE_CACHE | exists — drops a cache file after mutations |
+| 17 | INDEX_META | exists — `{status, path, bytes, modified_unix}`, never the listing |
+| 18 | SEARCH_INDEX | exists — substring search over the index file, capped matches |
+| 19 | READ_TEXT_FILE | exists — read-only text preview (`path\|max_bytes`), binary refused |
 
-## Facade pattern
+## Facade pattern (landed as Step 7, leaner than planned)
 
-Java `FileIndexer` can become a thin wrapper calling actions 10/11 so Transfer/Files keep stable APIs while the implementation shifts.
+Instead of wrapping the Java walk, Step 7 deleted it: Transfer reads the
+shared native index (`BUILD_INDEX` / `SEARCH_INDEX`) directly, and Files
+keeps its scoped live search in the same native module. No parallel
+implementations remain — one index file, one module, honest freshness rules
+per screen (see `docs/BRIDGE_PLAN.md` Step 7).

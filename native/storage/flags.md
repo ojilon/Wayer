@@ -16,6 +16,23 @@ real capacity via `StorageManager`/`StatFs` (native `statvfs` can't see
 past the app-visible partition) and pass it in, rather than C++ guessing.
 **Status**: signature updated, Java-side query not yet wired up.
 
+### Storage cache invalidation was time-only
+`storage_cache.cpp`'s `read_cache_if_fresh` only checked file age
+(`max_age_seconds`), not whether the underlying filesystem actually
+changed. A user deleting a large file and immediately checking the
+Storage screen could see stale numbers for up to `STATS_MAX_AGE_SECONDS`
+(currently 300s / 5 min in `StorageFragment.java`).
+**Status**: resolved — `invalidate_cache` (native, action 16) plus Java
+`NativeCache.invalidateStatsSnapshot`, called after delete confirmations
+(Files/Storage/Duplicates) and `OrganizeHelper.apply(Context, ...)`.
+Time-based freshness remains as a backstop.
+
+### Device capacity now wired from Java
+`StorageCapacity.queryDeviceBytes` (`StorageStatsManager.getTotalBytes`,
+`StatFs` fallback, 0 on failure) feeds action 7 (`root|bytes`) and action 13
+(`cache|root|max_age|bytes`). Native keeps the retail floor when Java passes 0.
+**Status**: resolved.
+
 ---
 
 ## OPEN
@@ -27,16 +44,18 @@ Java → native (simple strings) and native → Java (JSON out). It breaks
 down for `apply_organize`, which needs Java to send back a *plan*
 (a list of from/to move pairs) for native to execute.
 
-**Current workaround**: `apply_organize` accepts a pipe-delimited string
-(`from1|to1|from2|to2|...`) instead of JSON, reusing the existing
-`split_payload()` helper already used for `ACTION_FIND_LARGE_FILES` and
-`ACTION_SEARCH_FILES`. No parser needed.
+**Update (Step 6)**: resolved for organize — the pipe format is deleted.
+`apply_organize_file` reads a plan file with nlohmann/json and writes a
+report file. Remaining pipe payloads are flat scalars only.
 
 **Revisit when**: a Java → native payload needs real nesting (not just
 flat pairs) — e.g. if duplicate-group resolution needs to send back
 "delete these 3 of these 5 paths, per group" in one call. At that point,
 pull in a header-only JSON library (nlohmann/json is the standard pick)
 rather than extending the pipe-delimited format further.
+**Update**: the lib is vendored (`third_party/json`, Step 0) and first used
+for stats documents (Step 5). Pipe formats retire per bridge step —
+`apply_organize` is next (Step 6).
 
 ### Images excluded from `plan_organize`
 `plan_organize` currently skips `category == "images"` entirely —
@@ -62,15 +81,14 @@ app's own cache dir before descending into them. This is the *design*
 for avoiding permission-denied churn and irrelevant scanning, but hasn't
 been profiled on a real device with a large `Android/data` tree yet.
 
-### Storage cache invalidation is time-only
+### Storage cache invalidation is time-only (backstop)
 `storage_cache.cpp`'s `read_cache_if_fresh` only checks file age
 (`max_age_seconds`), not whether the underlying filesystem actually
-changed. A user deleting a large file and immediately checking the
-Storage screen could see stale numbers for up to `STATS_MAX_AGE_SECONDS`
-(currently 300s / 5 min in `StorageFragment.java`). Acceptable for now;
-if this becomes annoying, consider invalidating the cache explicitly
-after any native mutation (`FileMutator.delete`, `apply_organize`)
-rather than only on a timer.
+changed. Explicit invalidation now happens after native mutations
+(`FileMutator.delete`, `apply_organize` — see RESOLVED above); the timer
+remains for external changes (other apps, MTP). If staleness from outside
+the app becomes annoying, shorten `STATS_MAX_AGE_SECONDS` rather than
+adding watchers.
 
 ### Duplicate finder: no external JSON library, nested arrays by hand
 `find_duplicates` builds nested JSON arrays (`groups of groups of paths`)
@@ -87,9 +105,8 @@ nlohmann/json" flag as above.
   `ACTION_GET_STORAGE_STATS`, root path only).
 - **Java → native, multiple values**: pipe-delimited
   (`root|min_bytes|max_results` for `ACTION_FIND_LARGE_FILES`;
-  `cache_path|root|max_age_seconds` for `ACTION_GET_CACHED_STATS`;
-  `from|to|from|to|...` for `ACTION_APPLY_ORGANIZE`). Parsed on the
-  native side with `split_payload()` in `wayer_engine.cpp`.
+  `cache_path|root|max_age` for `ACTION_GET_CACHED_STATS`).
+  Former `from|to|...` plan payload retired in Step 6 (plan files now).
 - **Native → Java**: always JSON, built by hand with `std::format` +
   `json::escape()` (see `json_util.hpp`). Parsed on the Java side with
   `org.json.JSONObject`/`JSONArray`.

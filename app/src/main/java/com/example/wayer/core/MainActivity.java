@@ -10,6 +10,7 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import com.example.wayer.R;
+import com.example.wayer.bridge.NativeEngine;
 import com.example.wayer.databinding.ActivityMainBinding;
 import com.example.wayer.ui.*;
 
@@ -38,6 +39,9 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
 
         NativeEngine.initEngine();
+        // Give native its app-owned dirs once (cache/temp/logs); required before
+        // BUILD_INDEX / SEARCH_INDEX, otherwise they report paths_not_initialized.
+        NativeEngine.initAppPathsAsync(this, result -> android.util.Log.i("WayerNative", "initAppPaths: " + result));
         
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
@@ -48,7 +52,8 @@ public class MainActivity extends AppCompatActivity {
         setupNavigation();
 
         if (savedInstanceState == null) {
-            showFragment(new HomeFragment());
+            binding.bottomNavigation.check(R.id.nav_home);
+            scrollBarTo(R.id.nav_home);
         }
     }
 
@@ -88,25 +93,35 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setupNavigation() {
-        binding.bottomNavigation.setOnItemSelectedListener(item -> {
-            int itemId = item.getItemId();
-            if (itemId == R.id.nav_home) return showFragment(new HomeFragment());
-            if (itemId == R.id.nav_storage) return showFragment(new StorageFragment());
-            if (itemId == R.id.nav_transfer) return showFragment(new TransferFragment());
-            if (itemId == R.id.nav_files) return showFragment(new FilesFragment());
-            if (itemId == R.id.nav_duplicate) return showFragment(new DuplicatesFragment());
-            return false;
+        binding.bottomNavigation.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
+            if (!isChecked) return;
+            if (checkedId == R.id.nav_home) showFragment(new HomeFragment());
+            else if (checkedId == R.id.nav_storage) showFragment(new StorageFragment());
+            else if (checkedId == R.id.nav_transfer) showFragment(new TransferFragment());
+            else if (checkedId == R.id.nav_files) showFragment(new FilesFragment());
+            else if (checkedId == R.id.nav_cleaner) showFragment(new CleanerFragment());
+            else if (checkedId == R.id.nav_internals) showFragment(new InternalFragment());
         });
     }
 
-    private boolean showFragment(Fragment fragment) {
+    private void showFragment(Fragment fragment) {
         getSupportFragmentManager().beginTransaction()
             .replace(R.id.fragment_container, fragment)
             .commit();
-        return true;
     }
 
     public void navigateTo(int itemId) {
-        binding.bottomNavigation.setSelectedItemId(itemId);
+        binding.bottomNavigation.check(itemId);
+        scrollBarTo(itemId);
+    }
+
+    /** Keep the selected destination visible inside the scrollable bar. */
+    private void scrollBarTo(int itemId) {
+        android.view.View item = binding.bottomNavigation.findViewById(itemId);
+        if (item == null) return;
+        binding.bottomNavScroll.post(() -> {
+            int x = item.getLeft() - binding.bottomNavScroll.getWidth() / 4;
+            binding.bottomNavScroll.smoothScrollTo(Math.max(0, x), 0);
+        });
     }
 }
