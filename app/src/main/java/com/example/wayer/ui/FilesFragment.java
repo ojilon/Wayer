@@ -49,12 +49,13 @@ public class FilesFragment extends Fragment {
     private FragmentFilesBinding binding;
     private FileAdapter adapter;
 
-    private String currentPath = "/storage/emulated/0";
+    private String currentPath = BrowseSession.filesCurrentPath;
     private boolean showingSearchResults = false;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         binding = FragmentFilesBinding.inflate(inflater, container, false);
+        if (currentPath == null) currentPath = AppDirs.externalRoot().getPath();
         setupRecycler();
         setupDrawer();
         setupSearch();
@@ -91,6 +92,16 @@ public class FilesFragment extends Fragment {
         binding.currentPath.setOnLongClickListener(v -> {
             showCreateMenu();
             return true;
+        });
+        binding.btnFilesUp.setOnClickListener(v -> {
+            java.io.File parent = new java.io.File(currentPath).getParentFile();
+            if (parent != null) {
+                showingSearchResults = false;
+                binding.searchResultsHeader.setVisibility(View.GONE);
+                loadDirectory(parent.getAbsolutePath());
+            } else {
+                Toast.makeText(getContext(), "Already at the top", Toast.LENGTH_SHORT).show();
+            }
         });
     }
 
@@ -383,6 +394,7 @@ public class FilesFragment extends Fragment {
 
     private void loadDirectory(String path) {
         currentPath = path;
+        BrowseSession.filesCurrentPath = path;
         binding.currentPath.setText(path);
         showingSearchResults = false;
         binding.searchResultsHeader.setVisibility(View.GONE);
