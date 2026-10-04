@@ -52,6 +52,7 @@ public class MainActivity extends AppCompatActivity {
 
         if (savedInstanceState == null) {
             binding.bottomNavigation.check(R.id.nav_home);
+            scrollBarTo(R.id.nav_home);
         }
     }
 
@@ -110,5 +111,16 @@ public class MainActivity extends AppCompatActivity {
 
     public void navigateTo(int itemId) {
         binding.bottomNavigation.check(itemId);
+        scrollBarTo(itemId);
+    }
+
+    /** Keep the selected destination visible inside the scrollable bar. */
+    private void scrollBarTo(int itemId) {
+        android.view.View item = binding.bottomNavigation.findViewById(itemId);
+        if (item == null) return;
+        binding.bottomNavScroll.post(() -> {
+            int x = item.getLeft() - binding.bottomNavScroll.getWidth() / 4;
+            binding.bottomNavScroll.smoothScrollTo(Math.max(0, x), 0);
+        });
     }
 }

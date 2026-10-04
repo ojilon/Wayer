@@ -16,8 +16,11 @@
 
     <!-- Scrollable destination bar. BottomNavigationView hard-crashes past
          5 items, so this is a single-selection toggle group instead:
-         same view id, 120dp per destination, scrolls on narrow screens. -->
+         120dp per destination, left-aligned so position 0 is always reachable
+         (centering inside a scroller pushes the first items into negative,
+         unreachable coordinates). -->
     <HorizontalScrollView
+        android:id="@+id/bottom_nav_scroll"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:scrollbars="none"
@@ -28,7 +31,6 @@
             android:id="@+id/bottom_navigation"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center"
             app:singleSelection="true"
             app:selectionRequired="true">
 
