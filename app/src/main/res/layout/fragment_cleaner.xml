@@ -30,7 +30,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Duplicates"
+                    android:text="Cleaner"
                     android:textColor="@color/wayer_text_primary"
                     android:textSize="24sp"
                     android:textStyle="bold" />

@@ -1,4 +1,6 @@
-// DuplicatesFragment.java (new)
+// CleanerFragment.java — home of the file-cleaner utilities.
+// Today it hosts the duplicates scan directly; per TRANSFER_CLEANER_PLAN.md
+// it grows a card grid + sideways utility tabs (duplicates first).
 package com.example.wayer.ui;
 
 import android.os.Bundle;
@@ -21,7 +23,7 @@ import com.example.wayer.bridge.NativeCache;
 import com.example.wayer.bridge.NativeEngine;
 import com.example.wayer.bridge.PathCache;
 import com.example.wayer.bridge.PathRegistry;
-import com.example.wayer.databinding.FragmentDuplicatesBinding;
+import com.example.wayer.databinding.FragmentCleanerBinding;
 import com.example.wayer.storage.FileMutator;
 
 import org.json.JSONArray;
@@ -31,19 +33,19 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 
-public class DuplicatesFragment extends Fragment {
+public class CleanerFragment extends Fragment {
 
     private static final String ROOT = "/storage/emulated/0";
     private static final String DUPLICATES_JOB = "duplicates";
 
-    private FragmentDuplicatesBinding binding;
+    private FragmentCleanerBinding binding;
     private FileAdapter adapter;
     // groups[i] = list of full paths that are duplicates of each other
     private final List<List<String>> groups = new ArrayList<>();
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle saved) {
-        binding = FragmentDuplicatesBinding.inflate(inflater, container, false);
+        binding = FragmentCleanerBinding.inflate(inflater, container, false);
 
         adapter = new FileAdapter();
         binding.duplicatesList.setLayoutManager(new LinearLayoutManager(requireContext()));
@@ -135,14 +137,14 @@ public class DuplicatesFragment extends Fragment {
             }
     }
 
-    // add this method to DuplicatesFragment.java, called from onCreateView
+    // add this method to CleanerFragment.java, called from onCreateView
     // (add `setupSidebar();` right after the adapter/RecyclerView setup, before `scan();`)
     private void setupSidebar() {
         binding.btnOpenDuplicatesDrawer.setOnClickListener(v ->
                 binding.duplicatesDrawerLayout.openDrawer(GravityCompat.END));
 
         View panel = binding.duplicatesOptionsSidebar.getRoot();
-        binding.duplicatesOptionsSidebar.sidebarTitle.setText("Duplicates options");
+        binding.duplicatesOptionsSidebar.sidebarTitle.setText("Cleaner options");
         refreshAppearanceLabels();
         GlassBlur.applyFromPrefs(panel, requireContext());
 

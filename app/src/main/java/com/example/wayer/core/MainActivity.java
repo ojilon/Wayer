@@ -99,7 +99,7 @@ public class MainActivity extends AppCompatActivity {
             else if (checkedId == R.id.nav_storage) showFragment(new StorageFragment());
             else if (checkedId == R.id.nav_transfer) showFragment(new TransferFragment());
             else if (checkedId == R.id.nav_files) showFragment(new FilesFragment());
-            else if (checkedId == R.id.nav_duplicate) showFragment(new DuplicatesFragment());
+            else if (checkedId == R.id.nav_cleaner) showFragment(new CleanerFragment());
             else if (checkedId == R.id.nav_internals) showFragment(new InternalFragment());
         });
     }
