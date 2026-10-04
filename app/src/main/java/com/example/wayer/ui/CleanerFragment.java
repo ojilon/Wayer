@@ -73,6 +73,7 @@ public class CleanerFragment extends Fragment {
         setupSidebar();
 
         setupCardGrid();
+        setupTabs();
 
         binding.btnScanDuplicates.setOnClickListener(v -> scan());
         scan();
@@ -182,10 +183,10 @@ public class CleanerFragment extends Fragment {
         cardAdapter.submitCards(cards);
         cardAdapter.setOnCardClickListener(position -> {
             if (position == 0) {
-                scrollTo(binding.duplicatesList);
+                binding.cleanerTabs.check(R.id.tab_duplicates);
                 scan();
             } else if (position == 1) {
-                scrollTo(binding.largeFilesList);
+                binding.cleanerTabs.check(R.id.tab_large);
                 scanLargeFiles();
             } else {
                 Toast.makeText(getContext(), "More utilities coming", Toast.LENGTH_SHORT).show();
@@ -193,9 +194,14 @@ public class CleanerFragment extends Fragment {
         });
     }
 
-    private void scrollTo(View target) {
-        if (binding == null || target == null) return;
-        binding.cleanerScroll.post(() -> binding.cleanerScroll.smoothScrollTo(0, target.getTop()));
+    private void setupTabs() {
+        binding.cleanerTabs.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
+            if (!isChecked) return;
+            if (checkedId == R.id.tab_duplicates) binding.cleanerFlipper.setDisplayedChild(1);
+            else if (checkedId == R.id.tab_large) binding.cleanerFlipper.setDisplayedChild(2);
+            else binding.cleanerFlipper.setDisplayedChild(0);
+        });
+        binding.cleanerTabs.check(R.id.tab_utilities);
     }
 
     private void setupSidebar() {

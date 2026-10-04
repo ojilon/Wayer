@@ -54,117 +54,193 @@
                 app:tint="@color/wayer_text_primary" />
         </LinearLayout>
 
-        <ScrollView
-            android:id="@+id/cleaner_scroll"
+        <!-- Sideways utility tabs. New utilities add one button here plus one
+             flipper child — nothing existing moves. -->
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:scrollbars="none"
+            android:fillViewport="true"
+            android:paddingTop="@dimen/spacing_sm">
+
+            <com.google.android.material.button.MaterialButtonToggleGroup
+                android:id="@+id/cleaner_tabs"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:singleSelection="true"
+                app:selectionRequired="true">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/tab_utilities"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Utilities" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/tab_duplicates"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Duplicates" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/tab_large"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Large files" />
+
+            </com.google.android.material.button.MaterialButtonToggleGroup>
+
+        </HorizontalScrollView>
+
+        <ViewFlipper
+            android:id="@+id/cleaner_flipper"
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:layout_weight="1"
-            android:fillViewport="true">
+            android:layout_weight="1">
 
-            <LinearLayout
+            <!-- 0 · Utilities home grid -->
+            <ScrollView
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="@dimen/spacing_md">
+                android:layout_height="match_parent"
+                android:fillViewport="true">
 
-                <TextView
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Pick a utility to run it"
-                    android:textColor="@color/wayer_text_secondary"
-                    android:textSize="13sp" />
+                    android:orientation="vertical"
+                    android:padding="@dimen/spacing_md">
 
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/cleaner_grid"
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Pick a utility to run it"
+                        android:textColor="@color/wayer_text_secondary"
+                        android:textSize="13sp" />
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/cleaner_grid"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/spacing_sm"
+                        android:nestedScrollingEnabled="false" />
+
+                </LinearLayout>
+            </ScrollView>
+
+            <!-- 1 · Duplicates utility -->
+            <ScrollView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:fillViewport="true">
+
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/spacing_sm"
-                    android:nestedScrollingEnabled="false" />
+                    android:orientation="vertical"
+                    android:padding="@dimen/spacing_md">
 
-                <TextView
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Duplicates"
+                        android:textColor="@color/wayer_text_primary"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/spacing_xs"
+                        android:text="Long-press a file to delete that copy"
+                        android:textColor="@color/wayer_text_secondary"
+                        android:textSize="13sp" />
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/duplicates_list"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/spacing_sm"
+                        android:nestedScrollingEnabled="false" />
+
+                    <TextView
+                        android:id="@+id/duplicates_empty"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/spacing_sm"
+                        android:text="No duplicates found yet"
+                        android:textColor="@color/wayer_text_secondary"
+                        android:textSize="14sp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_scan_duplicates"
+                        style="@style/Widget.Wayer.GlassButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/spacing_lg"
+                        android:text="Scan for duplicates" />
+
+                </LinearLayout>
+            </ScrollView>
+
+            <!-- 2 · Large files utility -->
+            <ScrollView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:fillViewport="true">
+
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/spacing_lg"
-                    android:text="Duplicates"
-                    android:textColor="@color/wayer_text_primary"
-                    android:textSize="18sp"
-                    android:textStyle="bold" />
+                    android:orientation="vertical"
+                    android:padding="@dimen/spacing_md">
 
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/spacing_xs"
-                    android:text="Long-press a file to delete that copy"
-                    android:textColor="@color/wayer_text_secondary"
-                    android:textSize="13sp" />
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Large files"
+                        android:textColor="@color/wayer_text_primary"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
 
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/duplicates_list"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/spacing_sm"
-                    android:nestedScrollingEnabled="false" />
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/spacing_xs"
+                        android:text="Long-press a file to delete"
+                        android:textColor="@color/wayer_text_secondary"
+                        android:textSize="13sp" />
 
-                <TextView
-                    android:id="@+id/duplicates_empty"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/spacing_sm"
-                    android:text="No duplicates found yet"
-                    android:textColor="@color/wayer_text_secondary"
-                    android:textSize="14sp" />
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/large_files_list"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/spacing_sm"
+                        android:nestedScrollingEnabled="false" />
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btn_scan_duplicates"
-                    style="@style/Widget.Wayer.GlassButton"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/spacing_lg"
-                    android:text="Scan for duplicates" />
+                    <TextView
+                        android:id="@+id/large_files_empty"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/spacing_sm"
+                        android:text="No large files found yet"
+                        android:textColor="@color/wayer_text_secondary"
+                        android:textSize="14sp" />
 
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/spacing_lg"
-                    android:text="Large files"
-                    android:textColor="@color/wayer_text_primary"
-                    android:textSize="18sp"
-                    android:textStyle="bold" />
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_scan_large"
+                        style="@style/Widget.Wayer.GlassButton.Outlined"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/spacing_sm"
+                        android:text="Scan for large files" />
 
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/spacing_xs"
-                    android:text="Long-press a file to delete"
-                    android:textColor="@color/wayer_text_secondary"
-                    android:textSize="13sp" />
+                </LinearLayout>
+            </ScrollView>
 
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/large_files_list"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/spacing_sm"
-                    android:nestedScrollingEnabled="false" />
-
-                <TextView
-                    android:id="@+id/large_files_empty"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/spacing_sm"
-                    android:text="No large files found yet"
-                    android:textColor="@color/wayer_text_secondary"
-                    android:textSize="14sp" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btn_scan_large"
-                    style="@style/Widget.Wayer.GlassButton.Outlined"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/spacing_sm"
-                    android:text="Scan for large files" />
-
-            </LinearLayout>
-        </ScrollView>
+        </ViewFlipper>
     </LinearLayout>
 
     <include
