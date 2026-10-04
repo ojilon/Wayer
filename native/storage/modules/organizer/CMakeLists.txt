@@ -15,6 +15,7 @@ target_link_libraries(wayer_storage_organizer
     PUBLIC
         wayer_core
     PRIVATE
+        wayer_json
         project_warnings
 )
 

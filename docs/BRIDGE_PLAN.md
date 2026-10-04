@@ -20,6 +20,10 @@ Vision owner: you. This file is the shared checklist; check boxes as we land ste
   per-folder detail, SQLite history row best-effort, action 13 file-backed,
   action 7 retired, `bridge/Stats` shared by Home + Storage; needs device
   pass: numbers identical, refresh forces recompute, Internals shows files).
+- [ ] Step 6 — Create/delete through the bridge (code done: organize plan in /
+  report out as files via JSON lib, pipe format deleted, `OrganizeHelper`
+  writes the approved plan, invalidation now covers the index file too;
+  needs device pass: plan → apply on a scratch folder, never on real data).
 
 ## Vision (what we are building)
 

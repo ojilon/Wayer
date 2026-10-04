@@ -158,10 +158,25 @@ std::string route_action(int action_id, std::string_view payload) {
             }
             return wayer::storage::find_duplicates_to_file(parts[0], parts[1]);
         }
-        case ACTION_PLAN_ORGANIZE:
-            return wayer::storage::plan_organize(std::string(payload));
-        case ACTION_APPLY_ORGANIZE:
-            return wayer::storage::apply_organize(std::string(payload)); // pipe-delimited, not JSON
+        case ACTION_PLAN_ORGANIZE: {
+            // Payload "root|out_path". The plan is written to out_path; the
+            // reply is {"status":"ok","path":...} only.
+            auto parts = split_payload(payload);
+            if (parts.size() < 2 || parts[1].empty()) {
+                return R"({"status":"error","reason":"bad_payload"})";
+            }
+            return wayer::storage::plan_organize_to_file(parts[0], parts[1]);
+        }
+        case ACTION_APPLY_ORGANIZE: {
+            // Payload "plan_path|report_path". Java writes the plan file
+            // (usually after the user edits the preview); C++ executes it
+            // and writes the report. The pipe-delimited format is retired.
+            auto parts = split_payload(payload);
+            if (parts.size() < 2 || parts[0].empty() || parts[1].empty()) {
+                return R"({"status":"error","reason":"bad_payload"})";
+            }
+            return wayer::storage::apply_organize_file(parts[0], parts[1]);
+        }
         case ACTION_GET_CACHED_STATS: {
             // parts[0]=cache_path, parts[1]=root, parts[2]=max_age,
             // parts[3]=known_device_bytes (optional; 0/absent = legacy floor).

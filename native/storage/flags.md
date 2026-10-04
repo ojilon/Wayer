@@ -44,10 +44,9 @@ Java → native (simple strings) and native → Java (JSON out). It breaks
 down for `apply_organize`, which needs Java to send back a *plan*
 (a list of from/to move pairs) for native to execute.
 
-**Current workaround**: `apply_organize` accepts a pipe-delimited string
-(`from1|to1|from2|to2|...`) instead of JSON, reusing the existing
-`split_payload()` helper already used for `ACTION_FIND_LARGE_FILES` and
-`ACTION_SEARCH_FILES`. No parser needed.
+**Update (Step 6)**: resolved for organize — the pipe format is deleted.
+`apply_organize_file` reads a plan file with nlohmann/json and writes a
+report file. Remaining pipe payloads are flat scalars only.
 
 **Revisit when**: a Java → native payload needs real nesting (not just
 flat pairs) — e.g. if duplicate-group resolution needs to send back
@@ -106,9 +105,8 @@ nlohmann/json" flag as above.
   `ACTION_GET_STORAGE_STATS`, root path only).
 - **Java → native, multiple values**: pipe-delimited
   (`root|min_bytes|max_results` for `ACTION_FIND_LARGE_FILES`;
-  `cache_path|root|max_age_seconds` for `ACTION_GET_CACHED_STATS`;
-  `from|to|from|to|...` for `ACTION_APPLY_ORGANIZE`). Parsed on the
-  native side with `split_payload()` in `wayer_engine.cpp`.
+  `cache_path|root|max_age` for `ACTION_GET_CACHED_STATS`).
+  Former `from|to|...` plan payload retired in Step 6 (plan files now).
 - **Native → Java**: always JSON, built by hand with `std::format` +
   `json::escape()` (see `json_util.hpp`). Parsed on the Java side with
   `org.json.JSONObject`/`JSONArray`.

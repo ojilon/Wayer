@@ -134,8 +134,8 @@ shared storage (see `storage/AppDirs.java` — single policy for the app):
 | 8  | SEARCH_FILES | Files (file-out) |
 | 9  | FIND_LARGE | Storage |
 | 10 | FIND_DUPLICATES | Duplicates |
-| 11 | PLAN_ORGANIZE | Organize |
-| 12 | APPLY_ORGANIZE | Organize |
+| 11 | PLAN_ORGANIZE | Organize (plan file out) |
+| 12 | APPLY_ORGANIZE | Organize (plan file in, report out) |
 | 13 | GET_CACHED_STATS | Storage + Home via bridge/Stats (file-backed, force on 0) |
 | 14 | INIT_APP_PATHS | MainActivity (once at startup) |
 | 15 | BUILD_INDEX | planned UI (Transfer refresh / Files) |

@@ -81,6 +81,20 @@ public class NativeEngine {
                 outPath, "duplicates", callback);
     }
 
+    /** Organize plan into a file; reply is {status,path}. */
+    public static void planOrganizeAsync(String root, String outPath, Callback callback) {
+        Bridge.run(ACTION_PLAN_ORGANIZE,
+                (root != null ? root : "") + "|" + (outPath != null ? outPath : ""),
+                outPath, "organize", callback);
+    }
+
+    /** Execute a plan file into a report file; reply is {status,path}. */
+    public static void applyOrganizeAsync(String planPath, String reportPath, Callback callback) {
+        Bridge.run(ACTION_APPLY_ORGANIZE,
+                (planPath != null ? planPath : "") + "|" + (reportPath != null ? reportPath : ""),
+                reportPath, "organize", callback);
+    }
+
     /** Remove a native cache file written by an earlier action (stats snapshot, etc.). */
     public static void invalidateCacheAsync(String cachePath, Callback callback) {
         processActionAsync(ACTION_INVALIDATE_CACHE, cachePath != null ? cachePath : "", callback);

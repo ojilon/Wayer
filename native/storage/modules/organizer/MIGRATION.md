@@ -6,7 +6,8 @@
 
 1. [x] `file_organizer.cpp` lives in this module; API in `include/wayer/storage/organizer.hpp`
 2. [x] STATIC library; parent links it
-3. [x] Pipe-delimited `apply_organize` kept until JSON parser exists (flags.md)
+3. [x] Pipe-delimited `apply_organize` retired (Step 6): plans and reports are
+   JSON files parsed/written with the JSON lib; Java writes the approved plan
 
 ## Improvements
 

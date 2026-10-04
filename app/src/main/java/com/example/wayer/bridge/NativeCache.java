@@ -20,8 +20,9 @@ public final class NativeCache {
     }
 
     /**
-     * Delete the snapshot directly (it is just a file) and, best-effort, ask
-     * native to drop it too in case a later action cached under the same path.
+     * Delete the snapshot directly (it is just a file), drop the native
+     * index file too (moved/deleted files stale it as well), and best-effort
+     * ask native to drop both in case a later action cached under same paths.
      */
     public static boolean invalidateStatsSnapshot(Context context) {
         if (context == null) return false;
@@ -32,12 +33,27 @@ public final class NativeCache {
         } catch (Exception ignored) {
             gone = false;
         }
+        String index = indexFilePath(context);
+        try {
+            File f = new File(index);
+            if (f.exists() && !f.delete()) gone = false;
+        } catch (Exception ignored) {
+            gone = false;
+        }
         try {
             NativeEngine.invalidateCacheAsync(statsSnapshotPath(context), result -> { });
+            if (!index.isEmpty()) NativeEngine.invalidateCacheAsync(index, result -> { });
         } catch (Exception ignored) {
-            // Native not loaded yet (unit tests) — file delete above is enough.
+            // Native not loaded yet (unit tests) — file deletes above are enough.
         }
         return gone;
+    }
+
+    /** Native index file derived from the registry ("" when unknown). */
+    public static String indexFilePath(Context context) {
+        if (context == null) return "";
+        String cache = PathRegistry.cacheDir(context);
+        return cache.isEmpty() ? "" : cache + "/index/files.json";
     }
 
     private NativeCache() {}

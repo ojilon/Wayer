@@ -36,8 +36,8 @@ Sockets/hotspot protocol remain **Java** (`NetworkManager`) by project rule; nat
 | 8 | SEARCH_FILES | file-out (`root\|out\|query…`) |
 | 9 | FIND_LARGE | exists |
 | 10 | FIND_DUPLICATES | exists |
-| 11 | PLAN_ORGANIZE | exists |
-| 12 | APPLY_ORGANIZE | exists |
+| 11 | PLAN_ORGANIZE | file-out (`root\|out`) |
+| 12 | APPLY_ORGANIZE | file-in/out (`plan\|report`, JSON via lib) |
 | 13 | GET_CACHED_STATS | file-backed (`cache\|root\|max_age[\|bytes]` → `{status,path}`; max_age ≤ 0 forces recompute) |
 | 14 | INIT_APP_PATHS | exists — Java passes files dir once |
 | 15 | BUILD_INDEX | exists — writes `cache/index/files.json`, returns `{path, count}` |
