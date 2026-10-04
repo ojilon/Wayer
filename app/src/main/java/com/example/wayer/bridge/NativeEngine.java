@@ -43,7 +43,10 @@ public class NativeEngine {
             java.io.File filesDir = context.getFilesDir();
             root = filesDir != null ? filesDir.getAbsolutePath() : "";
         }
-        processActionAsync(ACTION_INIT_APP_PATHS, root, callback);
+        processActionAsync(ACTION_INIT_APP_PATHS, root, rawJson -> {
+            PathRegistry.update(context, rawJson);
+            callback.onResult(rawJson);
+        });
     }
 
     /** Walk root once, spill the listing to the native index file; returns {path, count}. */

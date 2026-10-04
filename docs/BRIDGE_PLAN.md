@@ -3,6 +3,13 @@
 Status: plan only — implemented one step at a time, each verified on device.
 Vision owner: you. This file is the shared checklist; check boxes as we land steps.
 
+- [x] Step 0 — libs vendored (`json.hpp` 3.11.3, SQLite 3.53.4 amalgamation
+  proven by host round-trip tests) and CMake targets wired (`wayer_json`,
+  `wayer_sqlite3`, missing-install fails fast at configure).
+- [x] Step 1 — bridge package live on device, behavior identical
+  (`NativeEngine` moved, `Bridge` owns the executor, imports re-pointed).
+- [ ] Step 2 — PathRegistry + module scratch folders (code done, needs device pass).
+
 ## Vision (what we are building)
 
 Today Java and C++ talk in JSON strings over JNI. Tomorrow they talk in

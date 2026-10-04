@@ -10,8 +10,8 @@ import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
-import com.example.wayer.bridge.AppDirs;
 import com.example.wayer.bridge.NativeEngine;
+import com.example.wayer.bridge.PathRegistry;
 import com.example.wayer.databinding.FragmentInternalBinding;
 
 import java.io.File;
@@ -37,7 +37,7 @@ public class InternalFragment extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         binding = FragmentInternalBinding.inflate(inflater, container, false);
-        root = AppDirs.privateRoot(requireContext());
+        root = new File(PathRegistry.root(requireContext()));
         current = root;
 
         adapter = new FileAdapter();
@@ -72,7 +72,7 @@ public class InternalFragment extends Fragment {
         // Ensure the native tree (and paths.json) exists, then list it.
         NativeEngine.initAppPathsAsync(requireContext(), result -> {
             if (binding == null || getContext() == null) return;
-            root = AppDirs.privateRoot(requireContext());
+            root = new File(PathRegistry.root(requireContext()));
             if (!isUnderRoot(current)) current = root;
             loadDirectory();
         });
