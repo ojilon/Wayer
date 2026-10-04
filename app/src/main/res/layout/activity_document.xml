@@ -46,17 +46,18 @@
         android:layout_weight="1"
         android:background="@color/wayer_surface">
 
-        <!-- Temporary placeholder until C++ renderer is ready -->
+        <!-- Scrollable text content (filled by the C++ preview module) -->
         <TextView
             android:id="@+id/placeholder"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:padding="@dimen/spacing_lg"
-            android:gravity="center"
-            android:text="Document viewer foundation\n\nC++ rendering will appear here\nafter libraries are chosen"
-            android:textColor="@color/wayer_text_secondary"
-            android:textSize="15sp" />
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="@dimen/spacing_md"
+            android:gravity="start"
+            android:text="Reading…"
+            android:textColor="@color/wayer_text_primary"
+            android:textSize="13sp"
+            android:fontFamily="monospace"
+            android:scrollbars="vertical" />
 
     </FrameLayout>
 

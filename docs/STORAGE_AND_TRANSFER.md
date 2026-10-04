@@ -142,6 +142,7 @@ shared storage (see `storage/AppDirs.java` — single policy for the app):
 | 16 | INVALIDATE_CACHE | delete / organize flows via `NativeCache` |
 | 17 | INDEX_META | planned UI |
 | 18 | SEARCH_INDEX | planned UI (`query\|max_results`) |
+| 19 | READ_TEXT_FILE | Document viewer (`path\|max_bytes`, read-only) |
 
 ---
 

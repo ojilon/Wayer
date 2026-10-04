@@ -5,8 +5,6 @@
 #include <wayer/storage/extension_map.hpp>
 #include <wayer/storage/walker.hpp>
 
-#include <algorithm>
-#include <cctype>
 #include <chrono>
 #include <filesystem>
 #include <format>
@@ -31,13 +29,6 @@ std::string date_bucket(const fs::path& p) {
                        static_cast<int>(ymd.year()), static_cast<unsigned>(ymd.month()));
 }
 
-std::string category_for(const fs::path& p) {
-    std::string ext = p.extension().string();
-    std::transform(ext.begin(), ext.end(), ext.begin(),
-                   [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
-    auto it = EXTENSION_MAP.find(ext);
-    return it != EXTENSION_MAP.end() ? it->second : "others";
-}
 } // namespace
 
 std::string plan_organize(const std::string& root_path) {
@@ -47,7 +38,7 @@ std::string plan_organize(const std::string& root_path) {
 
     walk_files(root_path, [&](const fs::directory_entry& entry) {
         const fs::path& src = entry.path();
-        std::string category = category_for(src);
+        const std::string category = category_for_extension(src.extension().string());
 
         // Only file types we actually recognize AND intend to relocate.
         // Images stay where they are for now (camera roll / DCIM conventions

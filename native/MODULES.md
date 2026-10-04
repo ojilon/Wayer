@@ -43,6 +43,11 @@ native/
 │   ├── MIGRATION.md
 │   ├── include/wayer/media/
 │   └── src/
+├── preview/                    # wayer_preview (read-only text preview)
+│   ├── CMakeLists.txt
+│   ├── MIGRATION.md
+│   ├── include/wayer/preview/
+│   └── src/
 ├── jni/                        # SHARED lib boundary only
 │   ├── CMakeLists.txt
 │   ├── MIGRATION.md
@@ -59,7 +64,9 @@ core
 storage  ←── documents
   ↑      ←── transfer
   ↑      ←── media (later)
-jni links: core, storage, documents, transfer, media
+  ↑
+preview (core only — read-only text for the in-app viewer)
+jni links: core, storage, documents, transfer, media, preview
 ```
 
 Rules:
@@ -68,6 +75,18 @@ Rules:
 2. Domain modules depend only downward (`PUBLIC`/`PRIVATE` link as documented per module).
 3. Large results → files under app cache (see `core` AppPaths); JNI returns paths + metadata.
 4. Do not rename `native/` to `backend/` unless Gradle `externalNativeBuild` is updated in the same change.
+
+## C++ style for this tree (keep it beginner-readable)
+
+- Plain structs + free functions; no `class`, no inheritance, no virtuals.
+- Headers declare, `.cpp` files define — no `inline` functions or globals in headers.
+- Plain `for`/`while`/`if` over clever algorithms; one shared helper beats five
+  local lambdas (see `core::ascii_lower`).
+- Name every conversion: `static_cast` for narrowing is honest and required;
+  `reinterpret_cast` appears only where an OS API forces it (sockets).
+- No macros for logging — use `wayer::core::log`. No `using namespace`.
+- `std::string_view` at API edges, `std::filesystem`, `std::error_code`
+  (never exceptions) — modern STL/RAII, nothing exotic.
 
 ## Build status
 
@@ -78,6 +97,8 @@ Rules:
 - File-backed index is complete: `BUILD_INDEX` / `INDEX_META` / `SEARCH_INDEX`
   (`storage/index.hpp`); Java passes app files dir once and real device capacity
   per stats call; caches are invalidated after mutations.
+- `wayer_preview` serves capped read-only text previews to `DocumentActivity`
+  (action 19); the Internals bottom-nav destination browses the private home.
 
 ## Ordered migration for agents
 

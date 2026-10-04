@@ -44,6 +44,7 @@ Sockets/hotspot protocol remain **Java** (`NetworkManager`) by project rule; nat
 | 16 | INVALIDATE_CACHE | exists — drops a cache file after mutations |
 | 17 | INDEX_META | exists — `{status, path, bytes, modified_unix}`, never the listing |
 | 18 | SEARCH_INDEX | exists — substring search over the index file, capped matches |
+| 19 | READ_TEXT_FILE | exists — read-only text preview (`path\|max_bytes`), binary refused |
 
 ## Facade pattern
 

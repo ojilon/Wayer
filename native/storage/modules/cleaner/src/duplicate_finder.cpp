@@ -69,23 +69,23 @@ std::string find_duplicates(const std::string& root_path) {
 
     // Step 2: within each size group, group by partial hash.
     std::vector<std::vector<fs::path>> duplicate_groups;
-    for (auto& [size, paths] : by_size) {
+    for (auto& size_entry : by_size) {
+        std::vector<fs::path>& paths = size_entry.second;
         if (paths.size() < 2) continue; // unique size, can't be a dup
 
         std::unordered_map<uint64_t, std::vector<fs::path>> by_partial;
-        for (auto& p : paths) by_partial[partial_hash(p, size)].push_back(p);
+        for (auto& p : paths) by_partial[partial_hash(p, size_entry.first)].push_back(p);
 
         // Step 3: confirm with full hash only for partial-hash collisions.
-        for (auto& [ph, candidates] : by_partial) {
-            (void)ph;
+        for (auto& partial_entry : by_partial) {
+            std::vector<fs::path>& candidates = partial_entry.second;
             if (candidates.size() < 2) continue;
 
             std::unordered_map<uint64_t, std::vector<fs::path>> by_full;
             for (auto& p : candidates) by_full[full_hash(p)].push_back(p);
 
-            for (auto& [fh, confirmed] : by_full) {
-                (void)fh;
-                if (confirmed.size() > 1) duplicate_groups.push_back(confirmed);
+            for (auto& full_entry : by_full) {
+                if (full_entry.second.size() > 1) duplicate_groups.push_back(full_entry.second);
             }
         }
     }

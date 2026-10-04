@@ -25,7 +25,11 @@
     <item
         android:id="@+id/nav_duplicate"
         android:icon="@drawable/ic_nav_duplicate"
-        android:title="Transfer" />
+        android:title="Duplicates" />
 
+    <item
+        android:id="@+id/nav_internals"
+        android:icon="@drawable/ic_nav_debug"
+        android:title="Internals" />
 
 </menu>

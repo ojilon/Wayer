@@ -23,6 +23,7 @@ add_subdirectory(storage)
 add_subdirectory(documents)
 add_subdirectory(transfer)
 add_subdirectory(media)
+add_subdirectory(preview)
 add_subdirectory(jni)
 
 # Optional: keep a convenience alias matching older docs
@@ -33,4 +34,5 @@ target_link_libraries(wayer_native_modules INTERFACE
     wayer_documents
     wayer_transfer
     wayer_media
+    wayer_preview
 )

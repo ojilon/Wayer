@@ -1,8 +1,10 @@
 # wayer_core — shared foundation (no domain logic, no JNI)
 
 add_library(wayer_core STATIC
+    src/json_util.cpp
     src/paths.cpp
     src/logging.cpp
+    src/text.cpp
 )
 
 target_include_directories(wayer_core

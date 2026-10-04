@@ -4,8 +4,6 @@
 #include <wayer/storage/extension_map.hpp>
 #include <wayer/storage/walker.hpp>
 
-#include <algorithm>
-#include <cctype>
 #include <cstdint>
 #include <filesystem>
 #include <format>
@@ -52,10 +50,8 @@ namespace wayer::storage {
 
         walk_files(root_path, [&](const fs::directory_entry& entry) {
             std::error_code ec;
-            std::string ext = entry.path().extension().string();
-            std::transform(ext.begin(), ext.end(), ext.begin(),
-                           [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
-            uint64_t sz = entry.file_size(ec);
+            const std::string ext = entry.path().extension().string();
+            const uint64_t sz = entry.file_size(ec);
             if (ec) return;
             categories[category_for_extension(ext)] += sz;
         });

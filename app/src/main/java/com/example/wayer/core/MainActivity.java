@@ -98,6 +98,7 @@ public class MainActivity extends AppCompatActivity {
             if (itemId == R.id.nav_transfer) return showFragment(new TransferFragment());
             if (itemId == R.id.nav_files) return showFragment(new FilesFragment());
             if (itemId == R.id.nav_duplicate) return showFragment(new DuplicatesFragment());
+            if (itemId == R.id.nav_internals) return showFragment(new InternalFragment());
             return false;
         });
     }

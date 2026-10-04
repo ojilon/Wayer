@@ -3,6 +3,7 @@ package com.example.wayer.ui;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.method.ScrollingMovementMethod;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -10,17 +11,20 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.example.wayer.databinding.ActivityDocumentBinding;
 import com.example.wayer.core.NativeEngine;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 /**
- * Full-window document viewer / editor.
+ * Full-window document viewer (read-only).
  *
  * How to launch from FilesFragment (or anywhere):
  *
  *   DocumentActivity.open(context, fullFilePath);
  *
- * Later:
- *   - Java will send the path to C++ (bulk or single open request)
- *   - C++ (with chosen libraries) will produce pages / text / preview
- *   - Java only displays the result inside document_container
+ * Text-like files are rendered through the C++ wayer_preview module
+ * (capped, binary refused). Rich rendering via third_party engines
+ * remains a later step; Java only displays what native returns.
  */
 public class DocumentActivity extends AppCompatActivity {
 
@@ -52,9 +56,7 @@ public class DocumentActivity extends AppCompatActivity {
 
         setupToolbar();
         showFileInfo();
-
-        // Future: ask C++ to open / prepare the document
-        // NativeEngine.processActionAsync(ACTION_OPEN_DOCUMENT, filePath, result -> { ... });
+        loadPreview();
     }
 
     private void setupToolbar() {
@@ -72,12 +74,41 @@ public class DocumentActivity extends AppCompatActivity {
 
     private void showFileInfo() {
         binding.docPath.setText(filePath);
-        binding.placeholder.setText(
-                "Document viewer foundation\n\n" +
-                "File: " + filePath + "\n\n" +
-                "C++ rendering will appear here\n" +
-                "after libraries are chosen"
-        );
+    }
+
+    /** Read-only preview through wayer_preview (action 19). No writes, ever. */
+    private void loadPreview() {
+        binding.placeholder.setMovementMethod(new ScrollingMovementMethod());
+        binding.placeholder.setText("Reading…");
+        NativeEngine.readTextFileAsync(filePath, 64 * 1024, rawJson -> {
+            if (isFinishing() || binding == null) return;
+            try {
+                JSONObject data = new JSONObject(rawJson);
+                if (data.has("error")) {
+                    binding.placeholder.setText("Cannot preview: " + data.optString("error"));
+                    return;
+                }
+                if (data.optBoolean("binary", false)) {
+                    binding.placeholder.setText(
+                            "Binary file — content withheld.\n\nSize: " + data.optLong("size", 0) + " bytes");
+                    return;
+                }
+                JSONArray lines = data.optJSONArray("lines");
+                StringBuilder sb = new StringBuilder();
+                if (lines != null) {
+                    for (int i = 0; i < lines.length(); i++) {
+                        if (i > 0) sb.append('\n');
+                        sb.append(lines.optString(i));
+                    }
+                }
+                if (data.optBoolean("truncated", false)) {
+                    sb.append("\n\n… truncated after ").append(data.optLong("size", 0)).append(" bytes");
+                }
+                binding.placeholder.setText(sb.length() == 0 ? "(empty file)" : sb.toString());
+            } catch (JSONException e) {
+                binding.placeholder.setText("Cannot preview this file.");
+            }
+        });
     }
 
     @Override

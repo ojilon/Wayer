@@ -4,11 +4,11 @@
 
 #include <wayer/core/json_util.hpp>
 #include <wayer/core/paths.hpp>
+#include <wayer/core/text.hpp>
 #include <wayer/storage/walker.hpp>
 
 #include <algorithm>
 #include <array>
-#include <cctype>
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
@@ -20,20 +20,13 @@
 #include <system_error>
 
 namespace wayer::storage {
-    namespace fs = std::filesystem;
-    
-    namespace {
-    
-    constexpr std::string_view kIndexRelPath = "index/files.json";
-    constexpr std::size_t kDefaultMaxResults = 50;
-    constexpr std::size_t kHardMaxResults = 200;
-    
-    std::string to_lower_copy(std::string_view s) {
-        std::string out(s);
-        std::transform(out.begin(), out.end(), out.begin(),
-                       [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
-        return out;
-    }
+namespace fs = std::filesystem;
+
+namespace {
+
+constexpr std::string_view kIndexRelPath = "index/files.json";
+constexpr std::size_t kDefaultMaxResults = 50;
+constexpr std::size_t kHardMaxResults = 200;
     
     // Append the UTF-8 encoding of cp (BMP or U+FFFD fallback) to out.
     void append_utf8(std::string& out, uint32_t cp) {
@@ -54,31 +47,29 @@ namespace wayer::storage {
         }
     }
     
-    // Minimal streaming reader: the index file can be large, so never slurp it.
-    class CharStream {
-    public:
-        explicit CharStream(std::istream& in) : in_(in) {}
-    
-        // Returns false at EOF.
-        bool next(char& c) {
-            if (pos_ >= len_) {
-                if (!in_) return false;
-                in_.read(buf_.data(), static_cast<std::streamsize>(buf_.size()));
-                auto got = in_.gcount();
-                if (got <= 0) return false;
-                len_ = static_cast<std::size_t>(got);
-                pos_ = 0;
-            }
-            c = buf_[pos_++];
-            return true;
-        }
-    
-    private:
-        std::istream& in_;
-        std::array<char, 8192> buf_{};
-        std::size_t pos_ = 0;
-        std::size_t len_ = 0;
-    };
+// Plain data + one free function, kept chunk-wise so the index file —
+// which can be many megabytes — is never loaded fully into memory.
+struct CharStream {
+    std::istream& in;
+    std::array<char, 8192> buf{};
+    std::size_t pos = 0;
+    std::size_t len = 0;
+};
+
+// Reads the next byte into c. Returns false at end of file.
+bool stream_next(CharStream& cs, char& c) {
+    if (cs.pos >= cs.len) {
+        if (!cs.in) return false;
+        cs.in.read(cs.buf.data(), static_cast<std::streamsize>(cs.buf.size()));
+        const auto got = cs.in.gcount();
+        if (got <= 0) return false;
+        cs.len = static_cast<std::size_t>(got);
+        cs.pos = 0;
+    }
+    c = cs.buf[cs.pos];
+    ++cs.pos;
+    return true;
+}
     
     bool is_ws(char c) { return c == ' ' || c == '\t' || c == '\n' || c == '\r'; }
     
@@ -86,7 +77,7 @@ namespace wayer::storage {
         uint32_t v = 0;
         for (int i = 0; i < 4; ++i) {
             char c = 0;
-            if (!cs.next(c)) return 0xFFFD;
+            if (!stream_next(cs, c)) return 0xFFFD;
             v <<= 4;
             if (c >= '0' && c <= '9') v |= static_cast<uint32_t>(c - '0');
             else if (c >= 'a' && c <= 'f') v |= static_cast<uint32_t>(c - 'a' + 10);
@@ -101,13 +92,13 @@ namespace wayer::storage {
     bool parse_string(CharStream& cs, std::string& out) {
         out.clear();
         char c = 0;
-        while (cs.next(c)) {
+        while (stream_next(cs, c)) {
             if (c == '"') return true;
             if (c != '\\') {
                 out += c;
                 continue;
             }
-            if (!cs.next(c)) return false;
+            if (!stream_next(cs, c)) return false;
             switch (c) {
                 case '"': out += '"'; break;
                 case '\\': out += '\\'; break;
@@ -174,9 +165,15 @@ namespace wayer::storage {
         if (ec) return R"({"status":"missing"})";
         auto ftime = fs::last_write_time(path, ec);
         if (ec) return R"({"status":"missing"})";
-        auto sys_secs = std::chrono::floor<std::chrono::seconds>(
-            std::chrono::clock_cast<std::chrono::system_clock>(ftime));
-        long long modified = sys_secs.time_since_epoch().count();
+        // Map the file clock onto the system clock without std::chrono::clock_cast,
+        // which desktop toolchains have but NDK libc++ still lacks. Both clocks are
+        // sampled back-to-back and assumed to tick at the same rate — plenty for
+        // second-resolution metadata.
+        const auto age = ftime - fs::file_time_type::clock::now();
+        const auto sys_tp = std::chrono::system_clock::now() +
+            std::chrono::duration_cast<std::chrono::system_clock::duration>(age);
+        const long long modified =
+            std::chrono::floor<std::chrono::seconds>(sys_tp).time_since_epoch().count();
     
         return std::format(R"({{"status":"ready","path":"{}","bytes":{},"modified_unix":{}}})",
                            core::json::escape(path), bytes, modified);
@@ -186,7 +183,7 @@ namespace wayer::storage {
         if (max_results == 0) max_results = kDefaultMaxResults;
         max_results = std::min(max_results, kHardMaxResults);
     
-        const std::string q_lower = to_lower_copy(query);
+        const std::string q_lower = core::ascii_lower(query);
         std::string matches_json;
         std::size_t total = 0;
         std::size_t kept = 0;
@@ -194,26 +191,26 @@ namespace wayer::storage {
         if (!q_lower.empty()) {
             const std::string path = index_file_path();
             std::ifstream in(path, std::ios::binary);
-            if (in) {
-                CharStream cs(in);
+        if (in) {
+            CharStream cs{in};
                 // Seek: "files" key, then its opening '['.
                 // (Only parses files this module wrote — see build_index.)
                 char c = 0;
                 std::string lit;
                 bool in_array = false;
-                while (!in_array && cs.next(c)) {
+                while (!in_array && stream_next(cs, c)) {
                     if (c != '"') continue;
                     if (!parse_string(cs, lit)) break;
                     if (lit != "files") continue;
                     // Expect ':' then '[' (whitespace allowed, EOF-safe).
                     bool colon = false;
-                    while (cs.next(c)) {
+                    while (stream_next(cs, c)) {
                         if (is_ws(c)) continue;
                         colon = (c == ':');
                         break;
                     }
                     if (!colon) continue;
-                    while (cs.next(c)) {
+                    while (stream_next(cs, c)) {
                         if (is_ws(c)) continue;
                         in_array = (c == '[');
                         break;
@@ -222,7 +219,7 @@ namespace wayer::storage {
                 // Scan array elements.
                 std::string candidate;
                 bool done = false;
-                while (in_array && !done && cs.next(c)) {
+                while (in_array && !done && stream_next(cs, c)) {
                     if (c == ']') break;
                     if (c == ',') continue;
                     if (is_ws(c)) continue;
@@ -230,8 +227,8 @@ namespace wayer::storage {
                         done = true; // malformed — stop cleanly, keep what we have
                         break;
                     }
-                    if (!parse_string(cs, candidate)) break;
-                    if (to_lower_copy(candidate).find(q_lower) == std::string::npos) continue;
+                if (!parse_string(cs, candidate)) break;
+                if (core::ascii_lower(candidate).find(q_lower) == std::string::npos) continue;
                     ++total;
                     if (kept < max_results) {
                         if (kept > 0) matches_json += ",";

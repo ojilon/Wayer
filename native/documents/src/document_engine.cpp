@@ -2,10 +2,9 @@
 #include <wayer/documents/document_engine.hpp>
 
 #include <wayer/core/json_util.hpp>
+#include <wayer/core/text.hpp>
 
-#include <algorithm>
 #include <array>
-#include <cctype>
 #include <filesystem>
 #include <format>
 #include <string>
@@ -35,12 +34,15 @@ std::string filter_documents(std::string_view path) {
         if (ec) break;
         if (!entry.is_regular_file(ec) || ec) continue;
 
-        std::string ext = entry.path().extension().string();
-        std::transform(ext.begin(), ext.end(), ext.begin(),
-                       [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+        const std::string ext = core::ascii_lower(entry.path().extension().string());
 
-        const bool is_doc = std::ranges::any_of(
-            TARGET_EXTENSIONS, [&ext](std::string_view valid_ext) { return ext == valid_ext; });
+        bool is_doc = false;
+        for (std::string_view valid_ext : TARGET_EXTENSIONS) {
+            if (ext == valid_ext) {
+                is_doc = true;
+                break;
+            }
+        }
 
         if (is_doc) {
             if (!first) items_json += ",";

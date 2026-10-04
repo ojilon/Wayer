@@ -2,9 +2,8 @@
 #include <wayer/storage/search.hpp>
 
 #include <wayer/core/json_util.hpp>
+#include <wayer/core/text.hpp>
 
-#include <algorithm>
-#include <cctype>
 #include <filesystem>
 #include <format>
 #include <string>
@@ -13,14 +12,6 @@
 
 namespace wayer::storage {
 namespace fs = std::filesystem;
-
-namespace {
-std::string to_lower_copy(std::string s) {
-    std::transform(s.begin(), s.end(), s.begin(),
-                   [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
-    return s;
-}
-} // namespace
 
 struct SearchResult {
     std::string name;
@@ -33,7 +24,7 @@ std::string search_files(const std::string& root_path, const std::string& query)
     std::vector<SearchResult> exacts;
     std::vector<SearchResult> relateds;
 
-    std::string q_lower = to_lower_copy(query);
+    const std::string q_lower = core::ascii_lower(query);
     if (q_lower.empty()) {
         return R"({"exact_matches":[],"related_matches":[]})";
     }
@@ -44,7 +35,7 @@ std::string search_files(const std::string& root_path, const std::string& query)
         if (ec) break;
 
         std::string raw_name = entry.path().filename().string();
-        std::string name_lower = to_lower_copy(raw_name);
+        std::string name_lower = core::ascii_lower(raw_name);
         bool is_dir = entry.is_directory(ec);
         if (ec) continue;
 

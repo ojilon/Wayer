@@ -26,6 +26,7 @@ public class NativeEngine {
     public static final int ACTION_INVALIDATE_CACHE = 16;
     public static final int ACTION_INDEX_META = 17;
     public static final int ACTION_SEARCH_INDEX = 18;
+    public static final int ACTION_READ_TEXT_FILE = 19;
 
     private static final ExecutorService executor = Executors.newSingleThreadExecutor();
     private static final Handler mainHandler = new Handler(Looper.getMainLooper());
@@ -71,6 +72,11 @@ public class NativeEngine {
     /** Remove a native cache file written by an earlier action (stats snapshot, etc.). */
     public static void invalidateCacheAsync(String cachePath, Callback callback) {
         processActionAsync(ACTION_INVALIDATE_CACHE, cachePath != null ? cachePath : "", callback);
+    }
+
+    /** Read-only text preview via the wayer_preview module (capped, binary refused). */
+    public static void readTextFileAsync(String path, int maxBytes, Callback callback) {
+        processActionAsync(ACTION_READ_TEXT_FILE, (path != null ? path : "") + "|" + maxBytes, callback);
     }
 
     // Asynchronous wrapper: executes JNI call on background thread and posts back to UI thread
