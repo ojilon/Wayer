@@ -106,6 +106,22 @@ Upload:
 
 Used from Files long-press and path long-press; reuse from Storage cleanup later.
 
+## Where files live: private internals vs shared outputs
+
+Wayer is itself a file explorer, so its working files must not leak into
+shared storage (see `storage/AppDirs.java` — single policy for the app):
+
+- **Private** (`getFilesDir()/wayer`, invisible to explorers/other apps):
+  native index (`cache/index/files.json`), stats snapshots, logs, future DB.
+  The index is a full inventory of the user's storage — keeping it internal
+  is a safety property, not just tidiness. Native receives this root once via
+  action 14 (`INIT_APP_PATHS`).
+- **Shared** (visible to other phones/apps): only files the user explicitly
+  receives or creates — transfer downloads default to public `Download/`,
+  created documents land wherever the user is browsing. Resolved via
+  `Environment`, never hardcoded (`/storage/emulated/0/...` breaks on
+  multi-user / adoptable storage).
+
 ---
 
 ## Action IDs (native)

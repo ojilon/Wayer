@@ -18,7 +18,6 @@ import java.util.Map;
 public class FileIndexer {
 
     public static final String DEFAULT_ROOT = "/storage/emulated/0";
-    public static final String DEFAULT_DOWNLOADS = "/storage/emulated/0/Download";
 
     private static volatile FileIndexer instance;
 
@@ -131,10 +130,12 @@ public class FileIndexer {
         return allFolderPaths.size();
     }
 
-    /** Default folder for downloads from PC → phone. */
+    /** Default folder for downloads from PC → phone (public, visible to other apps). */
     public static String getDefaultSavePath() {
-        File dl = new File(DEFAULT_DOWNLOADS);
-        if (dl.exists() && dl.isDirectory()) return DEFAULT_DOWNLOADS;
+        File dl = AppDirs.downloadDir();
+        if (dl.exists() && dl.isDirectory()) return dl.getPath();
+        File root = AppDirs.externalRoot();
+        if (root.exists() && root.isDirectory()) return root.getPath();
         return DEFAULT_ROOT;
     }
 }

@@ -23,6 +23,7 @@ import com.example.wayer.core.NativeEngine;
 import com.example.wayer.core.ThemePrefs;
 import com.example.wayer.databinding.FragmentFilesBinding;
 import com.example.wayer.storage.FileMutator;
+import com.example.wayer.storage.AppDirs;
 import com.example.wayer.storage.NativeCache;
 
 import org.json.JSONArray;
@@ -218,15 +219,15 @@ public class FilesFragment extends Fragment {
             binding.searchResultsHeader.setVisibility(View.GONE);
 
             if (id == R.id.nav_browse || id == R.id.nav_internal) {
-                loadDirectory("/storage/emulated/0");
+                loadDirectory(AppDirs.externalRoot().getPath());
             } else if (id == R.id.nav_downloads) {
-                loadDirectory("/storage/emulated/0/Download");
+                loadDirectory(AppDirs.downloadDir().getPath());
             } else if (id == R.id.nav_images) {
-                loadDirectory("/storage/emulated/0/DCIM");
+                loadDirectory(AppDirs.dcimDir().getPath());
             } else if (id == R.id.nav_videos) {
-                loadDirectory("/storage/emulated/0/Movies");
+                loadDirectory(AppDirs.moviesDir().getPath());
             } else if (id == R.id.nav_documents) {
-                loadDirectory("/storage/emulated/0/Documents");
+                loadDirectory(AppDirs.documentsDir().getPath());
             } else if (id == R.id.nav_refresh) {
                 loadDirectory(currentPath);
             } else if (id == R.id.nav_external) {

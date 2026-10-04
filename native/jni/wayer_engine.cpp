@@ -74,13 +74,19 @@ std::string init_app_paths(std::string_view app_root_raw) {
     if (app_root.size() < 6 || app_root.compare(app_root.size() - 6, 6, "/wayer") != 0) {
         app_root += "/wayer";
     }
-    auto paths = wayer::core::AppPaths::from_root(app_root);
-    wayer::core::set_app_paths(paths);
-    LOGI("App paths set: root=%s", paths.root.c_str());
+    // Check-then-create lives in wayer_core; this file only routes + reports.
+    // The manifest (<root>/paths.json) is the shared record Java consults for
+    // per-folder paths, so later actions can take file paths instead of blobs.
+    auto report = wayer::core::ensure_app_dirs(app_root);
+    wayer::core::set_app_paths(report.paths);
+    const std::string manifest = wayer::core::write_paths_manifest(report);
+    LOGI("App paths set: root=%s ready=%d manifest=%s", report.paths.root.c_str(),
+         report.all_ready() ? 1 : 0, manifest.c_str());
     return std::format(
-        R"({{"status":"paths_set","root":"{}","cache":"{}","temp":"{}","logs":"{}"}})",
-        wayer::core::json::escape(paths.root), wayer::core::json::escape(paths.cache),
-        wayer::core::json::escape(paths.temp), wayer::core::json::escape(paths.logs));
+        R"({{"status":"paths_set","manifest":"{}","all_ready":{},"root":"{}","cache":"{}","temp":"{}","logs":"{}"}})",
+        wayer::core::json::escape(manifest), report.all_ready() ? "true" : "false",
+        wayer::core::json::escape(report.paths.root), wayer::core::json::escape(report.paths.cache),
+        wayer::core::json::escape(report.paths.temp), wayer::core::json::escape(report.paths.logs));
 }
 
 // BUILD_INDEX lives in wayer_storage (see storage/index.hpp) so this file stays

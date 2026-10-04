@@ -41,10 +41,15 @@ public class NativeEngine {
     public static native void initEngine();
     public static native String processAction(int actionId, String payload);
 
-    /** Pass context.getFilesDir() once so native cache/temp/logs resolve under app storage. */
+    /** Pass the private app root once so native cache/temp/logs stay off shared storage. */
     public static void initAppPathsAsync(android.content.Context context, Callback callback) {
-        java.io.File filesDir = context.getFilesDir();
-        String root = filesDir != null ? filesDir.getAbsolutePath() : "";
+        String root = "";
+        try {
+            root = com.example.wayer.storage.AppDirs.privateRoot(context).getAbsolutePath();
+        } catch (Exception ignored) {
+            java.io.File filesDir = context.getFilesDir();
+            root = filesDir != null ? filesDir.getAbsolutePath() : "";
+        }
         processActionAsync(ACTION_INIT_APP_PATHS, root, callback);
     }
 
