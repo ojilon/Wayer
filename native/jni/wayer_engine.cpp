@@ -135,10 +135,17 @@ std::string route_action(int action_id, std::string_view payload) {
             return wayer::storage::get_storage_stats(root, known_bytes);
         }
         case ACTION_SEARCH_FILES: {
+            // Payload "root|out_path|query..." — the query stays last because
+            // file names may legally contain '|'; everything from the 3rd
+            // part on is query. Matches are written to out_path; the reply
+            // is {"status":"ok","path":...} only.
             auto parts = split_payload(payload);
-            std::string root = parts.empty() ? "" : parts[0];
-            std::string query = parts.size() > 1 ? parts[1] : "";
-            return wayer::storage::search_files(root, query);
+            if (parts.size() < 3 || parts[1].empty()) {
+                return R"({"status":"error","reason":"bad_payload"})";
+            }
+            std::string query = parts[2];
+            for (size_t i = 3; i < parts.size(); ++i) query += "|" + parts[i];
+            return wayer::storage::search_files_to_file(parts[0], query, parts[1]);
         }
         case ACTION_FIND_LARGE_FILES: {
             auto parts = split_payload(payload);
@@ -153,8 +160,15 @@ std::string route_action(int action_id, std::string_view payload) {
             }
             return wayer::storage::find_large_files(root, min_bytes, max_results);
         }
-        case ACTION_FIND_DUPLICATES:
-            return wayer::storage::find_duplicates(std::string(payload));
+        case ACTION_FIND_DUPLICATES: {
+            // Payload "root|out_path". Groups are written to out_path; the
+            // reply is {"status":"ok","path":...} only.
+            auto parts = split_payload(payload);
+            if (parts.size() < 2 || parts[1].empty()) {
+                return R"({"status":"error","reason":"bad_payload"})";
+            }
+            return wayer::storage::find_duplicates_to_file(parts[0], parts[1]);
+        }
         case ACTION_PLAN_ORGANIZE:
             return wayer::storage::plan_organize(std::string(payload));
         case ACTION_APPLY_ORGANIZE:
@@ -184,11 +198,33 @@ std::string route_action(int action_id, std::string_view payload) {
         case ACTION_INDEX_META:
             return wayer::storage::index_meta();
         case ACTION_SEARCH_INDEX: {
-            // Payload "query|max_results" (max optional, default 50).
+            // Payload "out_path|max_results|query..." — query stays last
+            // (may hold '|'); max defaults to 50 when missing or not numeric.
+            auto parts = split_payload(payload);
+            if (parts.empty() || parts[0].empty()) {
+                return R"({"status":"error","reason":"bad_payload"})";
+            }
+            std::size_t max_results = 50;
+            std::size_t query_from = 1;
+            if (parts.size() > 1 && !parts[1].empty()) {
+                bool numeric = true;
+                for (char ch : parts[1]) {
+                    if (ch < '0' || ch > '9') {
+                        numeric = false;
+                        break;
+                    }
+                }
+                if (numeric) {
+                    max_results = static_cast<std::size_t>(std::strtoull(parts[1].c_str(), nullptr, 10));
+                    query_from = 2;
+                }
+            }
             std::string query;
-            std::size_t max_results = 0;
-            split_trailing_number(std::string(payload), 50, query, max_results);
-            return wayer::storage::search_index(query, max_results);
+            for (size_t i = query_from; i < parts.size(); ++i) {
+                if (i > query_from) query += "|";
+                query += parts[i];
+            }
+            return wayer::storage::search_index_to_file(query, max_results, parts[0]);
         }
         case ACTION_READ_TEXT_FILE: {
             // Payload "path|max_bytes" (budget optional, default 64 KiB).

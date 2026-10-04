@@ -69,4 +69,13 @@ std::string search_files(const std::string& root_path, const std::string& query)
     return json;
 }
 
+std::string search_files_to_file(const std::string& root_path, const std::string& query,
+                                 const std::string& out_path) {
+    const std::string json = search_files(root_path, query);
+    if (!core::write_text_file(out_path, json)) {
+        return R"({"status":"error","reason":"write_failed"})";
+    }
+    return std::format(R"({{"status":"ok","path":"{}"}})", core::json::escape(out_path));
+}
+
 } // namespace wayer::storage

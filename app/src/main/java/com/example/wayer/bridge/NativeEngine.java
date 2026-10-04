@@ -59,9 +59,26 @@ public class NativeEngine {
         processActionAsync(ACTION_INDEX_META, "", callback);
     }
 
-    /** Case-insensitive substring search over the native index (no full tree walk). */
-    public static void searchIndexAsync(String query, int maxResults, Callback callback) {
-        processActionAsync(ACTION_SEARCH_INDEX, (query != null ? query : "") + "|" + maxResults, callback);
+    /** Index search; matches go to outPath, reply is {status,path}. */
+    public static void searchIndexAsync(String query, int maxResults, String outPath, Callback callback) {
+        Bridge.run(ACTION_SEARCH_INDEX,
+                (outPath != null ? outPath : "") + "|" + maxResults + "|" + (query != null ? query : ""),
+                outPath, "search", callback);
+    }
+
+    /** Live file-name search; matches go to outPath, reply is {status,path}. */
+    public static void searchFilesAsync(String root, String query, String outPath, Callback callback) {
+        Bridge.run(ACTION_SEARCH_FILES,
+                (root != null ? root : "") + "|" + (outPath != null ? outPath : "")
+                        + "|" + (query != null ? query : ""),
+                outPath, "search", callback);
+    }
+
+    /** Duplicate scan with file output. */
+    public static void findDuplicatesAsync(String root, String outPath, Callback callback) {
+        Bridge.run(ACTION_FIND_DUPLICATES,
+                (root != null ? root : "") + "|" + (outPath != null ? outPath : ""),
+                outPath, "duplicates", callback);
     }
 
     /** Remove a native cache file written by an earlier action (stats snapshot, etc.). */

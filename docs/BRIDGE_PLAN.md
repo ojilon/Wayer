@@ -12,6 +12,10 @@ Vision owner: you. This file is the shared checklist; check boxes as we land ste
 - [ ] Step 3 — Leases (code done: `bridge/FileLeases` + `Bridge.run` lease
   overload; Storage refresh/load serialize on the snapshot file, refused jobs
   keep old numbers; needs device pass: hammer refresh, watch `WayerBridge` tags).
+- [ ] Step 4 — Search results go to files (code done: `*_to_file` in search /
+  cleaner / index modules, `bridge/PathCache` new+previous, Files + Duplicates
+  re-pointed with previous-list-first, single-retry/already-running on busy;
+  needs device pass: search, rotate mid-search, rapid typing).
 
 ## Vision (what we are building)
 

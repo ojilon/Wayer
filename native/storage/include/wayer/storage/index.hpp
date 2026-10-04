@@ -25,5 +25,8 @@ std::string index_meta();
 // Case-insensitive substring search over indexed paths.
 // Returns {"query","count","truncated","matches":[...]} capped at max_results.
 std::string search_index(const std::string& query, std::size_t max_results);
+// Same result written to out_path; reply is {"status":"ok","path":...} only.
+std::string search_index_to_file(const std::string& query, std::size_t max_results,
+                                 const std::string& out_path);
 
 } // namespace wayer::storage

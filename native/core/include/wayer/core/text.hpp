@@ -9,4 +9,8 @@ namespace wayer::core {
 // which is exactly what file-name matching in this tree needs.
 std::string ascii_lower(std::string s);
 
+// Write content to path (creating parents, truncating). True only when the
+// file verifies afterwards. For C++-computed results Java will read back.
+bool write_text_file(const std::string& path, const std::string& content);
+
 } // namespace wayer::core

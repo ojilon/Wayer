@@ -2,6 +2,7 @@
 #include <wayer/storage/cleaner.hpp>
 
 #include <wayer/core/json_util.hpp>
+#include <wayer/core/text.hpp>
 #include <wayer/storage/walker.hpp>
 
 #include <array>
@@ -102,6 +103,14 @@ std::string find_duplicates(const std::string& root_path) {
     }
     json += "]}";
     return json;
+}
+
+std::string find_duplicates_to_file(const std::string& root_path, const std::string& out_path) {
+    const std::string json = find_duplicates(root_path);
+    if (!core::write_text_file(out_path, json)) {
+        return R"({"status":"error","reason":"write_failed"})";
+    }
+    return std::format(R"({{"status":"ok","path":"{}"}})", core::json::escape(out_path));
 }
 
 } // namespace wayer::storage

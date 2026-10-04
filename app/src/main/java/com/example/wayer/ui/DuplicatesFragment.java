@@ -19,6 +19,8 @@ import com.example.wayer.core.ThemePrefs;
 import com.example.wayer.core.UiChrome;
 import com.example.wayer.bridge.NativeCache;
 import com.example.wayer.bridge.NativeEngine;
+import com.example.wayer.bridge.PathCache;
+import com.example.wayer.bridge.PathRegistry;
 import com.example.wayer.databinding.FragmentDuplicatesBinding;
 import com.example.wayer.storage.FileMutator;
 
@@ -31,8 +33,8 @@ import java.util.List;
 
 public class DuplicatesFragment extends Fragment {
 
-    private static final int ACTION_FIND_DUPLICATES = 10;
     private static final String ROOT = "/storage/emulated/0";
+    private static final String DUPLICATES_JOB = "duplicates";
 
     private FragmentDuplicatesBinding binding;
     private FileAdapter adapter;
@@ -67,17 +69,40 @@ public class DuplicatesFragment extends Fragment {
     }
 
     private void scan() {
+        String dir = PathRegistry.moduleDir(getContext(), "cleaner");
+        if (dir.isEmpty()) {
+            binding.duplicatesEmpty.setText("Storage not ready");
+            binding.duplicatesEmpty.setVisibility(View.VISIBLE);
+            return;
+        }
+        String out = dir + "/duplicates.json";
+        PathCache.remember(DUPLICATES_JOB, out);
+
         binding.duplicatesEmpty.setText("Scanning…");
         binding.duplicatesEmpty.setVisibility(View.VISIBLE);
 
-        NativeEngine.processActionAsync(ACTION_FIND_DUPLICATES, ROOT, rawJson -> {
+        NativeEngine.findDuplicatesAsync(ROOT, out, rawJson -> {
             if (binding == null) return;
+            if ("busy".equals(PathCache.reason(rawJson))) {
+                Toast.makeText(getContext(), "Scan already running", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            String content = PathCache.readFile(PathCache.envelopePath(rawJson));
+            if (content == null) {
+                binding.duplicatesEmpty.setText("Scan failed");
+                binding.duplicatesEmpty.setVisibility(View.VISIBLE);
+                return;
+            }
+            renderDuplicatesContent(content);
+        });
+    }
 
+    private void renderDuplicatesContent(String content) {
             groups.clear();
             List<FileItem> flat = new ArrayList<>();
 
             try {
-                JSONObject root = new JSONObject(rawJson);
+                JSONObject root = new JSONObject(content);
                 JSONArray dupGroups = root.optJSONArray("duplicate_groups");
                 if (dupGroups != null) {
                     for (int g = 0; g < dupGroups.length(); g++) {
@@ -108,7 +133,6 @@ public class DuplicatesFragment extends Fragment {
                 binding.duplicatesEmpty.setVisibility(View.GONE);
                 adapter.submitList(flat);
             }
-        });
     }
 
     // add this method to DuplicatesFragment.java, called from onCreateView

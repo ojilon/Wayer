@@ -239,9 +239,18 @@ bool stream_next(CharStream& cs, char& c) {
             }
         }
     
-        return std::format(R"({{"query":"{}","count":{},"truncated":{},"matches":[{}]}})",
-                           core::json::escape(query), total, (total > kept ? "true" : "false"),
-                           matches_json);
+    return std::format(R"({{"query":"{}","count":{},"truncated":{},"matches":[{}]}})",
+                       core::json::escape(query), total, (total > kept ? "true" : "false"),
+                       matches_json);
+}
+
+std::string search_index_to_file(const std::string& query, std::size_t max_results,
+                                 const std::string& out_path) {
+    const std::string json = search_index(query, max_results);
+    if (!core::write_text_file(out_path, json)) {
+        return R"({"status":"error","reason":"write_failed"})";
     }
+    return std::format(R"({{"status":"ok","path":"{}"}})", core::json::escape(out_path));
+}
 
 } // namespace wayer::storage
