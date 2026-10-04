@@ -36,7 +36,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Transfer"
+                    android:text="@string/nav_transfer"
                     android:textColor="@color/wayer_text_primary"
                     android:textSize="22sp"
                     android:textStyle="bold" />
@@ -44,18 +44,18 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Connect to WayerPC over hotspot"
+                    android:text="@string/layout_fragment_transfer_text_24"
                     android:textColor="@color/wayer_text_secondary"
                     android:textSize="13sp" />
             </LinearLayout>
 
             <ImageButton
                 android:id="@+id/btn_open_transfer_drawer"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:src="@android:drawable/ic_menu_more"
-                android:contentDescription="Open transfer options"
+                android:contentDescription="@string/btn_open_transfer_drawer_desc"
                 app:tint="@color/wayer_text_primary" />
         </LinearLayout>
 
@@ -78,35 +78,35 @@
                     style="@style/Widget.Material3.Button.OutlinedButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Guide" />
+                    android:text="@string/tab_guide" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/tab_transfer"
                     style="@style/Widget.Material3.Button.OutlinedButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Transfer" />
+                    android:text="@string/nav_transfer" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/tab_search"
                     style="@style/Widget.Material3.Button.OutlinedButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Search" />
+                    android:text="@string/tab_search" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/tab_browse"
                     style="@style/Widget.Material3.Button.OutlinedButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Browse" />
+                    android:text="@string/tab_browse" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/tab_network"
                     style="@style/Widget.Material3.Button.OutlinedButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Network" />
+                    android:text="@string/tab_network" />
 
             </com.google.android.material.button.MaterialButtonToggleGroup>
 
@@ -135,7 +135,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="@dimen/spacing_sm"
-                        android:text="How to transfer"
+                        android:text="@string/layout_fragment_transfer_text_25"
                         android:textColor="@color/wayer_text_primary"
                         android:textSize="16sp"
                         android:textStyle="bold" />
@@ -144,7 +144,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="@dimen/spacing_sm"
-                        android:text="1. Put the phone and the PC on the same hotspot and note the PC address.\n\n2. Open the Transfer tab and press Test connection until it reports OK.\n\n3. Download: type a file name, press Download — the file lands in the save folder.\n\n4. Upload: type a file name, press Upload — the phone searches its local index, you confirm (one hit) or pick (several), then it sends to the PC.\n\n5. Change the save folder from Transfer options on the right, or pick one in the Browse tab."
+                        android:text="@string/layout_fragment_transfer_text_26"
                         android:textColor="@color/wayer_text_secondary"
                         android:textSize="13sp" />
 
@@ -182,7 +182,7 @@
                             <TextView
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:text="File transfer"
+                                android:text="@string/layout_fragment_transfer_text_27"
                                 android:textColor="@color/wayer_text_primary"
                                 android:textSize="15sp"
                                 android:textStyle="bold" />
@@ -191,7 +191,7 @@
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="@dimen/spacing_sm"
-                                android:hint="File name (search local / ask PC)"
+                                android:hint="@string/layout_fragment_transfer_hint_28"
                                 style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
 
                                 <com.google.android.material.textfield.TextInputEditText
@@ -208,7 +208,7 @@
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="@dimen/spacing_xs"
-                                android:text="Save downloads to: /storage/emulated/0/Download"
+                                android:text="@string/save_path_hint"
                                 android:textColor="@color/wayer_text_secondary"
                                 android:textSize="11sp" />
 
@@ -216,7 +216,7 @@
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="@dimen/spacing_xs"
-                                android:text="Download: /ask from PC → save folder\nUpload: search index → confirm → send to PC"
+                                android:text="@string/layout_fragment_transfer_text_29"
                                 android:textColor="@color/wayer_text_secondary"
                                 android:textSize="12sp" />
 
@@ -232,7 +232,7 @@
                                     android:layout_width="0dp"
                                     android:layout_height="wrap_content"
                                     android:layout_weight="1"
-                                    android:text="Download" />
+                                    android:text="@string/btn_download" />
 
                                 <com.google.android.material.button.MaterialButton
                                     android:id="@+id/btn_upload"
@@ -241,7 +241,7 @@
                                     android:layout_height="wrap_content"
                                     android:layout_marginStart="@dimen/spacing_sm"
                                     android:layout_weight="1"
-                                    android:text="Upload" />
+                                    android:text="@string/btn_upload" />
                             </LinearLayout>
                         </LinearLayout>
                     </com.google.android.material.card.MaterialCardView>
@@ -250,7 +250,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="@dimen/spacing_lg"
-                        android:text="Session"
+                        android:text="@string/layout_fragment_transfer_text_30"
                         android:textColor="@color/wayer_text_primary"
                         android:textSize="16sp"
                         android:textStyle="bold" />
@@ -260,7 +260,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="@dimen/spacing_xs"
-                        android:text="Queue: idle"
+                        android:text="@string/session_queue_status"
                         android:textColor="@color/wayer_text_secondary"
                         android:textSize="13sp" />
 
@@ -276,7 +276,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="@dimen/spacing_sm"
-                        android:text="No queued files"
+                        android:text="@string/session_queue_empty"
                         android:textColor="@color/wayer_text_secondary"
                         android:textSize="13sp" />
 
@@ -286,7 +286,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="@dimen/spacing_sm"
-                        android:text="Cancel queue"
+                        android:text="@string/btn_cancel_queue"
                         android:visibility="gone" />
 
                 </LinearLayout>
@@ -302,7 +302,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Search phone storage"
+                    android:text="@string/layout_fragment_transfer_text_31"
                     android:textColor="@color/wayer_text_primary"
                     android:textSize="18sp"
                     android:textStyle="bold" />
@@ -312,7 +312,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/spacing_sm"
-                    android:hint="File name…"
+                    android:hint="@string/search_input_hint"
                     android:inputType="text"
                     android:maxLines="1"
                     android:imeOptions="actionSearch"
@@ -333,7 +333,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Search" />
+                        android:text="@string/tab_search" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btn_search_select"
@@ -342,7 +342,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginStart="@dimen/spacing_sm"
                         android:layout_weight="1"
-                        android:text="Select" />
+                        android:text="@string/btn_search_select" />
 
                 </LinearLayout>
 
@@ -351,7 +351,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/spacing_sm"
-                    android:text="Results show files first, then their folders"
+                    android:text="@string/search_results_hint"
                     android:textColor="@color/wayer_text_secondary"
                     android:textSize="12sp" />
 
@@ -370,7 +370,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/spacing_sm"
                     android:enabled="false"
-                    android:text="Send" />
+                    android:text="@string/btn_search_send" />
 
             </LinearLayout>
 
@@ -391,7 +391,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Choose save folder"
+                        android:text="@string/layout_fragment_transfer_text_32"
                         android:textColor="@color/wayer_text_primary"
                         android:textSize="18sp"
                         android:textStyle="bold" />
@@ -401,7 +401,7 @@
                         style="@style/Widget.Material3.Button.OutlinedButton"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Up" />
+                        android:text="@string/btn_files_up" />
 
                 </LinearLayout>
 
@@ -410,7 +410,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/spacing_xs"
-                    android:text="/storage/emulated/0/Download"
+                    android:text="@string/browse_current_path"
                     android:textColor="@color/wayer_text_secondary"
                     android:textSize="12sp"
                     android:maxLines="2"
@@ -429,7 +429,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/spacing_sm"
-                    android:hint="Filter this folder…"
+                    android:hint="@string/browse_filter_hint"
                     android:inputType="text"
                     android:maxLines="1"
                     android:textColor="@color/wayer_text_primary"
@@ -449,7 +449,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Select" />
+                        android:text="@string/btn_search_select" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btn_send_selected"
@@ -459,7 +459,7 @@
                         android:layout_marginStart="@dimen/spacing_sm"
                         android:layout_weight="1"
                         android:enabled="false"
-                        android:text="Send" />
+                        android:text="@string/btn_search_send" />
                 </LinearLayout>
 
                 <LinearLayout
@@ -474,7 +474,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Back" />
+                        android:text="@string/btn_back_to_transfer" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btn_use_this_folder"
@@ -483,7 +483,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginStart="@dimen/spacing_sm"
                         android:layout_weight="1"
-                        android:text="Use this folder" />
+                        android:text="@string/btn_use_this_folder" />
                 </LinearLayout>
             </LinearLayout>
             <!-- 4 - Network: connection, session, log, history -->
@@ -518,7 +518,7 @@
                             <TextView
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:text="Connection"
+                                android:text="@string/layout_fragment_transfer_text_33"
                                 android:textColor="@color/wayer_text_primary"
                                 android:textSize="15sp"
                                 android:textStyle="bold" />
@@ -528,7 +528,7 @@
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="@dimen/spacing_sm"
-                                android:text="Not connected"
+                                android:text="@string/connection_status"
                                 android:textColor="@color/wayer_warning"
                                 android:textSize="13sp" />
 
@@ -537,7 +537,7 @@
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="@dimen/spacing_xs"
-                                android:text="Host / port"
+                                android:text="@string/connection_details"
                                 android:textColor="@color/wayer_text_secondary"
                                 android:textSize="12sp" />
 
@@ -553,7 +553,7 @@
                                     android:layout_width="0dp"
                                     android:layout_height="wrap_content"
                                     android:layout_weight="1"
-                                    android:text="Test connection" />
+                                    android:text="@string/btn_test_connection" />
 
                                 <com.google.android.material.button.MaterialButton
                                     android:id="@+id/btn_start_listener"
@@ -562,7 +562,7 @@
                                     android:layout_height="wrap_content"
                                     android:layout_marginStart="@dimen/spacing_sm"
                                     android:layout_weight="1"
-                                    android:text="Start listener" />
+                                    android:text="@string/btn_start_listener" />
                             </LinearLayout>
                         </LinearLayout>
                     </com.google.android.material.card.MaterialCardView>
@@ -586,7 +586,7 @@
                             <TextView
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:text="Session"
+                                android:text="@string/layout_fragment_transfer_text_30"
                                 android:textColor="@color/wayer_text_primary"
                                 android:textSize="15sp"
                                 android:textStyle="bold" />
@@ -596,7 +596,7 @@
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="@dimen/spacing_sm"
-                                android:text="Sent: 0 B Â· Received: 0 B"
+                                android:text="@string/session_stats"
                                 android:textColor="@color/wayer_text_secondary"
                                 android:textSize="13sp" />
 
@@ -605,7 +605,7 @@
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="@dimen/spacing_xs"
-                                android:text="Bandwidth estimate appears after a transfer"
+                                android:text="@string/bandwidth_hint"
                                 android:textColor="@color/wayer_text_secondary"
                                 android:textSize="12sp" />
                         </LinearLayout>
@@ -615,7 +615,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="@dimen/spacing_lg"
-                        android:text="Activity"
+                        android:text="@string/layout_fragment_transfer_text_34"
                         android:textColor="@color/wayer_text_primary"
                         android:textSize="16sp"
                         android:textStyle="bold" />
@@ -636,7 +636,7 @@
                             android:layout_height="wrap_content"
                             android:minHeight="100dp"
                             android:padding="@dimen/spacing_md"
-                            android:text="Ready.\n"
+                            android:text="@string/transfer_log"
                             android:textColor="@color/wayer_text_secondary"
                             android:textSize="11sp"
                             android:fontFamily="monospace" />
@@ -646,7 +646,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="@dimen/spacing_lg"
-                        android:text="Recent transfers"
+                        android:text="@string/layout_fragment_home_text_18"
                         android:textColor="@color/wayer_text_primary"
                         android:textSize="16sp"
                         android:textStyle="bold" />
@@ -656,7 +656,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="@dimen/spacing_sm"
-                        android:text="No transfers yet"
+                        android:text="@string/recent_transfers_empty_2"
                         android:textColor="@color/wayer_text_secondary"
                         android:textSize="13sp" />
 
@@ -688,7 +688,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Transfer options"
+            android:text="@string/layout_fragment_transfer_text_35"
             android:textColor="@color/wayer_text_primary"
             android:textSize="16sp"
             android:textStyle="bold" />
@@ -697,7 +697,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/spacing_xs"
-            android:text="Specialised for this window"
+            android:text="@string/layout_fragment_transfer_text_36"
             android:textColor="@color/wayer_text_secondary"
             android:textSize="12sp" />
 
@@ -705,7 +705,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/spacing_lg"
-            android:text="Current save path"
+            android:text="@string/layout_fragment_transfer_text_37"
             android:textColor="@color/wayer_text_secondary"
             android:textSize="11sp" />
 
@@ -713,7 +713,7 @@
             android:id="@+id/drawer_save_path"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="/storage/emulated/0/Download"
+            android:text="@string/browse_current_path"
             android:textColor="@color/wayer_text_primary"
             android:textSize="12sp"
             android:maxLines="3" />
@@ -724,7 +724,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/spacing_md"
-            android:text="Change save folder" />
+            android:text="@string/btn_change_save" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_refresh_indexer"
@@ -732,13 +732,13 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/spacing_sm"
-            android:text="Refresh file index" />
+            android:text="@string/btn_refresh_indexer" />
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/spacing_lg"
-            android:text="Appearance"
+            android:text="@string/layout_fragment_transfer_text_38"
             android:textColor="@color/wayer_text_secondary"
             android:textSize="11sp" />
 
@@ -747,7 +747,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/spacing_xs"
-            android:text="Theme: System"
+            android:text="@string/theme_label"
             android:textColor="@color/wayer_text_primary"
             android:textSize="13sp" />
 
@@ -757,14 +757,14 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/spacing_sm"
-            android:text="Cycle theme (System)" />
+            android:text="@string/btn_theme" />
 
         <TextView
             android:id="@+id/blur_label"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/spacing_md"
-            android:text="Glass blur: Off"
+            android:text="@string/blur_label"
             android:textColor="@color/wayer_text_primary"
             android:textSize="13sp" />
 
@@ -774,13 +774,13 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/spacing_sm"
-            android:text="Toggle glass blur" />
+            android:text="@string/btn_blur" />
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/spacing_sm"
-            android:text="Theme cycles System → Dark → Light. Blur uses RenderEffect on API 31+."
+            android:text="@string/layout_fragment_transfer_text_39"
             android:textColor="@color/wayer_text_disabled"
             android:textSize="11sp" />
     </LinearLayout>

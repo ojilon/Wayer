@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<resources>
+
+    <!-- layout\activity_document -->
+    <string name="doc_path">/path/to/file</string>
+    <string name="placeholder">Reading…</string>
+    <string name="btn_close">Close</string>
+
+    <!-- layout\activity_image -->
+    <string name="image_view_desc">Image preview</string>
+    <string name="placeholder_2">Loading image…</string>
+
+    <!-- layout\activity_main -->
+    <string name="nav_home">Home</string>
+    <string name="nav_files">Files</string>
+    <string name="nav_storage">Storage</string>
+    <string name="nav_transfer">Transfer</string>
+    <string name="nav_cleaner">Cleaner</string>
+    <string name="nav_internals">Internals</string>
+
+    <!-- layout\activity_video -->
+    <string name="placeholder_3">Preparing video…</string>
+
+    <!-- layout\fragment_cleaner -->
+    <string name="layout_fragment_cleaner_text_1">Free up space, safely</string>
+    <string name="btn_open_duplicates_drawer_desc">Open options</string>
+    <string name="tab_utilities">Utilities</string>
+    <string name="tab_duplicates">Duplicates</string>
+    <string name="tab_large">Large files</string>
+    <string name="layout_fragment_cleaner_text_2">Pick a utility to run it</string>
+    <string name="layout_fragment_cleaner_text_3">Long-press a file to delete that copy</string>
+    <string name="duplicates_empty">No duplicates found yet</string>
+    <string name="btn_scan_duplicates">Scan for duplicates</string>
+    <string name="layout_fragment_cleaner_text_4">Long-press a file to delete</string>
+    <string name="large_files_empty">No large files found yet</string>
+    <string name="btn_scan_large">Scan for large files</string>
+
+    <!-- layout\fragment_files -->
+    <string name="btn_open_drawer_desc">Open side panel</string>
+    <string name="search_layout_hint">Search files and folders...</string>
+    <string name="current_path">/storage/emulated/0</string>
+    <string name="btn_files_up">Up</string>
+    <string name="search_results_header">Search results</string>
+    <string name="layout_fragment_files_text_5">No files here</string>
+    <string name="layout_fragment_files_text_6">Open the side panel to browse storage\nor type a search above</string>
+
+    <!-- layout\fragment_home -->
+    <string name="layout_fragment_home_text_7">Wayer</string>
+    <string name="layout_fragment_home_text_8">Your files, devices and transfers</string>
+    <string name="storage_summary">Calculating...</string>
+    <string name="layout_fragment_home_text_9">Images</string>
+    <string name="cat_images">—</string>
+    <string name="layout_fragment_home_text_10">Videos</string>
+    <string name="layout_fragment_home_text_11">Audio</string>
+    <string name="layout_fragment_home_text_12">Documents</string>
+    <string name="layout_fragment_home_text_13">Foreign</string>
+    <string name="layout_fragment_home_text_14">System</string>
+    <string name="layout_fragment_home_text_15">Others</string>
+    <string name="layout_fragment_home_text_16">Quick actions</string>
+    <string name="action_terminal">Terminal</string>
+    <string name="layout_fragment_home_text_17">Recent files</string>
+    <string name="recent_files_empty">No recent files</string>
+    <string name="layout_fragment_home_text_18">Recent transfers</string>
+    <string name="recent_transfers_empty">No recent transfers</string>
+
+    <!-- layout\fragment_internal -->
+    <string name="layout_fragment_internal_text_19">App internals · read-only</string>
+    <string name="layout_fragment_internal_text_20">Nothing here yet</string>
+    <string name="layout_fragment_internal_text_21">Run the app once so native creates its folders</string>
+
+    <!-- layout\fragment_storage -->
+    <string name="layout_fragment_storage_text_22">Overview and cleanup tools</string>
+    <string name="storage_summary_2">Calculating…</string>
+    <string name="layout_fragment_storage_text_23">By type</string>
+    <string name="btn_refresh_storage">Refresh storage stats</string>
+
+    <!-- layout\fragment_transfer -->
+    <string name="layout_fragment_transfer_text_24">Connect to WayerPC over hotspot</string>
+    <string name="btn_open_transfer_drawer_desc">Open transfer options</string>
+    <string name="tab_guide">Guide</string>
+    <string name="tab_search">Search</string>
+    <string name="tab_browse">Browse</string>
+    <string name="tab_network">Network</string>
+    <string name="layout_fragment_transfer_text_25">How to transfer</string>
+    <string name="layout_fragment_transfer_text_26">1. Put the phone and the PC on the same hotspot and note the PC address.\n\n2. Open the Transfer tab and press Test connection until it reports OK.\n\n3. Download: type a file name, press Download — the file lands in the save folder.\n\n4. Upload: type a file name, press Upload — the phone searches its local index, you confirm (one hit) or pick (several), then it sends to the PC.\n\n5. Change the save folder from Transfer options on the right, or pick one in the Browse tab.</string>
+    <string name="layout_fragment_transfer_text_27">File transfer</string>
+    <string name="layout_fragment_transfer_hint_28">File name (search local / ask PC)</string>
+    <string name="save_path_hint">Save downloads to: /storage/emulated/0/Download</string>
+    <string name="layout_fragment_transfer_text_29">Download: /ask from PC → save folder\nUpload: search index → confirm → send to PC</string>
+    <string name="btn_download">Download</string>
+    <string name="btn_upload">Upload</string>
+    <string name="layout_fragment_transfer_text_30">Session</string>
+    <string name="session_queue_status">Queue: idle</string>
+    <string name="session_queue_empty">No queued files</string>
+    <string name="btn_cancel_queue">Cancel queue</string>
+    <string name="layout_fragment_transfer_text_31">Search phone storage</string>
+    <string name="search_input_hint">File name…</string>
+    <string name="btn_search_select">Select</string>
+    <string name="search_results_hint">Results show files first, then their folders</string>
+    <string name="btn_search_send">Send</string>
+    <string name="layout_fragment_transfer_text_32">Choose save folder</string>
+    <string name="browse_current_path">/storage/emulated/0/Download</string>
+    <string name="browse_filter_hint">Filter this folder…</string>
+    <string name="btn_back_to_transfer">Back</string>
+    <string name="btn_use_this_folder">Use this folder</string>
+    <string name="layout_fragment_transfer_text_33">Connection</string>
+    <string name="connection_status">Not connected</string>
+    <string name="connection_details">Host / port</string>
+    <string name="btn_test_connection">Test connection</string>
+    <string name="btn_start_listener">Start listener</string>
+    <string name="session_stats">Sent: 0 B Â· Received: 0 B</string>
+    <string name="bandwidth_hint">Bandwidth estimate appears after a transfer</string>
+    <string name="layout_fragment_transfer_text_34">Activity</string>
+    <string name="transfer_log">Ready.\n</string>
+    <string name="recent_transfers_empty_2">No transfers yet</string>
+    <string name="layout_fragment_transfer_text_35">Transfer options</string>
+    <string name="layout_fragment_transfer_text_36">Specialised for this window</string>
+    <string name="layout_fragment_transfer_text_37">Current save path</string>
+    <string name="btn_change_save">Change save folder</string>
+    <string name="btn_refresh_indexer">Refresh file index</string>
+    <string name="layout_fragment_transfer_text_38">Appearance</string>
+    <string name="theme_label">Theme: System</string>
+    <string name="btn_theme">Cycle theme (System)</string>
+    <string name="blur_label">Glass blur: Off</string>
+    <string name="btn_blur">Toggle glass blur</string>
+    <string name="layout_fragment_transfer_text_39">Theme cycles System → Dark → Light. Blur uses RenderEffect on API 31+.</string>
+
+    <!-- layout\include_options_sidebar -->
+    <string name="sidebar_title">Options</string>
+    <string name="btn_theme_2">Cycle theme</string>
+    <string name="layout_include_options_sidebar_text_40">Blur uses RenderEffect on Android 12+ (API 31). Older devices keep translucent panels only.</string>
+
+    <!-- layout\item_cleaner_card -->
+    <string name="card_icon_desc">Utility icon</string>
+    <string name="card_title">Utility</string>
+    <string name="card_status">Status</string>
+
+    <!-- layout\item_file -->
+    <string name="file_icon_desc">File icon</string>
+    <string name="file_details">Folder</string>
+
+    <!-- layout\nav_header -->
+    <string name="layout_nav_header_text_41">Browse and search your device</string>
+
+</resources>

@@ -30,7 +30,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Wayer"
+                    android:text="@string/layout_fragment_home_text_7"
                     android:textColor="@color/wayer_text_primary"
                     android:textSize="28sp"
                     android:textStyle="bold" />
@@ -39,18 +39,18 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/spacing_xs"
-                    android:text="Your files, devices and transfers"
+                    android:text="@string/layout_fragment_home_text_8"
                     android:textColor="@color/wayer_text_secondary"
                     android:textSize="14sp" />
             </LinearLayout>
 
             <ImageButton
                 android:id="@+id/btn_open_home_drawer"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:src="@android:drawable/ic_menu_more"
-                android:contentDescription="Open options"
+                android:contentDescription="@string/btn_open_duplicates_drawer_desc"
                 app:tint="@color/wayer_text_primary" />
         </LinearLayout>
 
@@ -85,7 +85,7 @@
                         <TextView
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:text="Storage"
+                            android:text="@string/nav_storage"
                             android:textColor="@color/wayer_text_primary"
                             android:textSize="18sp"
                             android:textStyle="bold" />
@@ -95,7 +95,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="@dimen/spacing_sm"
-                            android:text="Calculating..."
+                            android:text="@string/storage_summary"
                             android:textColor="@color/wayer_text_secondary"
                             android:textSize="14sp" />
 
@@ -116,38 +116,38 @@
                             android:orientation="vertical">
 
                             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:paddingTop="@dimen/spacing_xs" android:paddingBottom="@dimen/spacing_xs">
-                                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Images" android:textColor="@color/wayer_text_secondary" android:textSize="13sp" />
-                                <TextView android:id="@+id/cat_images" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="—" android:textColor="@color/wayer_text_primary" android:textSize="13sp" />
+                                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/layout_fragment_home_text_9" android:textColor="@color/wayer_text_secondary" android:textSize="13sp" />
+                                <TextView android:id="@+id/cat_images" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/cat_images" android:textColor="@color/wayer_text_primary" android:textSize="13sp" />
                             </LinearLayout>
 
                             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:paddingTop="@dimen/spacing_xs" android:paddingBottom="@dimen/spacing_xs">
-                                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Videos" android:textColor="@color/wayer_text_secondary" android:textSize="13sp" />
-                                <TextView android:id="@+id/cat_videos" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="—" android:textColor="@color/wayer_text_primary" android:textSize="13sp" />
+                                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/layout_fragment_home_text_10" android:textColor="@color/wayer_text_secondary" android:textSize="13sp" />
+                                <TextView android:id="@+id/cat_videos" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/cat_images" android:textColor="@color/wayer_text_primary" android:textSize="13sp" />
                             </LinearLayout>
 
                             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:paddingTop="@dimen/spacing_xs" android:paddingBottom="@dimen/spacing_xs">
-                                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Audio" android:textColor="@color/wayer_text_secondary" android:textSize="13sp" />
-                                <TextView android:id="@+id/cat_audio" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="—" android:textColor="@color/wayer_text_primary" android:textSize="13sp" />
+                                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/layout_fragment_home_text_11" android:textColor="@color/wayer_text_secondary" android:textSize="13sp" />
+                                <TextView android:id="@+id/cat_audio" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/cat_images" android:textColor="@color/wayer_text_primary" android:textSize="13sp" />
                             </LinearLayout>
 
                             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:paddingTop="@dimen/spacing_xs" android:paddingBottom="@dimen/spacing_xs">
-                                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Documents" android:textColor="@color/wayer_text_secondary" android:textSize="13sp" />
-                                <TextView android:id="@+id/cat_documents" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="—" android:textColor="@color/wayer_text_primary" android:textSize="13sp" />
+                                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/layout_fragment_home_text_12" android:textColor="@color/wayer_text_secondary" android:textSize="13sp" />
+                                <TextView android:id="@+id/cat_documents" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/cat_images" android:textColor="@color/wayer_text_primary" android:textSize="13sp" />
                             </LinearLayout>
 
                             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:paddingTop="@dimen/spacing_xs" android:paddingBottom="@dimen/spacing_xs">
-                                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Foreign" android:textColor="@color/wayer_text_secondary" android:textSize="13sp" />
-                                <TextView android:id="@+id/cat_foreign" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="—" android:textColor="@color/wayer_text_primary" android:textSize="13sp" />
+                                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/layout_fragment_home_text_13" android:textColor="@color/wayer_text_secondary" android:textSize="13sp" />
+                                <TextView android:id="@+id/cat_foreign" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/cat_images" android:textColor="@color/wayer_text_primary" android:textSize="13sp" />
                             </LinearLayout>
 
                             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:paddingTop="@dimen/spacing_xs" android:paddingBottom="@dimen/spacing_xs">
-                                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="System" android:textColor="@color/wayer_text_secondary" android:textSize="13sp" />
-                                <TextView android:id="@+id/cat_system" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="—" android:textColor="@color/wayer_text_primary" android:textSize="13sp" />
+                                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/layout_fragment_home_text_14" android:textColor="@color/wayer_text_secondary" android:textSize="13sp" />
+                                <TextView android:id="@+id/cat_system" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/cat_images" android:textColor="@color/wayer_text_primary" android:textSize="13sp" />
                             </LinearLayout>
                             
                             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:paddingTop="@dimen/spacing_xs" android:paddingBottom="@dimen/spacing_xs">
-                                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Others" android:textColor="@color/wayer_text_secondary" android:textSize="13sp" />
-                                <TextView android:id="@+id/cat_others" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="—" android:textColor="@color/wayer_text_primary" android:textSize="13sp" />
+                                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/layout_fragment_home_text_15" android:textColor="@color/wayer_text_secondary" android:textSize="13sp" />
+                                <TextView android:id="@+id/cat_others" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/cat_images" android:textColor="@color/wayer_text_primary" android:textSize="13sp" />
                             </LinearLayout>
                         </LinearLayout>
                     </LinearLayout>
@@ -157,7 +157,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/spacing_lg"
-                    android:text="Quick actions"
+                    android:text="@string/layout_fragment_home_text_16"
                     android:textColor="@color/wayer_text_primary"
                     android:textSize="20sp"
                     android:textStyle="bold" />
@@ -174,7 +174,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Files" />
+                        android:text="@string/nav_files" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/action_transfer"
@@ -183,7 +183,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginStart="@dimen/spacing_sm"
                         android:layout_weight="1"
-                        android:text="Transfer" />
+                        android:text="@string/nav_transfer" />
                 </LinearLayout>
 
                 <LinearLayout
@@ -198,7 +198,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Storage" />
+                        android:text="@string/nav_storage" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/action_terminal"
@@ -207,14 +207,14 @@
                         android:layout_height="wrap_content"
                         android:layout_marginStart="@dimen/spacing_sm"
                         android:layout_weight="1"
-                        android:text="Terminal" />
+                        android:text="@string/action_terminal" />
                 </LinearLayout>
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/spacing_lg"
-                    android:text="Recent files"
+                    android:text="@string/layout_fragment_home_text_17"
                     android:textColor="@color/wayer_text_primary"
                     android:textSize="20sp"
                     android:textStyle="bold" />
@@ -224,7 +224,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/spacing_sm"
-                    android:text="No recent files"
+                    android:text="@string/recent_files_empty"
                     android:textColor="@color/wayer_text_secondary"
                     android:textSize="14sp" />
 
@@ -232,7 +232,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/spacing_lg"
-                    android:text="Recent transfers"
+                    android:text="@string/layout_fragment_home_text_18"
                     android:textColor="@color/wayer_text_primary"
                     android:textSize="20sp"
                     android:textStyle="bold" />
@@ -242,7 +242,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/spacing_sm"
-                    android:text="No recent transfers"
+                    android:text="@string/recent_transfers_empty"
                     android:textColor="@color/wayer_text_secondary"
                     android:textSize="14sp" />
 

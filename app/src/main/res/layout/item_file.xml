@@ -29,7 +29,7 @@
             android:id="@+id/file_icon"
             android:layout_width="28dp"
             android:layout_height="28dp"
-            android:contentDescription="File icon"
+            android:contentDescription="@string/file_icon_desc"
             android:src="@drawable/ic_file" />
 
         <LinearLayout
@@ -43,7 +43,7 @@
                 android:id="@+id/file_name"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Documents"
+                android:text="@string/layout_fragment_home_text_12"
                 android:textColor="@color/wayer_text_primary"
                 android:textSize="14sp"
                 android:maxLines="1"
@@ -54,7 +54,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="1dp"
-                android:text="Folder"
+                android:text="@string/file_details"
                 android:textColor="@color/wayer_text_secondary"
                 android:textSize="11sp"
                 android:maxLines="1"

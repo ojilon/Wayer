@@ -35,7 +35,7 @@
                 android:id="@+id/card_icon"
                 android:layout_width="40dp"
                 android:layout_height="40dp"
-                android:contentDescription="Utility icon"
+                android:contentDescription="@string/card_icon_desc"
                 app:tint="@color/wayer_primary" />
 
             <TextView
@@ -43,7 +43,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/spacing_sm"
-                android:text="Utility"
+                android:text="@string/card_title"
                 android:textColor="@color/wayer_text_primary"
                 android:textSize="16sp"
                 android:textStyle="bold"
@@ -55,7 +55,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/spacing_xs"
-                android:text="Status"
+                android:text="@string/card_status"
                 android:textColor="@color/wayer_text_secondary"
                 android:textSize="12sp"
                 android:gravity="center"

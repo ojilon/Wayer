@@ -35,10 +35,7 @@ tap-through. Check boxes only after the device confirms.
     `res/drawable-nodpi/img_<what>.webp` (WebP, never multi-density PNGs
     by hand). Launcher icons stay in `mipmap-*`.
   - Each future item names its exact files; nothing lands anywhere else.
-- [ ] **D3 · Modern-practice audit.** One pass: no hardcoded colors/text in
-  layouts (theme attrs + `strings.xml`), `contentDescription` on every
-  `ImageView`, 48dp touch targets, `values-night` parity for every new
-  color, ViewBinding null-out (already the pattern — keep it).
+- [x] **D3 · Modern-practice audit.** (done: 113 strings extracted to values/strings.xml, night parity for wayer_cat_sys, 48dp drawer buttons, binding null-out verified everywhere)
 
 ## Build order (proposed)
 

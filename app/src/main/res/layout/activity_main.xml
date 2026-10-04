@@ -39,7 +39,7 @@
                 style="@style/Widget.Material3.Button.OutlinedButton"
                 android:layout_width="120dp"
                 android:layout_height="wrap_content"
-                android:text="Home"
+                android:text="@string/nav_home"
                 app:icon="@drawable/ic_nav_home"
                 app:iconGravity="textTop" />
 
@@ -48,7 +48,7 @@
                 style="@style/Widget.Material3.Button.OutlinedButton"
                 android:layout_width="120dp"
                 android:layout_height="wrap_content"
-                android:text="Files"
+                android:text="@string/nav_files"
                 app:icon="@drawable/ic_nav_files"
                 app:iconGravity="textTop" />
 
@@ -57,7 +57,7 @@
                 style="@style/Widget.Material3.Button.OutlinedButton"
                 android:layout_width="120dp"
                 android:layout_height="wrap_content"
-                android:text="Storage"
+                android:text="@string/nav_storage"
                 app:icon="@drawable/ic_nav_storage"
                 app:iconGravity="textTop" />
 
@@ -66,7 +66,7 @@
                 style="@style/Widget.Material3.Button.OutlinedButton"
                 android:layout_width="120dp"
                 android:layout_height="wrap_content"
-                android:text="Transfer"
+                android:text="@string/nav_transfer"
                 app:icon="@drawable/ic_nav_transfer"
                 app:iconGravity="textTop" />
 
@@ -75,7 +75,7 @@
                 style="@style/Widget.Material3.Button.OutlinedButton"
                 android:layout_width="120dp"
                 android:layout_height="wrap_content"
-                android:text="Cleaner"
+                android:text="@string/nav_cleaner"
                 app:icon="@drawable/ic_nav_cleaner"
                 app:iconGravity="textTop" />
 
@@ -84,7 +84,7 @@
                 style="@style/Widget.Material3.Button.OutlinedButton"
                 android:layout_width="120dp"
                 android:layout_height="wrap_content"
-                android:text="Internals"
+                android:text="@string/nav_internals"
                 app:icon="@drawable/ic_nav_debug"
                 app:iconGravity="textTop" />
 

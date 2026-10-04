@@ -22,14 +22,14 @@
             android:id="@+id/btn_up"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Up" />
+            android:text="@string/btn_files_up" />
 
         <TextView
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:layout_marginStart="@dimen/spacing_sm"
-            android:text="App internals · read-only"
+            android:text="@string/layout_fragment_internal_text_19"
             android:textColor="@color/wayer_text_primary"
             android:textSize="16sp"
             android:textStyle="bold" />
@@ -68,7 +68,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Nothing here yet"
+            android:text="@string/layout_fragment_internal_text_20"
             android:textColor="@color/wayer_text_primary"
             android:textSize="18sp"
             android:textStyle="bold" />
@@ -77,7 +77,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/spacing_sm"
-            android:text="Run the app once so native creates its folders"
+            android:text="@string/layout_fragment_internal_text_21"
             android:textColor="@color/wayer_text_secondary"
             android:textSize="14sp"
             android:gravity="center" />

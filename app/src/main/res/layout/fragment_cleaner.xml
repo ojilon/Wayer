@@ -30,7 +30,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Cleaner"
+                    android:text="@string/nav_cleaner"
                     android:textColor="@color/wayer_text_primary"
                     android:textSize="24sp"
                     android:textStyle="bold" />
@@ -39,18 +39,18 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/spacing_xs"
-                    android:text="Free up space, safely"
+                    android:text="@string/layout_fragment_cleaner_text_1"
                     android:textColor="@color/wayer_text_secondary"
                     android:textSize="14sp" />
             </LinearLayout>
 
             <ImageButton
                 android:id="@+id/btn_open_duplicates_drawer"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:src="@android:drawable/ic_menu_more"
-                android:contentDescription="Open options"
+                android:contentDescription="@string/btn_open_duplicates_drawer_desc"
                 app:tint="@color/wayer_text_primary" />
         </LinearLayout>
 
@@ -75,21 +75,21 @@
                     style="@style/Widget.Material3.Button.OutlinedButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Utilities" />
+                    android:text="@string/tab_utilities" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/tab_duplicates"
                     style="@style/Widget.Material3.Button.OutlinedButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Duplicates" />
+                    android:text="@string/tab_duplicates" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/tab_large"
                     style="@style/Widget.Material3.Button.OutlinedButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Large files" />
+                    android:text="@string/tab_large" />
 
             </com.google.android.material.button.MaterialButtonToggleGroup>
 
@@ -116,7 +116,7 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Pick a utility to run it"
+                        android:text="@string/layout_fragment_cleaner_text_2"
                         android:textColor="@color/wayer_text_secondary"
                         android:textSize="13sp" />
 
@@ -145,7 +145,7 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Duplicates"
+                        android:text="@string/tab_duplicates"
                         android:textColor="@color/wayer_text_primary"
                         android:textSize="18sp"
                         android:textStyle="bold" />
@@ -154,7 +154,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="@dimen/spacing_xs"
-                        android:text="Long-press a file to delete that copy"
+                        android:text="@string/layout_fragment_cleaner_text_3"
                         android:textColor="@color/wayer_text_secondary"
                         android:textSize="13sp" />
 
@@ -170,7 +170,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="@dimen/spacing_sm"
-                        android:text="No duplicates found yet"
+                        android:text="@string/duplicates_empty"
                         android:textColor="@color/wayer_text_secondary"
                         android:textSize="14sp" />
 
@@ -180,7 +180,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="@dimen/spacing_lg"
-                        android:text="Scan for duplicates" />
+                        android:text="@string/btn_scan_duplicates" />
 
                 </LinearLayout>
             </ScrollView>
@@ -200,7 +200,7 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Large files"
+                        android:text="@string/tab_large"
                         android:textColor="@color/wayer_text_primary"
                         android:textSize="18sp"
                         android:textStyle="bold" />
@@ -209,7 +209,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="@dimen/spacing_xs"
-                        android:text="Long-press a file to delete"
+                        android:text="@string/layout_fragment_cleaner_text_4"
                         android:textColor="@color/wayer_text_secondary"
                         android:textSize="13sp" />
 
@@ -225,7 +225,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="@dimen/spacing_sm"
-                        android:text="No large files found yet"
+                        android:text="@string/large_files_empty"
                         android:textColor="@color/wayer_text_secondary"
                         android:textSize="14sp" />
 
@@ -235,7 +235,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="@dimen/spacing_sm"
-                        android:text="Scan for large files" />
+                        android:text="@string/btn_scan_large" />
 
                 </LinearLayout>
             </ScrollView>
