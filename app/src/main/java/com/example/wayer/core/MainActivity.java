@@ -51,7 +51,7 @@ public class MainActivity extends AppCompatActivity {
         setupNavigation();
 
         if (savedInstanceState == null) {
-            showFragment(new HomeFragment());
+            binding.bottomNavigation.check(R.id.nav_home);
         }
     }
 
@@ -91,26 +91,24 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setupNavigation() {
-        binding.bottomNavigation.setOnItemSelectedListener(item -> {
-            int itemId = item.getItemId();
-            if (itemId == R.id.nav_home) return showFragment(new HomeFragment());
-            if (itemId == R.id.nav_storage) return showFragment(new StorageFragment());
-            if (itemId == R.id.nav_transfer) return showFragment(new TransferFragment());
-            if (itemId == R.id.nav_files) return showFragment(new FilesFragment());
-            if (itemId == R.id.nav_duplicate) return showFragment(new DuplicatesFragment());
-            if (itemId == R.id.nav_internals) return showFragment(new InternalFragment());
-            return false;
+        binding.bottomNavigation.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
+            if (!isChecked) return;
+            if (checkedId == R.id.nav_home) showFragment(new HomeFragment());
+            else if (checkedId == R.id.nav_storage) showFragment(new StorageFragment());
+            else if (checkedId == R.id.nav_transfer) showFragment(new TransferFragment());
+            else if (checkedId == R.id.nav_files) showFragment(new FilesFragment());
+            else if (checkedId == R.id.nav_duplicate) showFragment(new DuplicatesFragment());
+            else if (checkedId == R.id.nav_internals) showFragment(new InternalFragment());
         });
     }
 
-    private boolean showFragment(Fragment fragment) {
+    private void showFragment(Fragment fragment) {
         getSupportFragmentManager().beginTransaction()
             .replace(R.id.fragment_container, fragment)
             .commit();
-        return true;
     }
 
     public void navigateTo(int itemId) {
-        binding.bottomNavigation.setSelectedItemId(itemId);
+        binding.bottomNavigation.check(itemId);
     }
 }

@@ -14,19 +14,79 @@
         android:layout_height="0dp"
         android:layout_weight="1" />
 
-    <!-- Horizontally scrollable so 6 destinations fit small screens.
-         The bar keeps its view id/type, so Activity binding code is unchanged. -->
+    <!-- Scrollable destination bar. BottomNavigationView hard-crashes past
+         5 items, so this is a single-selection toggle group instead:
+         same view id, 120dp per destination, scrolls on narrow screens. -->
     <HorizontalScrollView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:scrollbars="none"
-        android:fillViewport="true">
+        android:fillViewport="true"
+        android:background="@color/wayer_surface">
 
-        <com.google.android.material.bottomnavigation.BottomNavigationView
+        <com.google.android.material.button.MaterialButtonToggleGroup
             android:id="@+id/bottom_navigation"
-            android:layout_width="720dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            app:menu="@menu/bottom_navigation_menu" />
+            android:layout_gravity="center"
+            app:singleSelection="true"
+            app:selectionRequired="true">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/nav_home"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="120dp"
+                android:layout_height="wrap_content"
+                android:text="Home"
+                app:icon="@drawable/ic_nav_home"
+                app:iconGravity="textTop" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/nav_files"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="120dp"
+                android:layout_height="wrap_content"
+                android:text="Files"
+                app:icon="@drawable/ic_nav_files"
+                app:iconGravity="textTop" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/nav_storage"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="120dp"
+                android:layout_height="wrap_content"
+                android:text="Storage"
+                app:icon="@drawable/ic_nav_storage"
+                app:iconGravity="textTop" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/nav_transfer"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="120dp"
+                android:layout_height="wrap_content"
+                android:text="Transfer"
+                app:icon="@drawable/ic_nav_transfer"
+                app:iconGravity="textTop" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/nav_duplicate"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="120dp"
+                android:layout_height="wrap_content"
+                android:text="Duplicates"
+                app:icon="@drawable/ic_nav_duplicate"
+                app:iconGravity="textTop" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/nav_internals"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="120dp"
+                android:layout_height="wrap_content"
+                android:text="Internals"
+                app:icon="@drawable/ic_nav_debug"
+                app:iconGravity="textTop" />
+
+        </com.google.android.material.button.MaterialButtonToggleGroup>
 
     </HorizontalScrollView>
 
