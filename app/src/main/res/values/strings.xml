@@ -103,7 +103,7 @@
     <string name="browse_current_path">/storage/emulated/0/Download</string>
     <string name="browse_filter_hint">Filter this folder…</string>
     <string name="btn_back_to_transfer">Back</string>
-    <string name="btn_use_this_folder">Use this folder</string>
+    <string name="btn_select_save_folder">Select save folder</string>
     <string name="layout_fragment_transfer_text_33">Connection</string>
     <string name="connection_status">Not connected</string>
     <string name="connection_details">Host / port</string>

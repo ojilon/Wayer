@@ -363,14 +363,31 @@
                     android:layout_marginTop="@dimen/spacing_sm"
                     android:clipToPadding="false" />
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btn_search_send"
-                    style="@style/Widget.Material3.Button.OutlinedButton"
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/spacing_sm"
-                    android:enabled="false"
-                    android:text="@string/btn_search_send" />
+                    android:orientation="horizontal"
+                    android:layout_marginTop="@dimen/spacing_sm">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_search_up"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/btn_files_up" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_search_send"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/spacing_sm"
+                        android:layout_weight="1"
+                        android:enabled="false"
+                        android:text="@string/btn_search_send" />
+
+                </LinearLayout>
 
             </LinearLayout>
 
@@ -444,31 +461,6 @@
                     android:layout_marginTop="@dimen/spacing_sm">
 
                     <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btn_select_mode"
-                        style="@style/Widget.Material3.Button.OutlinedButton"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="@string/btn_search_select" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btn_send_selected"
-                        style="@style/Widget.Material3.Button.OutlinedButton"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="@dimen/spacing_sm"
-                        android:layout_weight="1"
-                        android:enabled="false"
-                        android:text="@string/btn_search_send" />
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:layout_marginTop="@dimen/spacing_sm">
-
-                    <com.google.android.material.button.MaterialButton
                         android:id="@+id/btn_back_to_transfer"
                         style="@style/Widget.Wayer.GlassButton.Outlined"
                         android:layout_width="0dp"
@@ -483,7 +475,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginStart="@dimen/spacing_sm"
                         android:layout_weight="1"
-                        android:text="@string/btn_use_this_folder" />
+                        android:text="@string/btn_select_save_folder" />
                 </LinearLayout>
             </LinearLayout>
             <!-- 4 - Network: connection, session, log, history -->

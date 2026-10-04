@@ -242,13 +242,6 @@ public class TransferFragment extends Fragment {
             }
         });
 
-        browseAdapter.setOnSelectionChangedListener(count -> updateSendButton());
-
-        binding.btnSelectMode.setOnClickListener(v -> {
-            browseAdapter.setSelectionMode(!browseAdapter.isSelectionMode());
-            binding.btnSelectMode.setText(browseAdapter.isSelectionMode() ? "Done" : "Select");
-            updateSendButton();
-        });
         binding.btnBrowseUp.setOnClickListener(v -> {
             File parent = new File(browsePath).getParentFile();
             if (parent != null) {
@@ -257,7 +250,6 @@ public class TransferFragment extends Fragment {
                 Toast.makeText(getContext(), "Already at the top", Toast.LENGTH_SHORT).show();
             }
         });
-        binding.btnSendSelected.setOnClickListener(v -> uploadSelected());
 
         binding.browseFilter.addTextChangedListener(new android.text.TextWatcher() {
             @Override
@@ -273,7 +265,6 @@ public class TransferFragment extends Fragment {
                 applyBrowseFilter(s != null ? s.toString() : "");
             }
         });
-        updateSendButton();
     }
 
     private final List<FileItem> browseFiles = new ArrayList<>();
@@ -294,13 +285,6 @@ public class TransferFragment extends Fragment {
         browseAdapter.submitList(filtered);
     }
 
-    private void updateSendButton() {
-        if (binding == null) return;
-        int count = browseAdapter != null ? browseAdapter.getSelectedPaths().size() : 0;
-        binding.btnSendSelected.setEnabled(count > 0);
-        binding.btnSendSelected.setText(count > 0 ? "Send (" + count + ")" : "Send");
-    }
-
     private void setupSearchTab() {
         searchAdapter = new FileAdapter();
         binding.searchResultsList.setLayoutManager(new LinearLayoutManager(requireContext()));
@@ -310,9 +294,8 @@ public class TransferFragment extends Fragment {
             @Override
             public void onItemClick(FileItem item) {
                 if (item.isDirectory()) {
-                    // Browse it exactly like the Browse tab would.
-                    browsePath = item.getPath();
-                    showBrowseTab();
+                    // Browse inside this tab — independent stack, Up returns.
+                    enterSearchFolder(item.getPath());
                 }
             }
 
@@ -322,6 +305,8 @@ public class TransferFragment extends Fragment {
             }
         });
         searchAdapter.setOnSelectionChangedListener(count -> updateSearchSendButton());
+
+        binding.btnSearchUp.setOnClickListener(v -> searchUp());
 
         binding.btnSearchSelect.setOnClickListener(v -> {
             searchAdapter.setSelectionMode(!searchAdapter.isSelectionMode());
@@ -374,7 +359,7 @@ public class TransferFragment extends Fragment {
         });
     }
 
-    /** Files first, then their distinct parent folders (tap a folder to browse it). */
+    /** Files first, then their distinct parent folders (tap a folder to browse it here). */
     private void renderSearchResults(String content) {
         List<FileItem> rows = new ArrayList<>();
         List<String> folders = new ArrayList<>();
@@ -400,10 +385,59 @@ public class TransferFragment extends Fragment {
             File f = new File(folder);
             rows.add(new FileItem(f.getName(), folder, "Folder — tap to browse", true, 0));
         }
-        searchAdapter.submitList(rows);
+        searchResultRows.clear();
+        searchResultRows.addAll(rows);
+        searchNavStack.clear();
+        searchAdapter.submitList(new ArrayList<>(rows));
         binding.searchResultsHint.setText(rows.isEmpty()
                 ? "No matches — try Refresh index"
                 : rows.size() + " result(s)");
+    }
+
+    /** Independent folder stack for the Search tab — results persist underneath. */
+    private final List<String> searchNavStack = new ArrayList<>();
+    private final List<FileItem> searchResultRows = new ArrayList<>();
+
+    private void enterSearchFolder(String path) {
+        searchNavStack.add(path);
+        listSearchFolder(path);
+    }
+
+    private void searchUp() {
+        if (binding == null) return;
+        if (searchNavStack.isEmpty()) {
+            Toast.makeText(getContext(), "Already showing results", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        searchNavStack.remove(searchNavStack.size() - 1);
+        if (searchNavStack.isEmpty()) {
+            searchAdapter.submitList(new ArrayList<>(searchResultRows));
+            binding.searchResultsHint.setText(searchResultRows.isEmpty()
+                    ? "No matches — try Refresh index"
+                    : searchResultRows.size() + " result(s)");
+        } else {
+            listSearchFolder(searchNavStack.get(searchNavStack.size() - 1));
+        }
+    }
+
+    private void listSearchFolder(String path) {
+        if (binding == null) return;
+        List<FileItem> rows = new ArrayList<>();
+        File[] children = new File(path).listFiles();
+        if (children != null) {
+            Arrays.sort(children, Comparator
+                    .comparing((File f) -> !f.isDirectory())
+                    .thenComparing(f -> f.getName().toLowerCase()));
+            for (File c : children) {
+                if (c.isDirectory()) {
+                    rows.add(new FileItem(c.getName(), c.getAbsolutePath(), "Folder", true, 0));
+                } else {
+                    rows.add(new FileItem(c.getName(), c.getAbsolutePath(), formatSize(c.length()), false, c.length()));
+                }
+            }
+        }
+        searchAdapter.submitList(rows);
+        binding.searchResultsHint.setText(path);
     }
 
     private void setupTabs() {
@@ -718,19 +752,6 @@ public class TransferFragment extends Fragment {
                 .setAdapter(adapter, (dialog, which) -> performUpload(matches.get(which)))
                 .setNegativeButton("Cancel", null)
                 .show();
-    }
-
-    /** Send every ticked file in order; paths were saved to the queue file first. */
-    private void uploadSelected() {
-        List<String> files = filesOnly(browseAdapter.getSelectedPaths());
-        if (files.isEmpty()) {
-            Toast.makeText(getContext(), "Tick files to send first", Toast.LENGTH_SHORT).show();
-            return;
-        }
-        browseAdapter.setSelectionMode(false);
-        binding.btnSelectMode.setText("Select");
-        updateSendButton();
-        uploadPaths(files);
     }
 
     private void uploadSearchSelected() {
