@@ -8,6 +8,7 @@
     <dimen name="spacing_lg">24dp</dimen>
     <dimen name="spacing_xl">32dp</dimen>
 
+    <dimen name="radius_xs">4dp</dimen>
     <dimen name="radius_sm">8dp</dimen>
     <dimen name="radius_md">16dp</dimen>
     <dimen name="radius_lg">24dp</dimen>

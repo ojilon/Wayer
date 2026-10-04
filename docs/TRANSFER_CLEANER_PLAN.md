@@ -24,10 +24,8 @@ tap-through. Check boxes only after the device confirms.
 - [x] **C1 · Return where you left.** `FilesFragment.currentPath` resets to (done: `currentPath` lives in `BrowseSession`, Up button beside the path bar)
 ## D — Theme, rows, icons
 
-- [ ] **D1 · Flatten file/folder rows.** `item_file.xml` today: 8dp corners +
-  1dp glass stroke reads as chunky buttons. New row: 4dp corners (new
-  `radius_xs`), no stroke, list separated by spacing + surface contrast.
-  One layout edit, every list in the app improves at once.
+- [x] **D1 · Flatten file/folder rows.** (done: 4dp radius_xs, stroke removed, spacing+surface separation)
+
 - [ ] **D2 · Real file-type icons.** Extend `FileAdapter.iconFor` (already
   extension-mapped) with new glyphs. Asset rules for anything downloaded:
   - **Vectors** (icons, glyphs): `res/drawable/ic_<what>.xml`
