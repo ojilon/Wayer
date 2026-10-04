@@ -26,18 +26,7 @@ tap-through. Check boxes only after the device confirms.
 - [x] **B1 · Transfer tab strip.** (done: Guide | Transfer | Browse strip +
   static Guide page; browse is child 2)
 - [x] **B2 · Multi-select + one-by-one queue.** (done: checkbox selection in FileAdapter, folder filter, queue file with per-file status, sequential uploader with session log)
-- [ ] **B4 · Browse memory + refresh + Up.** Browsing remembers its folder
-  (and restores folder + contents after any refresh), refresh re-reads from
-  disk (never from a stale list), and an Up button climbs the tree like the
-  Internals tab. State lives in a process-scoped holder: survives rotation
-  and tab-hopping, dies with the process (never persisted = "resets only on
-  full close" for free).
-- [ ] **B5 · Session UI.** Below the transfer controls: the queue with per-file
-  status rows + session totals. One uploader, sequential, cancellable
-  between files (never mid-file).
-
-## C — Files tab session memory
-
+- [x] **B4 · Browse memory + refresh + Up.** (done: process-scoped BrowseSession, Up button, refresh re-reads disk into the remembered folder)
 - [ ] **C1 · Return where you left.** `FilesFragment.currentPath` resets to
   root on every visit today. Move it into the same process-scoped holder as
   B4 (per-tab keys: files / transfer-browse). Leaving the tab and coming

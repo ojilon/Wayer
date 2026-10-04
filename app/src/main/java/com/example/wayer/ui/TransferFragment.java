@@ -48,7 +48,7 @@ public class TransferFragment extends Fragment {
     private long sessionReceivedBytes = 0;
 
     private String savePath = FileIndexer.getDefaultSavePath();
-    private String browsePath = FileIndexer.getDefaultSavePath();
+    private String browsePath = BrowseSession.transferBrowsePath;
 
     private FileAdapter browseAdapter;
     private FileAdapter recentAdapter;
@@ -56,6 +56,7 @@ public class TransferFragment extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         binding = FragmentTransferBinding.inflate(inflater, container, false);
+        if (browsePath == null) browsePath = FileIndexer.getDefaultSavePath();
         setupUI();
         ensureIndexWarm();
         return binding.getRoot();
@@ -197,6 +198,14 @@ public class TransferFragment extends Fragment {
             binding.btnSelectMode.setText(browseAdapter.isSelectionMode() ? "Done" : "Select");
             updateSendButton();
         });
+        binding.btnBrowseUp.setOnClickListener(v -> {
+            File parent = new File(browsePath).getParentFile();
+            if (parent != null) {
+                loadBrowseDirectory(parent.getAbsolutePath());
+            } else {
+                Toast.makeText(getContext(), "Already at the top", Toast.LENGTH_SHORT).show();
+            }
+        });
         binding.btnSendSelected.setOnClickListener(v -> uploadSelected());
 
         binding.browseFilter.addTextChangedListener(new android.text.TextWatcher() {
@@ -264,6 +273,7 @@ public class TransferFragment extends Fragment {
 
     private void loadBrowseDirectory(String path) {
         browsePath = path;
+        BrowseSession.transferBrowsePath = path;
         binding.browseCurrentPath.setText(path);
 
         // Plain directory listing — no index involved. The native index only
