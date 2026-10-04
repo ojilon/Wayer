@@ -37,13 +37,9 @@ tap-through. Check boxes only after the device confirms.
   in order, marking each pending/sending/done/failed in a session list under
   the window. Queue file survives rotation; a second tap appends, never
   duplicates (dedupe on save).
-- [ ] **B3 · Space-in-filename upload fix (bug).** Root cause: the `/upload`
-  command is space-separated (`/upload <size> <basename>`), so the PC parses
-  `file name` as two tokens. Fix: sanitize **the protocol token only** with
-  `TextSanitizer.replaceSpacesWithUnderscores` when building the command —
-  the local file is never renamed, the PC receives `file_name`. Same guard
-  on the `/ask` *display* path is NOT applied (the PC looks up its own real
-  names there). Add a pure-function note so it stays testable.
+- [x] **B3 · Space-in-filename upload fix (bug).** (done: protocol token
+  sanitized via `TextSanitizer`, local file untouched, pure `uploadCommand`
+  builder covered by 3 unit tests — full suite 14/14 green)
 - [ ] **B4 · Browse memory + refresh + Up.** Browsing remembers its folder
   (and restores folder + contents after any refresh), refresh re-reads from
   disk (never from a stale list), and an Up button climbs the tree like the

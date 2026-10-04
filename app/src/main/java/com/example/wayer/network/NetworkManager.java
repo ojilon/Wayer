@@ -1,6 +1,7 @@
 package com.example.wayer.network;
 
 import com.example.wayer.core.Config;
+import com.example.wayer.utils.TextSanitizer;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -113,9 +114,12 @@ public class NetworkManager {
             return;
         }
 
-        String baseName = localFile.getName();
+        // The /upload command is space-separated, so the advertised name must
+        // not contain spaces. Only this protocol token is sanitized — the
+        // local file is never renamed.
+        String baseName = TextSanitizer.replaceSpacesWithUnderscores(localFile.getName());
         long fileSize = localFile.length();
-        out.write(("/upload " + fileSize + " " + baseName).getBytes());
+        out.write(uploadCommand(fileSize, baseName).getBytes());
         out.flush();
 
         byte[] buffer = new byte[1024];
@@ -140,6 +144,11 @@ public class NetworkManager {
         } else {
             callback.onOperationComplete("Remote declined upload: " + pcResponse);
         }
+    }
+
+    /** Pure command builder (kept separate so unit tests cover the spacing rule). */
+    static String uploadCommand(long fileSize, String baseName) {
+        return "/upload " + fileSize + " " + TextSanitizer.replaceSpacesWithUnderscores(baseName);
     }
 
     /** Prefer absolute path when provided; otherwise resolve under workingDir. */
