@@ -43,6 +43,7 @@ android {
         externalNativeBuild {
             cmake {
                 cppFlags "-std=c++23"
+                arguments "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
             }
         }
     }
@@ -117,4 +118,26 @@ dependencies {
 
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+}
+
+
+tasks.register("copyCompileCommands", Copy) {
+    def cxxDir = file("${buildDir}/.cxx")
+    doFirst {
+        def found = fileTree(cxxDir) {
+            include "**/compile_commands.json"
+        }.files.max { it.lastModified() }
+
+        if (found == null) {
+            throw new GradleException("No compile_commands.json found under ${cxxDir}")
+        }
+        from(found)
+    }
+    into "${projectDir}"
+}
+
+afterEvaluate {
+    tasks.matching { it.name.startsWith("externalNativeBuild") }.configureEach {
+        finalizedBy "copyCompileCommands"
+    }
 }
