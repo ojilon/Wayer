@@ -23,10 +23,8 @@ tap-through. Check boxes only after the device confirms.
 
 ## B — Transfer sub-windows + multi-send queue
 
-- [ ] **B1 · Transfer tab strip.** Same pattern as A4: [Guide | Transfer |
-  Browse]. Guide = the existing "how to test the connection" steps as a
-  static help page (today that knowledge lives only in docs). Transfer =
-  current send/receive UI. Browse = current folder browser, upgraded below.
+- [x] **B1 · Transfer tab strip.** (done: Guide | Transfer | Browse strip +
+  static Guide page; browse is child 2)
 - [ ] **B2 · Multi-select + one-by-one queue.** Browse list gains selection
   mode (checkbox rows via `FileAdapter` selection set): tick files under the
   opened folder → "Send selected" saves the path list to

@@ -59,11 +59,83 @@
                 app:tint="@color/wayer_text_primary" />
         </LinearLayout>
 
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:scrollbars="none"
+            android:fillViewport="true"
+            android:paddingTop="@dimen/spacing_sm">
+
+            <com.google.android.material.button.MaterialButtonToggleGroup
+                android:id="@+id/transfer_tabs"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:singleSelection="true"
+                app:selectionRequired="true">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/tab_guide"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Guide" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/tab_transfer"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Transfer" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/tab_browse"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Browse" />
+
+            </com.google.android.material.button.MaterialButtonToggleGroup>
+
+        </HorizontalScrollView>
+
         <ViewFlipper
             android:id="@+id/transfer_view_flipper"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1">
+
+            <!-- 0 · Guide: how to move files between phone and WayerPC -->
+            <ScrollView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:fillViewport="true">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingHorizontal="@dimen/spacing_md"
+                    android:paddingBottom="@dimen/spacing_md">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/spacing_sm"
+                        android:text="How to transfer"
+                        android:textColor="@color/wayer_text_primary"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/spacing_sm"
+                        android:text="1. Put the phone and the PC on the same hotspot and note the PC address.\n\n2. Open the Transfer tab and press Test connection until it reports OK.\n\n3. Download: type a file name, press Download — the file lands in the save folder.\n\n4. Upload: type a file name, press Upload — the phone searches its local index, you confirm (one hit) or pick (several), then it sends to the PC.\n\n5. Change the save folder from Transfer options on the right, or pick one in the Browse tab."
+                        android:textColor="@color/wayer_text_secondary"
+                        android:textSize="13sp" />
+
+                </LinearLayout>
+            </ScrollView>
 
             <ScrollView
                 android:layout_width="match_parent"

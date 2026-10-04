@@ -104,8 +104,9 @@ public class TransferFragment extends Fragment {
 
         setupBrowseList();
         setupRecentList();
+        setupTabs();
         GlassBlur.applyFromPrefs(binding.transferSidebarRoot, requireContext());
-        showTransferTab();
+        binding.transferTabs.check(R.id.tab_transfer);
     }
 
     private void setupRecentList() {
@@ -189,12 +190,21 @@ public class TransferFragment extends Fragment {
         });
     }
 
+    private void setupTabs() {
+        binding.transferTabs.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
+            if (!isChecked) return;
+            if (checkedId == R.id.tab_guide) binding.transferViewFlipper.setDisplayedChild(0);
+            else if (checkedId == R.id.tab_transfer) binding.transferViewFlipper.setDisplayedChild(1);
+            else if (checkedId == R.id.tab_browse) binding.transferViewFlipper.setDisplayedChild(2);
+        });
+    }
+
     private void showTransferTab() {
-        binding.transferViewFlipper.setDisplayedChild(0);
+        binding.transferTabs.check(R.id.tab_transfer);
     }
 
     private void showBrowseTab() {
-        binding.transferViewFlipper.setDisplayedChild(1);
+        binding.transferTabs.check(R.id.tab_browse);
         loadBrowseDirectory(browsePath);
         if (!binding.transferDrawerLayout.isDrawerOpen(GravityCompat.END)) {
             binding.transferDrawerLayout.openDrawer(GravityCompat.END);
@@ -261,7 +271,7 @@ public class TransferFragment extends Fragment {
                 appendLog("Index refresh failed");
                 Toast.makeText(getContext(), "Index refresh failed", Toast.LENGTH_SHORT).show();
             }
-            if (binding.transferViewFlipper.getDisplayedChild() == 1) {
+                if (binding.transferViewFlipper.getDisplayedChild() == 2) {
                 loadBrowseDirectory(browsePath);
             }
         });
