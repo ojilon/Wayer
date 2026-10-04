@@ -51,7 +51,7 @@ public class NativeEngine {
 
     /** Walk root once, spill the listing to the native index file; returns {path, count}. */
     public static void buildIndexAsync(String root, Callback callback) {
-        processActionAsync(ACTION_BUILD_INDEX, root != null ? root : "", callback);
+        Bridge.run(ACTION_BUILD_INDEX, root != null ? root : "", "native-index", "index", callback);
     }
 
     /** Metadata about the native index file ({status, path, bytes, modified_unix}). */

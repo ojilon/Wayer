@@ -14,6 +14,9 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.example.wayer.R;
+import com.example.wayer.bridge.NativeEngine;
+import com.example.wayer.bridge.PathCache;
+import com.example.wayer.bridge.PathRegistry;
 import com.example.wayer.core.Config;
 import com.example.wayer.core.GlassBlur;
 import com.example.wayer.core.ThemePrefs;
@@ -25,10 +28,15 @@ import com.example.wayer.storage.FileIndexer;
 import com.example.wayer.transfer.RecentTransfersStore;
 import com.example.wayer.transfer.TransferController;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import java.io.File;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 
 public class TransferFragment extends Fragment {
@@ -197,25 +205,17 @@ public class TransferFragment extends Fragment {
         browsePath = path;
         binding.browseCurrentPath.setText(path);
 
+        // Plain directory listing — no index involved. The native index only
+        // serves global name search; browsing one folder never needs it.
         List<FileItem> items = new ArrayList<>();
-        FileIndexer indexer = FileIndexer.getInstance();
-
-        List<String> cached = indexer.getContentsOfFolder(path);
-        if (cached.isEmpty() && !indexer.isCacheEmpty()) {
-            File dir = new File(path);
-            File[] children = dir.listFiles();
-            if (children != null) {
-                for (File c : children) {
-                    if (c.isDirectory()) {
-                        items.add(new FileItem(c.getName(), c.getAbsolutePath(), "Folder", true, 0));
-                    }
-                }
-            }
-        } else {
-            for (String p : cached) {
-                File f = new File(p);
-                if (f.isDirectory()) {
-                    items.add(new FileItem(f.getName(), p, "Folder", true, 0));
+        File[] children = new File(path).listFiles();
+        if (children != null) {
+            Arrays.sort(children, Comparator
+                    .comparing((File f) -> !f.isDirectory())
+                    .thenComparing(f -> f.getName().toLowerCase()));
+            for (File c : children) {
+                if (c.isDirectory()) {
+                    items.add(new FileItem(c.getName(), c.getAbsolutePath(), "Folder", true, 0));
                 }
             }
         }
@@ -231,34 +231,57 @@ public class TransferFragment extends Fragment {
         browseAdapter.submitList(items);
     }
 
+    /** Index file shared with every other screen; builds it when missing. */
     private void ensureIndexWarm() {
-        FileIndexer indexer = FileIndexer.getInstance();
-        if (indexer.isCacheEmpty()) {
-            appendLog("Indexing local storage (background)…");
-            new Thread(() -> {
-                indexer.refreshCache();
-                runOnUi(() -> appendLog("Index ready · "
-                        + indexer.getIndexedFileCount() + " files, "
-                        + indexer.getIndexedFolderCount() + " folders"));
-            }).start();
-        }
+        NativeEngine.indexMetaAsync(rawMeta -> {
+            if (!isAdded()) return;
+            if (isIndexMissing(rawMeta)) {
+                appendLog("Indexing local storage (background)…");
+                NativeEngine.buildIndexAsync(FileIndexer.DEFAULT_ROOT, rawBuild -> {
+                    if (!isAdded()) return;
+                    appendLog("Index ready · " + buildCount(rawBuild) + " files");
+                });
+            } else {
+                appendLog("Index ready");
+            }
+        });
     }
 
     private void refreshIndexer() {
-        appendLog("Refreshing FileIndexer cache…");
+        appendLog("Refreshing native index…");
         binding.btnRefreshIndexer.setEnabled(false);
-        new Thread(() -> {
-            FileIndexer.getInstance().refreshCache();
-            FileIndexer idx = FileIndexer.getInstance();
-            runOnUi(() -> {
-                binding.btnRefreshIndexer.setEnabled(true);
-                appendLog("Cache refreshed · " + idx.getIndexedFileCount() + " files");
+        NativeEngine.buildIndexAsync(FileIndexer.DEFAULT_ROOT, rawJson -> {
+            if (binding == null) return;
+            binding.btnRefreshIndexer.setEnabled(true);
+            int count = buildCount(rawJson);
+            if (count >= 0) {
+                appendLog("Index refreshed · " + count + " files");
                 Toast.makeText(getContext(), "Index refreshed", Toast.LENGTH_SHORT).show();
-                if (binding.transferViewFlipper.getDisplayedChild() == 1) {
-                    loadBrowseDirectory(browsePath);
-                }
-            });
-        }).start();
+            } else {
+                appendLog("Index refresh failed");
+                Toast.makeText(getContext(), "Index refresh failed", Toast.LENGTH_SHORT).show();
+            }
+            if (binding.transferViewFlipper.getDisplayedChild() == 1) {
+                loadBrowseDirectory(browsePath);
+            }
+        });
+    }
+
+    private static boolean isIndexMissing(String rawMeta) {
+        try {
+            String status = new JSONObject(rawMeta).optString("status", "");
+            return status.equals("missing") || rawMeta.contains("paths_not_initialized");
+        } catch (Exception e) {
+            return true;
+        }
+    }
+
+    private static int buildCount(String rawJson) {
+        try {
+            return new JSONObject(rawJson).optInt("count", -1);
+        } catch (Exception e) {
+            return -1;
+        }
     }
 
     private void updateSavePathLabel() {
@@ -368,32 +391,70 @@ public class TransferFragment extends Fragment {
             return;
         }
 
-        FileIndexer indexer = FileIndexer.getInstance();
-        if (indexer.isCacheEmpty()) {
-            Toast.makeText(getContext(), "Index empty — refreshing…", Toast.LENGTH_SHORT).show();
-            refreshIndexer();
-            return;
-        }
-
         appendLog("Searching index for \"" + name + "\"…");
         setTransferButtonsEnabled(false);
 
-        new Thread(() -> {
-            List<String> matches = indexer.searchFilesByKeyword(name);
-            runOnUi(() -> {
-                setTransferButtonsEnabled(true);
-                if (matches.isEmpty()) {
-                    appendLog("No local files matched \"" + name + "\"");
-                    Toast.makeText(getContext(), "No matches — try Refresh index", Toast.LENGTH_SHORT).show();
-                    return;
+        // Global search runs on the shared native index (same file every
+        // screen reads). Builds it first when missing, then searches.
+        NativeEngine.indexMetaAsync(rawMeta -> {
+            if (!isAdded()) {
+                runOnUi(() -> setTransferButtonsEnabled(true));
+                return;
+            }
+            if (isIndexMissing(rawMeta)) {
+                appendLog("Index missing — building first…");
+                NativeEngine.buildIndexAsync(FileIndexer.DEFAULT_ROOT,
+                        rawBuild -> runOnUi(() -> doUploadSearch(name)));
+            } else {
+                doUploadSearch(name);
+            }
+        });
+    }
+
+    private void doUploadSearch(String name) {
+        String dir = PathRegistry.moduleDir(getContext(), "search");
+        if (dir.isEmpty()) {
+            setTransferButtonsEnabled(true);
+            Toast.makeText(getContext(), "Storage not ready", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        String out = dir + "/transfer-matches.json";
+        PathCache.remember("transfer-search", out);
+        NativeEngine.searchIndexAsync(name, 50, out, rawJson -> {
+            if (!isAdded()) return;
+            setTransferButtonsEnabled(true);
+            if ("busy".equals(PathCache.reason(rawJson))) {
+                Toast.makeText(getContext(), "Search busy — try again", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            List<String> matches = parseIndexMatches(PathCache.readFile(PathCache.envelopePath(rawJson)));
+            if (matches.isEmpty()) {
+                appendLog("No local files matched \"" + name + "\"");
+                Toast.makeText(getContext(), "No matches — try Refresh index", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            if (matches.size() == 1) {
+                confirmSingleUpload(matches.get(0));
+            } else {
+                showMatchPicker(matches);
+            }
+        });
+    }
+
+    private static List<String> parseIndexMatches(String content) {
+        List<String> matches = new ArrayList<>();
+        if (content == null) return matches;
+        try {
+            JSONArray array = new JSONObject(content).optJSONArray("matches");
+            if (array != null) {
+                for (int i = 0; i < array.length(); i++) {
+                    matches.add(array.getString(i));
                 }
-                if (matches.size() == 1) {
-                    confirmSingleUpload(matches.get(0));
-                } else {
-                    showMatchPicker(matches);
-                }
-            });
-        }).start();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return matches;
     }
 
     private void confirmSingleUpload(String absolutePath) {

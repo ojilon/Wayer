@@ -24,6 +24,10 @@ Vision owner: you. This file is the shared checklist; check boxes as we land ste
   report out as files via JSON lib, pipe format deleted, `OrganizeHelper`
   writes the approved plan, invalidation now covers the index file too;
   needs device pass: plan → apply on a scratch folder, never on real data).
+- [ ] Step 7 — Refreshable whole-storage index (code done: Transfer reads
+  the shared native index with meta-gated rebuild, Java walk deleted,
+  Files keeps scoped live search in the same native module; needs device
+  pass: refresh, offline upload search, stale-vs-fresh expectations).
 
 ## Vision (what we are building)
 
@@ -202,15 +206,24 @@ output files and hands paths in; `FileMutator`/`OrganizeHelper` delegate.
 
 ## Step 7 — Refreshable whole-storage index (the loop closes)
 
-**Exit:** Refresh button rebuilds the index file under lease; every
-recursive search reads the index file, never walks live storage.
+**Exit:** Refresh button rebuilds the one shared index file under lease;
+Transfer's global search reads that file; the Java tree-walk cache is deleted.
 
-- `BUILD_INDEX(root, out_path)` + `INDEX_META` + `SEARCH_INDEX` all
-  file-backed; `FileIndexer.refreshCache()` becomes a bridge call.
-- Transfer/Files share the one index (the facade pattern from
-  `FUTURE_JNI_AND_CPP23.md`, finally wired).
-- Verify: airplane-mode airplane test — index searches work fully offline
-  from the file; refresh updates `modified_unix`.
+- `BUILD_INDEX` keeps its canonical location (`cache/index/files.json`) —
+  that file *is* the sharing point, so no `out_path` parameter: every reader
+  meets at the same file. `INDEX_META` guards every index read (missing →
+  build first, then proceed).
+- Transfer upload search → `SEARCH_INDEX` on the shared file (meta-gated
+  rebuild). Transfer folder browsing lists via plain `java.io` (one folder
+  never needed an index). The Java walk (`rebuildCache`, keyword search,
+  counts) is deleted; `FileIndexer` keeps only path helpers.
+- Files keeps its **scoped live search** (`SEARCH_FILES` on the current
+  folder): an explorer must show just-created files, and an index is stale
+  by design. Both searches live in the same native module
+  (`wayer_storage_search`) — shared code, honest freshness per screen.
+- Verify: airplane test — index searches work fully offline from the file;
+  refresh updates `modified_unix`; upload search finds a file added before
+  the last refresh, misses one added after (until next refresh).
 
 ---
 

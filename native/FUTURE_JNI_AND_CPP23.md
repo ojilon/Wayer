@@ -46,9 +46,10 @@ Sockets/hotspot protocol remain **Java** (`NetworkManager`) by project rule; nat
 | 18 | SEARCH_INDEX | exists — substring search over the index file, capped matches |
 | 19 | READ_TEXT_FILE | exists — read-only text preview (`path\|max_bytes`), binary refused |
 
-## Facade pattern
+## Facade pattern (landed as Step 7, leaner than planned)
 
-Java `FileIndexer` can become a thin wrapper calling actions 15 (`BUILD_INDEX`) /
-18 (`SEARCH_INDEX`) so Transfer/Files keep stable APIs while the implementation
-shifts. Kept as a follow-up: `FileIndexer` still owns the Java walk until the
-native index path is proven on-device.
+Instead of wrapping the Java walk, Step 7 deleted it: Transfer reads the
+shared native index (`BUILD_INDEX` / `SEARCH_INDEX`) directly, and Files
+keeps its scoped live search in the same native module. No parallel
+implementations remain — one index file, one module, honest freshness rules
+per screen (see `docs/BRIDGE_PLAN.md` Step 7).
