@@ -137,17 +137,22 @@ std::string route_action(int action_id, std::string_view payload) {
             return wayer::storage::search_files_to_file(parts[0], query, parts[1]);
         }
         case ACTION_FIND_LARGE_FILES: {
+            // Payload "root|min_bytes|max_results|out_path". The listing is
+            // written to out_path; the reply is {"status":"ok","path":...}.
             auto parts = split_payload(payload);
-            std::string root = parts.empty() ? "/storage/emulated/0" : parts[0];
+            if (parts.size() < 4 || parts[3].empty()) {
+                return R"({"status":"error","reason":"bad_payload"})";
+            }
+            std::string root = parts[0].empty() ? "/storage/emulated/0" : parts[0];
             uint64_t min_bytes = 10ull * 1024 * 1024;
             int max_results = 50;
-            if (parts.size() > 1 && !parts[1].empty()) {
+            if (!parts[1].empty()) {
                 min_bytes = static_cast<uint64_t>(std::strtoull(parts[1].c_str(), nullptr, 10));
             }
-            if (parts.size() > 2 && !parts[2].empty()) {
+            if (!parts[2].empty()) {
                 max_results = static_cast<int>(std::strtol(parts[2].c_str(), nullptr, 10));
             }
-            return wayer::storage::find_large_files(root, min_bytes, max_results);
+            return wayer::storage::find_large_files_to_file(root, min_bytes, max_results, parts[3]);
         }
         case ACTION_FIND_DUPLICATES: {
             // Payload "root|out_path". Groups are written to out_path; the

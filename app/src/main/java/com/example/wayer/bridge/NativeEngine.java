@@ -81,6 +81,15 @@ public class NativeEngine {
                 outPath, "duplicates", callback);
     }
 
+    /** Large-files scan with file output. */
+    public static void findLargeFilesAsync(String root, long minBytes, int maxResults,
+                                           String outPath, Callback callback) {
+        Bridge.run(ACTION_FIND_LARGE_FILES,
+                (root != null ? root : "") + "|" + minBytes + "|" + maxResults
+                        + "|" + (outPath != null ? outPath : ""),
+                outPath, "large-files", callback);
+    }
+
     /** Organize plan into a file; reply is {status,path}. */
     public static void planOrganizeAsync(String root, String outPath, Callback callback) {
         Bridge.run(ACTION_PLAN_ORGANIZE,

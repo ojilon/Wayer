@@ -7,40 +7,25 @@ import android.view.ViewGroup;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AlertDialog;
 import androidx.core.view.GravityCompat;
 import androidx.fragment.app.Fragment;
-import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.example.wayer.core.GlassBlur;
-import com.example.wayer.bridge.NativeCache;
-import com.example.wayer.bridge.NativeEngine;
 import com.example.wayer.bridge.Stats;
 import com.example.wayer.core.ThemePrefs;
 import com.example.wayer.core.UiChrome;
 import com.example.wayer.databinding.FragmentStorageBinding;
-import com.example.wayer.storage.FileMutator;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class StorageFragment extends Fragment {
 
-    private static final int ACTION_FIND_LARGE    = 9;
-    private static final String ROOT = "/storage/emulated/0";
-    private static final long MIN_BYTES = 10L * 1024 * 1024;
-
     private FragmentStorageBinding binding;
-    private FileAdapter largeAdapter;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         binding = FragmentStorageBinding.inflate(inflater, container, false);
-        setupLargeList();
         setupButtons();
         setupSidebar();
         loadStats();
@@ -90,54 +75,8 @@ public class StorageFragment extends Fragment {
                 GlassBlur.isSupported() ? "Toggle glass blur" : "Blur unavailable");
     }
 
-    private void setupLargeList() {
-        largeAdapter = new FileAdapter();
-        binding.largeFilesList.setLayoutManager(new LinearLayoutManager(requireContext()));
-        binding.largeFilesList.setAdapter(largeAdapter);
-
-        largeAdapter.setOnItemClickListener(new FileAdapter.OnItemClickListener() {
-            @Override
-            public void onItemClick(FileItem item) {
-                FileOpenHelper.open(requireContext(), item.getPath());
-            }
-
-            @Override
-            public void onItemLongClick(FileItem item) {
-                new AlertDialog.Builder(requireContext())
-                        .setTitle(item.getName())
-                        .setItems(new String[]{"Open", "Delete", "Cancel"}, (d, which) -> {
-                            if (which == 0) {
-                                FileOpenHelper.open(requireContext(), item.getPath());
-                            } else if (which == 1) {
-                                confirmDeleteLarge(item);
-                            }
-                        })
-                        .show();
-            }
-        });
-    }
-
-    private void confirmDeleteLarge(FileItem item) {
-        new AlertDialog.Builder(requireContext())
-                .setTitle("Delete large file?")
-                .setMessage(item.getName() + "\n" + item.getDetails())
-                .setPositiveButton("Delete", (d, w) -> {
-                    FileMutator.Result r = FileMutator.delete(item.getPath());
-                    Toast.makeText(getContext(), r.message, Toast.LENGTH_SHORT).show();
-                    if (r.ok) {
-                        NativeCache.invalidateStatsSnapshot(getContext());
-                        scanLargeFiles();
-                        loadStats();
-                    }
-                })
-                .setNegativeButton("Cancel", null)
-                .show();
-    }
-
     private void setupButtons() {
         binding.btnRefreshStorage.setOnClickListener(v -> loadStats(true));
-
-        binding.btnScanLarge.setOnClickListener(v -> scanLargeFiles());
     }
 
     private void loadStats() {
@@ -191,58 +130,6 @@ public class StorageFragment extends Fragment {
             e.printStackTrace();
             binding.storageSummary.setText("Failed to parse storage data");
         }
-    }
-
-    private void scanLargeFiles() {
-        binding.largeFilesEmpty.setText("Scanning…");
-        binding.largeFilesEmpty.setVisibility(View.VISIBLE);
-        binding.btnScanLarge.setEnabled(false);
-
-        String payload = ROOT + "|" + MIN_BYTES + "|50";
-
-        NativeEngine.processActionAsync(ACTION_FIND_LARGE, payload, rawJson -> {
-            if (binding == null) return;
-            binding.btnScanLarge.setEnabled(true);
-
-            List<FileItem> items = parseLargeFiles(rawJson);
-            if (items.isEmpty()) {
-                binding.largeFilesEmpty.setText("No files ≥ " + formatSize(MIN_BYTES));
-                binding.largeFilesEmpty.setVisibility(View.VISIBLE);
-                largeAdapter.submitList(null);
-            } else {
-                binding.largeFilesEmpty.setVisibility(View.GONE);
-                largeAdapter.submitList(items);
-            }
-        });
-    }
-
-    private List<FileItem> parseLargeFiles(String rawJson) {
-        List<FileItem> result = new ArrayList<>();
-        try {
-            JSONObject root = new JSONObject(rawJson);
-            if (root.has("error")) {
-                Toast.makeText(getContext(), root.getString("error"), Toast.LENGTH_SHORT).show();
-                return result;
-            }
-            JSONArray files = root.optJSONArray("files");
-            if (files == null) return result;
-
-            for (int i = 0; i < files.length(); i++) {
-                JSONObject o = files.getJSONObject(i);
-                long size = o.optLong("size", 0);
-                result.add(new FileItem(
-                        o.getString("name"),
-                        o.getString("path"),
-                        formatSize(size),
-                        false,
-                        size
-                ));
-            }
-        } catch (JSONException e) {
-            e.printStackTrace();
-            Toast.makeText(getContext(), "Failed to parse large files", Toast.LENGTH_SHORT).show();
-        }
-        return result;
     }
 
     private void updateBarWeights(long images, long videos, long audio, long docs,long sys, long others) {

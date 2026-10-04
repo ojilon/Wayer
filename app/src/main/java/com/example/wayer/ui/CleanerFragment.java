@@ -37,11 +37,14 @@ public class CleanerFragment extends Fragment {
 
     private static final String ROOT = "/storage/emulated/0";
     private static final String DUPLICATES_JOB = "duplicates";
+    private static final String LARGE_JOB = "large-files";
+    private static final long LARGE_MIN_BYTES = 10L * 1024 * 1024;
 
     private FragmentCleanerBinding binding;
     private FileAdapter adapter;
     // groups[i] = list of full paths that are duplicates of each other
     private final List<List<String>> groups = new ArrayList<>();
+    private FileAdapter largeAdapter;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle saved) {
@@ -67,6 +70,25 @@ public class CleanerFragment extends Fragment {
 
         binding.btnScanDuplicates.setOnClickListener(v -> scan());
         scan();
+
+        largeAdapter = new FileAdapter();
+        binding.largeFilesList.setLayoutManager(new LinearLayoutManager(requireContext()));
+        binding.largeFilesList.setAdapter(largeAdapter);
+
+        largeAdapter.setOnItemClickListener(new FileAdapter.OnItemClickListener() {
+            @Override
+            public void onItemClick(FileItem item) {
+                FileOpenHelper.open(requireContext(), item.getPath());
+            }
+
+            @Override
+            public void onItemLongClick(FileItem item) {
+                confirmDeleteLarge(item);
+            }
+        });
+
+        binding.btnScanLarge.setOnClickListener(v -> scanLargeFiles());
+        scanLargeFiles();
         return binding.getRoot();
     }
 
@@ -196,6 +218,93 @@ public class CleanerFragment extends Fragment {
                 })
                 .setNegativeButton("Cancel", null)
                 .show();
+    }
+
+    private void scanLargeFiles() {
+        String dir = PathRegistry.moduleDir(getContext(), "cleaner");
+        if (dir.isEmpty()) {
+            binding.largeFilesEmpty.setText("Storage not ready");
+            binding.largeFilesEmpty.setVisibility(View.VISIBLE);
+            return;
+        }
+        String out = dir + "/large-files.json";
+        PathCache.remember(LARGE_JOB, out);
+
+        binding.largeFilesEmpty.setText("Scanning…");
+        binding.largeFilesEmpty.setVisibility(View.VISIBLE);
+        binding.btnScanLarge.setEnabled(false);
+
+        NativeEngine.findLargeFilesAsync(ROOT, LARGE_MIN_BYTES, 50, out, rawJson -> {
+            if (binding == null) return;
+            binding.btnScanLarge.setEnabled(true);
+            if ("busy".equals(PathCache.reason(rawJson))) {
+                Toast.makeText(getContext(), "Scan already running", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            String content = PathCache.readFile(PathCache.envelopePath(rawJson));
+            if (content == null) {
+                binding.largeFilesEmpty.setText("Scan failed");
+                binding.largeFilesEmpty.setVisibility(View.VISIBLE);
+                return;
+            }
+            renderLargeFilesContent(content);
+        });
+    }
+
+    private void renderLargeFilesContent(String content) {
+        List<FileItem> items = new ArrayList<>();
+        try {
+            JSONObject root = new JSONObject(content);
+            JSONArray files = root.optJSONArray("files");
+            if (files != null) {
+                for (int i = 0; i < files.length(); i++) {
+                    JSONObject o = files.getJSONObject(i);
+                    long size = o.optLong("size", 0);
+                    items.add(new FileItem(
+                            o.getString("name"),
+                            o.getString("path"),
+                            formatSize(size),
+                            false,
+                            size
+                    ));
+                }
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+            Toast.makeText(getContext(), "Failed to parse large files", Toast.LENGTH_SHORT).show();
+        }
+
+        if (items.isEmpty()) {
+            binding.largeFilesEmpty.setText("No files ≥ " + formatSize(LARGE_MIN_BYTES));
+            binding.largeFilesEmpty.setVisibility(View.VISIBLE);
+            largeAdapter.submitList(null);
+        } else {
+            binding.largeFilesEmpty.setVisibility(View.GONE);
+            largeAdapter.submitList(items);
+        }
+    }
+
+    private void confirmDeleteLarge(FileItem item) {
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Delete large file?")
+                .setMessage(item.getName() + "\n" + item.getDetails())
+                .setPositiveButton("Delete", (d, w) -> {
+                    FileMutator.Result r = FileMutator.delete(item.getPath());
+                    Toast.makeText(getContext(), r.message, Toast.LENGTH_SHORT).show();
+                    if (r.ok) {
+                        NativeCache.invalidateStatsSnapshot(getContext());
+                        scanLargeFiles();
+                    }
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private static String formatSize(long bytes) {
+        if (bytes < 1024) return bytes + " B";
+        if (bytes < 1024 * 1024) return String.format("%.1f KB", bytes / 1024.0);
+        if (bytes < 1024L * 1024 * 1024) return String.format("%.1f MB", bytes / (1024.0 * 1024));
+        return String.format("%.1f GB", bytes / (1024.0 * 1024 * 1024));
     }
 
     @Override

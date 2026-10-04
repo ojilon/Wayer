@@ -132,7 +132,7 @@ shared storage (see `storage/AppDirs.java` — single policy for the app):
 | 6  | START_LISTENER | Transfer |
 | 7  | STORAGE_STATS | retired (merged into 13) |
 | 8  | SEARCH_FILES | Files (file-out) |
-| 9  | FIND_LARGE | Storage |
+| 9  | FIND_LARGE | Cleaner (file-out) |
 | 10 | FIND_DUPLICATES | Duplicates |
 | 11 | PLAN_ORGANIZE | Organize (plan file out) |
 | 12 | APPLY_ORGANIZE | Organize (plan file in, report out) |

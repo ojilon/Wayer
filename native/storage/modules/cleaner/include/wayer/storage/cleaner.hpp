@@ -7,6 +7,8 @@ namespace wayer::storage {
 // Kept in wayer::storage for JNI compat; submodule owns the TUs.
 std::string find_duplicates(const std::string& root_path);
 std::string find_large_files(const std::string& root_path, uint64_t min_bytes, int max_results);
-// Same result written to out_path; reply is {"status":"ok","path":...} only.
+// Same results written to out_path; replies are {"status":"ok","path":...} only.
 std::string find_duplicates_to_file(const std::string& root_path, const std::string& out_path);
+std::string find_large_files_to_file(const std::string& root_path, uint64_t min_bytes,
+                                     int max_results, const std::string& out_path);
 } // namespace wayer::storage

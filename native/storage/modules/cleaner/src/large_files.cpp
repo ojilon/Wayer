@@ -2,6 +2,7 @@
 #include <wayer/storage/cleaner.hpp>
 
 #include <wayer/core/json_util.hpp>
+#include <wayer/core/text.hpp>
 
 #include <algorithm>
 #include <cstddef>
@@ -64,6 +65,15 @@ std::string find_large_files(const std::string& root_path, uint64_t min_bytes, i
     }
     json << "]}";
     return json.str();
+}
+
+std::string find_large_files_to_file(const std::string& root_path, uint64_t min_bytes,
+                                     int max_results, const std::string& out_path) {
+    const std::string json = find_large_files(root_path, min_bytes, max_results);
+    if (!core::write_text_file(out_path, json)) {
+        return R"({"status":"error","reason":"write_failed"})";
+    }
+    return std::format(R"({{"status":"ok","path":"{}"}})", core::json::escape(out_path));
 }
 
 } // namespace wayer::storage

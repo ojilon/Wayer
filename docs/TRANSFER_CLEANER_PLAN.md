@@ -7,14 +7,10 @@ tap-through. Check boxes only after the device confirms.
 
 ## A — Cleaner tab restructure
 
-- [ ] **A1 · Duplicates → Cleaner rename.** `DuplicatesFragment` becomes
-  `CleanerFragment` (`fragment_cleaner.xml`, menu id `nav_cleaner`), title
-  "Cleaner". Pure rename + rebuild + launch; nothing else moves yet.
-- [ ] **A2 · Move large-files scan into Cleaner.** Relocate `scanLargeFiles`,
-  `parseLargeFiles`, the results list and its button from `StorageFragment`
-  to the Cleaner large-files tab. Storage keeps summary + category bars
-  (room there for future non-cleaner widgets). `StorageFragment` shrinks;
-  no behavior changes on either screen.
+- [x] **A1 · Duplicates → Cleaner rename.** (done, build green)
+- [x] **A2 · Move large-files scan into Cleaner.** (done: scan + list + delete
+  moved verbatim into `CleanerFragment`, converted to the file-backed
+  `find_large_files_to_file` on the way; Storage keeps summary + bars)
 - [ ] **A3 · Cleaner home grid.** Cleaner opens on a 2-column vertical grid
   of **square cards** (icon top, label + status line below), not buttons:
   Duplicates, Large files (+ future cards from `CLEANER_IDEAS.md`, each a

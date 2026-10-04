@@ -34,7 +34,7 @@ Sockets/hotspot protocol remain **Java** (`NetworkManager`) by project rule; nat
 | 6 | START_LISTENER | exists |
 | 7 | STORAGE_STATS | retired — merged into 13 (file-backed) |
 | 8 | SEARCH_FILES | file-out (`root\|out\|query…`) |
-| 9 | FIND_LARGE | exists |
+| 9 | FIND_LARGE | file-out (`root\|min\|max\|out`) |
 | 10 | FIND_DUPLICATES | exists |
 | 11 | PLAN_ORGANIZE | file-out (`root\|out`) |
 | 12 | APPLY_ORGANIZE | file-in/out (`plan\|report`, JSON via lib) |
