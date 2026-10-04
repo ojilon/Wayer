@@ -436,6 +436,44 @@
                     android:layout_marginTop="@dimen/spacing_sm"
                     android:clipToPadding="false" />
 
+                <EditText
+                    android:id="@+id/browse_filter"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/spacing_sm"
+                    android:hint="Filter this folder…"
+                    android:inputType="text"
+                    android:maxLines="1"
+                    android:textColor="@color/wayer_text_primary"
+                    android:textColorHint="@color/wayer_text_secondary"
+                    android:background="@drawable/input_field_box"
+                    android:padding="@dimen/spacing_sm" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="@dimen/spacing_sm">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_select_mode"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Select" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_send_selected"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/spacing_sm"
+                        android:layout_weight="1"
+                        android:enabled="false"
+                        android:text="Send" />
+                </LinearLayout>
+
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"

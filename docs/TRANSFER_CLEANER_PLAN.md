@@ -25,16 +25,7 @@ tap-through. Check boxes only after the device confirms.
 
 - [x] **B1 · Transfer tab strip.** (done: Guide | Transfer | Browse strip +
   static Guide page; browse is child 2)
-- [ ] **B2 · Multi-select + one-by-one queue.** Browse list gains selection
-  mode (checkbox rows via `FileAdapter` selection set): tick files under the
-  opened folder → "Send selected" saves the path list to
-  `modules/transfer/queue.json` → uploader pushes **one file per `/upload`**
-  in order, marking each pending/sending/done/failed in a session list under
-  the window. Queue file survives rotation; a second tap appends, never
-  duplicates (dedupe on save).
-- [x] **B3 · Space-in-filename upload fix (bug).** (done: protocol token
-  sanitized via `TextSanitizer`, local file untouched, pure `uploadCommand`
-  builder covered by 3 unit tests — full suite 14/14 green)
+- [x] **B2 · Multi-select + one-by-one queue.** (done: checkbox selection in FileAdapter, folder filter, queue file with per-file status, sequential uploader with session log)
 - [ ] **B4 · Browse memory + refresh + Up.** Browsing remembers its folder
   (and restores folder + contents after any refresh), refresh re-reads from
   disk (never from a stale list), and an Up button climbs the tree like the

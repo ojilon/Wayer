@@ -62,6 +62,16 @@
 
         </LinearLayout>
 
+        <CheckBox
+            android:id="@+id/row_checkbox"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/spacing_sm"
+            android:layout_gravity="center_vertical"
+            android:visibility="gone"
+            android:clickable="false"
+            android:focusable="false" />
+
     </LinearLayout>
 
 </com.google.android.material.card.MaterialCardView>

@@ -27,6 +27,7 @@ import com.example.wayer.network.NetworkManager;
 import com.example.wayer.storage.FileIndexer;
 import com.example.wayer.transfer.RecentTransfersStore;
 import com.example.wayer.transfer.TransferController;
+import com.example.wayer.transfer.TransferQueue;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -188,6 +189,56 @@ public class TransferFragment extends Fragment {
                 }
             }
         });
+
+        browseAdapter.setOnSelectionChangedListener(count -> updateSendButton());
+
+        binding.btnSelectMode.setOnClickListener(v -> {
+            browseAdapter.setSelectionMode(!browseAdapter.isSelectionMode());
+            binding.btnSelectMode.setText(browseAdapter.isSelectionMode() ? "Done" : "Select");
+            updateSendButton();
+        });
+        binding.btnSendSelected.setOnClickListener(v -> uploadSelected());
+
+        binding.browseFilter.addTextChangedListener(new android.text.TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+            }
+
+            @Override
+            public void afterTextChanged(android.text.Editable s) {
+                applyBrowseFilter(s != null ? s.toString() : "");
+            }
+        });
+        updateSendButton();
+    }
+
+    private final List<FileItem> browseFiles = new ArrayList<>();
+
+    private void applyBrowseFilter(String query) {
+        if (binding == null) return;
+        if (query == null || query.trim().isEmpty()) {
+            browseAdapter.submitList(new ArrayList<>(browseFiles));
+            return;
+        }
+        String q = query.trim().toLowerCase();
+        List<FileItem> filtered = new ArrayList<>();
+        for (FileItem item : browseFiles) {
+            if (item.getName().toLowerCase().contains(q)) {
+                filtered.add(item);
+            }
+        }
+        browseAdapter.submitList(filtered);
+    }
+
+    private void updateSendButton() {
+        if (binding == null) return;
+        int count = browseAdapter != null ? browseAdapter.getSelectedPaths().size() : 0;
+        binding.btnSendSelected.setEnabled(count > 0);
+        binding.btnSendSelected.setText(count > 0 ? "Send (" + count + ")" : "Send");
     }
 
     private void setupTabs() {
@@ -238,7 +289,11 @@ public class TransferFragment extends Fragment {
             }
         }
 
-        browseAdapter.submitList(items);
+        browseFiles.clear();
+        browseFiles.addAll(items);
+        String filter = binding.browseFilter.getText() != null
+                ? binding.browseFilter.getText().toString() : "";
+        applyBrowseFilter(filter);
     }
 
     /** Index file shared with every other screen; builds it when missing. */
@@ -497,7 +552,55 @@ public class TransferFragment extends Fragment {
                 .show();
     }
 
+    /** Send every ticked file in order; paths were saved to the queue file first. */
+    private void uploadSelected() {
+        List<String> files = new ArrayList<>();
+        for (String path : browseAdapter.getSelectedPaths()) {
+            File f = new File(path);
+            if (f.isFile()) files.add(path);
+        }
+        if (files.isEmpty()) {
+            Toast.makeText(getContext(), "Tick files to send first", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (!TransferQueue.save(requireContext(), files)) {
+            Toast.makeText(getContext(), "Cannot save queue", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        browseAdapter.setSelectionMode(false);
+        binding.btnSelectMode.setText("Select");
+        updateSendButton();
+        setTransferButtonsEnabled(false);
+        appendLog("Queue: " + files.size() + " file(s)");
+        uploadNext(0, files, 0);
+    }
+
+    private void uploadNext(int index, List<String> paths, int sent) {
+        if (binding == null) return;
+        if (index >= paths.size()) {
+            setTransferButtonsEnabled(true);
+            appendLog("Queue done · " + sent + "/" + paths.size() + " sent");
+            Toast.makeText(getContext(), "Sent " + sent + "/" + paths.size(), Toast.LENGTH_SHORT).show();
+            return;
+        }
+        String path = paths.get(index);
+        appendLog("[" + (index + 1) + "/" + paths.size() + "] " + new File(path).getName());
+        TransferQueue.setStatus(requireContext(), path, "sending");
+        performUpload(path, ok -> {
+            TransferQueue.setStatus(requireContext(), path, ok ? "done" : "failed");
+            uploadNext(index + 1, paths, ok ? sent + 1 : sent);
+        });
+    }
+
+    private interface UploadDone {
+        void onDone(boolean ok);
+    }
+
     private void performUpload(String absolutePath) {
+        performUpload(absolutePath, null);
+    }
+
+    private void performUpload(String absolutePath, UploadDone onDone) {
         File local = new File(absolutePath);
         String command = "/upload " + absolutePath;
         appendLog("Upload: " + local.getName() + " ← " + absolutePath);
@@ -519,7 +622,8 @@ public class TransferFragment extends Fragment {
                     appendLog(finalResult);
                     setTransferButtonsEnabled(true);
 
-                    if (finalResult != null && finalResult.toLowerCase().contains("success")) {
+                    boolean ok = finalResult != null && finalResult.toLowerCase().contains("success");
+                    if (ok) {
                         long bytes = local.exists() ? local.length() : 0;
                         sessionSentBytes += bytes;
                         updateSessionStats();
@@ -530,6 +634,7 @@ public class TransferFragment extends Fragment {
                         }
                         recordSuccess(false, local.getName(), absolutePath);
                     }
+                    if (onDone != null) onDone.onDone(ok);
                 });
             }
         });
