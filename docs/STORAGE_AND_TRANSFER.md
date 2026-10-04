@@ -17,11 +17,11 @@ Show clear storage statistics and prepare cleanup (large files, delete).
 
 ### Data flow
 ```
-StorageFragment
-    → NativeEngine.processActionAsync(13, "<cache>|<root>|<max_age>|<device_bytes>")
-    → C++ read_cache_if_fresh() or get_storage_stats(root, known_device_bytes)
-    → JSON: total/used/free + breakdown{images,videos,audio,documents,others}
-    → Java updates text + LinearLayout weights on the stacked bar
+StorageFragment / HomeFragment
+    → bridge/Stats.requestSnapshot (one shared snapshot file, leased)
+    → NativeEngine action 13 → C++ computes (JSON lib) or serves the file
+    → Java reads the file, fills UI (same parsers as before)
+    → SQLite history row recorded best-effort (cache/stats/stats.db)
 ```
 
 Device capacity comes from `StorageCapacity.queryDeviceBytes`
@@ -130,13 +130,13 @@ shared storage (see `storage/AppDirs.java` — single policy for the app):
 |----|------|---------|
 | 3  | LIST_FILES | Files |
 | 6  | START_LISTENER | Transfer |
-| 7  | STORAGE_STATS | Home, Storage (`root\|device_bytes`) |
-| 8  | SEARCH_FILES | Files |
+| 7  | STORAGE_STATS | retired (merged into 13) |
+| 8  | SEARCH_FILES | Files (file-out) |
 | 9  | FIND_LARGE | Storage |
 | 10 | FIND_DUPLICATES | Duplicates |
 | 11 | PLAN_ORGANIZE | Organize |
 | 12 | APPLY_ORGANIZE | Organize |
-| 13 | GET_CACHED_STATS | Storage (`cache\|root\|max_age[\|device_bytes]`) |
+| 13 | GET_CACHED_STATS | Storage + Home via bridge/Stats (file-backed, force on 0) |
 | 14 | INIT_APP_PATHS | MainActivity (once at startup) |
 | 15 | BUILD_INDEX | planned UI (Transfer refresh / Files) |
 | 16 | INVALIDATE_CACHE | delete / organize flows via `NativeCache` |

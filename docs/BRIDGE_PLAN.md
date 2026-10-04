@@ -16,6 +16,10 @@ Vision owner: you. This file is the shared checklist; check boxes as we land ste
   cleaner / index modules, `bridge/PathCache` new+previous, Files + Duplicates
   re-pointed with previous-list-first, single-retry/already-running on busy;
   needs device pass: search, rotate mid-search, rapid typing).
+- [ ] Step 5 — Stats grow up (code done: stats document via JSON lib with
+  per-folder detail, SQLite history row best-effort, action 13 file-backed,
+  action 7 retired, `bridge/Stats` shared by Home + Storage; needs device
+  pass: numbers identical, refresh forces recompute, Internals shows files).
 
 ## Vision (what we are building)
 

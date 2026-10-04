@@ -13,10 +13,9 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.example.wayer.core.GlassBlur;
-import com.example.wayer.bridge.Bridge;
 import com.example.wayer.bridge.NativeCache;
 import com.example.wayer.bridge.NativeEngine;
-import com.example.wayer.bridge.StorageCapacity;
+import com.example.wayer.bridge.Stats;
 import com.example.wayer.core.ThemePrefs;
 import com.example.wayer.core.UiChrome;
 import com.example.wayer.databinding.FragmentStorageBinding;
@@ -31,12 +30,9 @@ import java.util.List;
 
 public class StorageFragment extends Fragment {
 
-    private static final int ACTION_STORAGE_STATS = 7;
     private static final int ACTION_FIND_LARGE    = 9;
     private static final String ROOT = "/storage/emulated/0";
     private static final long MIN_BYTES = 10L * 1024 * 1024;
-    private static final int ACTION_GET_CACHED_STATS = 13;
-    private static final int STATS_MAX_AGE_SECONDS = 300; // 5 min
 
     private FragmentStorageBinding binding;
     private FileAdapter largeAdapter;
@@ -139,34 +135,18 @@ public class StorageFragment extends Fragment {
     }
 
     private void setupButtons() {
-        binding.btnRefreshStorage.setOnClickListener(v -> {
-            String payload = statsCachePath() + "|" + ROOT + "|0"
-                    + "|" + StorageCapacity.queryDeviceBytes(getContext());
-            requestStats(payload);
-        });
+        binding.btnRefreshStorage.setOnClickListener(v -> loadStats(true));
 
         binding.btnScanLarge.setOnClickListener(v -> scanLargeFiles());
     }
 
     private void loadStats() {
-        binding.storageSummary.setText("Calculating…");
-
-        String payload = statsCachePath() + "|" + ROOT + "|" + STATS_MAX_AGE_SECONDS
-                + "|" + StorageCapacity.queryDeviceBytes(getContext());
-        requestStats(payload);
+        loadStats(false);
     }
 
-    /**
-     * Both stats calls share one snapshot file, so they run under its lease:
-     * a refresh landing mid-load waits its turn instead of tearing the file.
-     * A refused ("busy") job keeps the numbers already on screen.
-     */
-    private void requestStats(String payload) {
-        Bridge.run(ACTION_GET_CACHED_STATS, payload, statsCachePath(), "stats", rawJson -> {
-            if (binding == null) return;
-            if (rawJson != null && rawJson.contains("\"busy\"")) return;
-            handleStatsResult(rawJson);
-        });
+    private void loadStats(boolean force) {
+        binding.storageSummary.setText("Calculating…");
+        Stats.requestSnapshot(getContext(), force, this::handleStatsResult);
     }
 
     private void handleStatsResult(String rawJson) {
@@ -293,10 +273,6 @@ public class StorageFragment extends Fragment {
         if (bytes < 1024 * 1024) return String.format("%.1f KB", bytes / 1024.0);
         if (bytes < 1024L * 1024 * 1024) return String.format("%.1f MB", bytes / (1024.0 * 1024));
         return String.format("%.1f GB", bytes / (1024.0 * 1024 * 1024));
-    }
-
-    private String statsCachePath() {
-        return NativeCache.statsSnapshotPath(requireContext());
     }
 
     @Override

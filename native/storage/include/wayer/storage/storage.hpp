@@ -8,6 +8,8 @@
 #include <wayer/storage/organizer.hpp>
 #include <wayer/storage/safety.hpp>
 #include <wayer/storage/search.hpp>
+#include <wayer/storage/stats_db.hpp>
+#include <wayer/storage/stats_json.hpp>
 #include <wayer/storage/storage_cache.hpp>
 #include <wayer/storage/walker.hpp>
 

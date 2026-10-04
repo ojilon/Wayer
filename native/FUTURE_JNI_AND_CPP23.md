@@ -32,13 +32,13 @@ Sockets/hotspot protocol remain **Java** (`NetworkManager`) by project rule; nat
 |----|------|--------|
 | 3 | LIST_FILES | exists |
 | 6 | START_LISTENER | exists |
-| 7 | STORAGE_STATS | exists (`root\|known_device_bytes`) |
-| 8 | SEARCH_FILES | exists (full-tree walk; prefer 18 over an index when one is built) |
+| 7 | STORAGE_STATS | retired — merged into 13 (file-backed) |
+| 8 | SEARCH_FILES | file-out (`root\|out\|query…`) |
 | 9 | FIND_LARGE | exists |
 | 10 | FIND_DUPLICATES | exists |
 | 11 | PLAN_ORGANIZE | exists |
 | 12 | APPLY_ORGANIZE | exists |
-| 13 | GET_CACHED_STATS | exists (`cache_path\|root\|max_age[\|known_device_bytes]`) |
+| 13 | GET_CACHED_STATS | file-backed (`cache\|root\|max_age[\|bytes]` → `{status,path}`; max_age ≤ 0 forces recompute) |
 | 14 | INIT_APP_PATHS | exists — Java passes files dir once |
 | 15 | BUILD_INDEX | exists — writes `cache/index/files.json`, returns `{path, count}` |
 | 16 | INVALIDATE_CACHE | exists — drops a cache file after mutations |

@@ -28,7 +28,6 @@ constexpr int ACTION_LIST_FILES = 3;
 constexpr int ACTION_GET_NETWORK_INFO = 4;
 constexpr int ACTION_FILTER_DOCUMENTS = 5;
 constexpr int ACTION_START_LISTENER = 6;
-constexpr int ACTION_GET_STORAGE_STATS = 7;
 constexpr int ACTION_SEARCH_FILES = 8;
 constexpr int ACTION_FIND_LARGE_FILES = 9;
 constexpr int ACTION_FIND_DUPLICATES = 10;
@@ -124,16 +123,6 @@ std::string route_action(int action_id, std::string_view payload) {
             return wayer::documents::filter_documents(payload);
         case ACTION_START_LISTENER:
             return wayer::transfer::start_listener(8080);
-        case ACTION_GET_STORAGE_STATS: {
-            // Payload: "root" or "root|known_device_bytes" (see storage/flags.md).
-            auto parts = split_payload(payload);
-            std::string root = parts.empty() ? "" : parts[0];
-            uint64_t known_bytes = 0;
-            if (parts.size() > 1 && !parts[1].empty()) {
-                known_bytes = std::strtoull(parts[1].c_str(), nullptr, 10);
-            }
-            return wayer::storage::get_storage_stats(root, known_bytes);
-        }
         case ACTION_SEARCH_FILES: {
             // Payload "root|out_path|query..." — the query stays last because
             // file names may legally contain '|'; everything from the 3rd
@@ -176,20 +165,24 @@ std::string route_action(int action_id, std::string_view payload) {
         case ACTION_GET_CACHED_STATS: {
             // parts[0]=cache_path, parts[1]=root, parts[2]=max_age,
             // parts[3]=known_device_bytes (optional; 0/absent = legacy floor).
+            // The snapshot file is the answer: fresh files are returned as-is,
+            // stale/missing ones are recomputed into place first. Either way
+            // Java reads the file — the reply is {"status":"ok","path":...}.
             std::vector<std::string> parts = split_payload(payload);
-            if (parts.size() < 3) return R"({"error":"bad_payload"})";
+            if (parts.size() < 3) return R"({"status":"error","reason":"bad_payload"})";
             int max_age = static_cast<int>(std::strtol(parts[2].c_str(), nullptr, 10));
 
             std::string cached = wayer::storage::read_cache_if_fresh(parts[0], max_age);
-            if (!cached.empty()) return cached;
+            if (!cached.empty()) {
+                return std::format(R"({{"status":"ok","path":"{}"}})",
+                                   wayer::core::json::escape(parts[0]));
+            }
 
             uint64_t known_bytes = 0;
             if (parts.size() > 3 && !parts[3].empty()) {
                 known_bytes = std::strtoull(parts[3].c_str(), nullptr, 10);
             }
-            std::string fresh = wayer::storage::get_storage_stats(parts[1], known_bytes);
-            wayer::storage::write_cache(parts[0], fresh);
-            return fresh;
+            return wayer::storage::write_storage_stats(parts[1], parts[0], known_bytes);
         }
         case ACTION_INIT_APP_PATHS:
             return init_app_paths(payload);

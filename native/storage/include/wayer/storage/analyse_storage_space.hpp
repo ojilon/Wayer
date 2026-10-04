@@ -5,12 +5,10 @@
 
 namespace wayer::storage {
 
-// Classic entry point (kept for JNI compat). Uses statvfs partition metrics
-// plus a retail-capacity floor when Java has not supplied a real capacity.
-std::string get_storage_stats(const std::string& root_path);
-
-// Preferred entry point: Java passes the real device capacity (bytes) queried
-// via StorageManager/StatFs. Pass 0 to fall back to the legacy behavior.
-std::string get_storage_stats(const std::string& root_path, uint64_t known_device_bytes);
+// Compute stats for root_path, write the JSON document to out_path, record a
+// SQLite history row (best-effort), and reply {"status":"ok","path":...}.
+// known_device_bytes comes from Java (0 = legacy retail-capacity floor).
+std::string write_storage_stats(const std::string& root_path, const std::string& out_path,
+                                uint64_t known_device_bytes);
 
 } // namespace wayer::storage

@@ -11,6 +11,8 @@ add_library(wayer_storage STATIC
     src/index.cpp
     src/list_files.cpp
     src/safety.cpp
+    src/stats_db.cpp
+    src/stats_json.cpp
     src/storage_cache.cpp
     src/storage_placeholder.cpp
     src/walker.cpp
@@ -28,6 +30,8 @@ target_link_libraries(wayer_storage
         wayer_storage_cleaner
         wayer_storage_organizer
     PRIVATE
+        wayer_json
+        wayer_sqlite3
         project_warnings
 )
 

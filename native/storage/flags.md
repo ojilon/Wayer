@@ -54,6 +54,9 @@ flat pairs) — e.g. if duplicate-group resolution needs to send back
 "delete these 3 of these 5 paths, per group" in one call. At that point,
 pull in a header-only JSON library (nlohmann/json is the standard pick)
 rather than extending the pipe-delimited format further.
+**Update**: the lib is vendored (`third_party/json`, Step 0) and first used
+for stats documents (Step 5). Pipe formats retire per bridge step —
+`apply_organize` is next (Step 6).
 
 ### Images excluded from `plan_organize`
 `plan_organize` currently skips `category == "images"` entirely —
