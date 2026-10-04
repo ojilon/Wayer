@@ -77,16 +77,31 @@ Activity log shows handshake and result. Session counters update on success; ban
 ### Protocol (phone ↔ WayerPC)
 ```
 Download:
-  phone → /ask <filename>
-  pc    → FOUND <size>
-  phone → (flush)
-  pc    → <raw bytes>
+  phone → /ask <filename>\n            (always newline-terminated)
+  pc    → FOUND <size>\n + <size> raw bytes
+          (header and body can arrive in one TCP burst — frame the
+          header on \n, then read exactly <size> bytes)
+  pc    → MATCHES <n>\n + up to 50 name lines  (vague query —
+          show names, /ask one by exact name)
+  pc    → ERROR <code>\n
 
 Upload:
-  phone → /upload <size> <basename>
-  pc    → READY  (or /send)
+  phone → /upload <size> <basename>\n   (basename space-sanitized)
+  pc    → READY                         (bare token, NO trailing
+          newline — never line-read here, or both sides deadlock)
   phone → <raw bytes>
+  pc    → DONE\n  (upload confirmed) | ERROR <code>\n
 ```
+
+Client timeouts: 10 s connect, 30 s read → "Timed out waiting for PC
+(check hotspot & retry)." (`NetworkManager.CONNECT_TIMEOUT_MS` /
+`READ_TIMEOUT_MS`).
+
+### Protocol fix notes (`NetworkManager`)
+- Commands were sent without `\n`, costing the server's ~500 ms fallback delay each time.
+- The `FOUND` header used a single `read(1024)`, so coalesced file bytes were parsed as header text and lost (plus `parseLong` crashes). Now framed byte-at-a-time off the raw stream with exact-size body reads.
+- No socket timeouts meant an infinite hang on a silent PC; `READY`/`DONE` and `MATCHES` handling as above.
+- Covered by `NetworkManagerLoopbackTest` (coalesced `FOUND`, `MATCHES`, bare-`READY` + `DONE`, silent-server timeout).
 
 ### Next for Transfer
 - Folder transfer (list of files)
