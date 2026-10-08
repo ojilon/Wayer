@@ -133,3 +133,6 @@ If neither file nor env is set, release still builds but may be **unsigned** (fi
 - Bump `versionCode` every public APK.
 - Multi-ABI makes the APK larger; that is expected.
 - Later: Play App Bundle (`bundleRelease`) can split ABIs per device — not required for sideload.
+- **clangd:** every native build ends with `:app:copyCompileCommands`,
+  refreshing `build/compile_commands.json` (plus `build/desktop/` for MinGW
+  files) — see `.clangd` if the LSP misbehaves.

@@ -3,15 +3,18 @@
 # ============================================================================
 cmake_minimum_required(VERSION 3.22.1)
 
+option(WAYER_ENABLE_ANALYZER "Enable GCC -fanalyzer (slow, noisy on C++)" OFF)
+option(WAYER_WARNINGS_AS_ERRORS "Treat warnings as errors (enable in CI/release, not by default)" OFF)
+
 if(NOT TARGET project_warnings)
     add_library(project_warnings INTERFACE)
 
     # 1. Enforce Modern C++ Standards
+    # NOTE: CXX_EXTENSIONS is set project-wide (set(CMAKE_CXX_EXTENSIONS OFF)
+    # in the top-level CMakeLists); set() has no INTERFACE mode.
     target_compile_features(project_warnings INTERFACE cxx_std_23)
-    set(CMAKE_CXX_STANDARD_REQUIRED ON INTERFACE)
-    set(CMAKE_CXX_EXTENSIONS OFF INTERFACE) # Disallow compiler-specific extensions (pure standard C++)
 
-    # 2. Strict Error and Warning Flags for GCC
+    # 2a. Strict warning flags for GCC (unchanged set)
     if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
         target_compile_options(project_warnings INTERFACE
             -Wall
@@ -27,16 +30,44 @@ if(NOT TARGET project_warnings)
             -Wnull-dereference # Warn if a null dereference is detected
             -Wdouble-promotion # Warn if float is implicitly promoted to double
             -Wformat=2       # Security checks on printf/scanf style functions
-            
-            # --- GCC 15+ Advanced Safety Analytics ---
-            -fanalyzer       # Turns on GCC's deep static analyzer (catches complex lifetime/null issues)
+        )
+        # GCC-only deep static analyzer: opt-in, it is slow and noisy on C++.
+        if(WAYER_ENABLE_ANALYZER)
+            target_compile_options(project_warnings INTERFACE -fanalyzer)
+        endif()
+    endif()
+
+    # 2b. Strict warning flags for Clang / AppleClang (this is what the NDK uses)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        target_compile_options(project_warnings INTERFACE
+            -Wall
+            -Wextra
+            -Wpedantic
+            -Wshadow
+            -Wnon-virtual-dtor
+            -Wcast-align
+            -Woverloaded-virtual
+            -Wconversion
+            -Wsign-conversion
+            -Wnull-dereference
+            -Wdouble-promotion
+            -Wformat=2
         )
     endif()
 
-    # 3. Optional: Treat Warnings as Errors in Debug Mode
-    # This prevents you from ignoring warnings while actively writing code.
-    if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR NOT CMAKE_BUILD_TYPE)
-        if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    # 2c. Hardening for GCC/Clang (MSVC is not used by this project).
+    # JNI entry points stay exported via JNIEXPORT despite -fvisibility=hidden.
+    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+        target_compile_options(project_warnings INTERFACE
+            -fstack-protector-strong
+            -fvisibility=hidden
+            $<$<CONFIG:Debug>:-fno-omit-frame-pointer>
+        )
+        # _FORTIFY_SOURCE requires optimization; Debug (-O0) is excluded.
+        target_compile_definitions(project_warnings INTERFACE
+            $<$<NOT:$<CONFIG:Debug>>:_FORTIFY_SOURCE=2>
+        )
+        if(WAYER_WARNINGS_AS_ERRORS)
             target_compile_options(project_warnings INTERFACE -Werror)
         endif()
     endif()

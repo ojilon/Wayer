@@ -13,7 +13,7 @@ import androidx.fragment.app.Fragment;
 import com.example.wayer.R;
 import com.example.wayer.core.GlassBlur;
 import com.example.wayer.core.MainActivity;
-import com.example.wayer.core.NativeEngine;
+import com.example.wayer.bridge.Stats;
 import com.example.wayer.core.ThemePrefs;
 import com.example.wayer.core.UiChrome;
 import com.example.wayer.databinding.FragmentHomeBinding;
@@ -80,7 +80,7 @@ public class HomeFragment extends Fragment {
     }
 
     private void setupUI() {
-        NativeEngine.processActionAsync(7, "/storage/emulated/0", rawJson -> {
+        Stats.requestSnapshot(getContext(), false, rawJson -> {
             // Safety check: ensure fragment context is still valid
             if (binding == null || getActivity() == null) return;
 

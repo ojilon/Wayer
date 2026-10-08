@@ -5,6 +5,9 @@ local.properties
 # Build outputs and reports
 build/reports/
 
+# Manual CMake configure dirs (clangd compile_commands.json lives here)
+build/
+
 # App-specific build outputs
 app/build/
 

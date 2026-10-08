@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
+<!-- Flat list row (D1): small corners, no stroke — rows separate by
+     spacing + surface contrast instead of reading as chunky buttons. -->
 <com.google.android.material.card.MaterialCardView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -10,10 +12,8 @@
     android:layout_marginTop="2dp"
     android:layout_marginBottom="2dp"
     app:cardBackgroundColor="@color/wayer_surface"
-    app:cardCornerRadius="@dimen/radius_sm"
-    app:cardElevation="0dp"
-    app:strokeColor="@color/wayer_outline_glass"
-    app:strokeWidth="1dp">
+    app:cardCornerRadius="@dimen/radius_xs"
+    app:cardElevation="0dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -29,7 +29,7 @@
             android:id="@+id/file_icon"
             android:layout_width="28dp"
             android:layout_height="28dp"
-            android:contentDescription="File icon"
+            android:contentDescription="@string/file_icon_desc"
             android:src="@drawable/ic_file" />
 
         <LinearLayout
@@ -43,7 +43,7 @@
                 android:id="@+id/file_name"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Documents"
+                android:text="@string/layout_fragment_home_text_12"
                 android:textColor="@color/wayer_text_primary"
                 android:textSize="14sp"
                 android:maxLines="1"
@@ -54,13 +54,23 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="1dp"
-                android:text="Folder"
+                android:text="@string/file_details"
                 android:textColor="@color/wayer_text_secondary"
                 android:textSize="11sp"
                 android:maxLines="1"
                 android:ellipsize="end" />
 
         </LinearLayout>
+
+        <CheckBox
+            android:id="@+id/row_checkbox"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/spacing_sm"
+            android:layout_gravity="center_vertical"
+            android:visibility="gone"
+            android:clickable="false"
+            android:focusable="false" />
 
     </LinearLayout>
 

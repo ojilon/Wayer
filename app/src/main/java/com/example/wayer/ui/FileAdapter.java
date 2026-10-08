@@ -3,6 +3,7 @@ package com.example.wayer.ui;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -12,8 +13,10 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.wayer.R;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 /**
  * Displays FileItem rows with compact sizing and simple type icons.
@@ -25,11 +28,46 @@ public class FileAdapter extends RecyclerView.Adapter<FileAdapter.ViewHolder> {
         void onItemLongClick(FileItem item);
     }
 
+    public interface OnSelectionChangedListener {
+        void onSelectionChanged(int count);
+    }
+
     private final List<FileItem> items = new ArrayList<>();
+    private final Set<String> selectedPaths = new LinkedHashSet<>();
+    private boolean selectionMode = false;
     private OnItemClickListener listener;
+    private OnSelectionChangedListener selectionListener;
 
     public void setOnItemClickListener(OnItemClickListener listener) {
         this.listener = listener;
+    }
+
+    public void setOnSelectionChangedListener(OnSelectionChangedListener listener) {
+        this.selectionListener = listener;
+    }
+
+    /** Selection mode shows checkboxes; row taps toggle instead of opening. */
+    public void setSelectionMode(boolean on) {
+        selectionMode = on;
+        if (!on) selectedPaths.clear();
+        notifyDataSetChanged();
+    }
+
+    public boolean isSelectionMode() {
+        return selectionMode;
+    }
+
+    public void toggleSelection(String path) {
+        if (path == null) return;
+        if (!selectedPaths.remove(path)) {
+            selectedPaths.add(path);
+        }
+        notifyDataSetChanged();
+        if (selectionListener != null) selectionListener.onSelectionChanged(selectedPaths.size());
+    }
+
+    public List<String> getSelectedPaths() {
+        return new ArrayList<>(selectedPaths);
     }
 
     public void submitList(List<FileItem> newItems) {
@@ -54,9 +92,15 @@ public class FileAdapter extends RecyclerView.Adapter<FileAdapter.ViewHolder> {
         holder.name.setText(item.getName());
         holder.details.setText(item.getDetails());
         holder.icon.setImageResource(iconFor(item));
+        holder.selectBox.setVisibility(selectionMode ? View.VISIBLE : View.GONE);
+        holder.selectBox.setChecked(selectedPaths.contains(item.getPath()));
 
         holder.itemView.setOnClickListener(v -> {
-            if (listener != null) listener.onItemClick(item);
+            if (selectionMode) {
+                toggleSelection(item.getPath());
+            } else if (listener != null) {
+                listener.onItemClick(item);
+            }
         });
 
         holder.itemView.setOnLongClickListener(v -> {
@@ -88,12 +132,14 @@ public class FileAdapter extends RecyclerView.Adapter<FileAdapter.ViewHolder> {
         final ImageView icon;
         final TextView name;
         final TextView details;
+        final CheckBox selectBox;
 
         ViewHolder(@NonNull View itemView) {
             super(itemView);
             icon = itemView.findViewById(R.id.file_icon);
             name = itemView.findViewById(R.id.file_name);
             details = itemView.findViewById(R.id.file_details);
+            selectBox = itemView.findViewById(R.id.row_checkbox);
         }
     }
 }

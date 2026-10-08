@@ -1,9 +1,11 @@
 package com.example.wayer.ui;
 
 import android.os.Bundle;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.EditorInfo;
 import android.widget.ArrayAdapter;
 import android.widget.Toast;
 
@@ -14,6 +16,9 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.example.wayer.R;
+import com.example.wayer.bridge.NativeEngine;
+import com.example.wayer.bridge.PathCache;
+import com.example.wayer.bridge.PathRegistry;
 import com.example.wayer.core.Config;
 import com.example.wayer.core.GlassBlur;
 import com.example.wayer.core.ThemePrefs;
@@ -24,11 +29,17 @@ import com.example.wayer.network.NetworkManager;
 import com.example.wayer.storage.FileIndexer;
 import com.example.wayer.transfer.RecentTransfersStore;
 import com.example.wayer.transfer.TransferController;
+import com.example.wayer.transfer.TransferQueue;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.io.File;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 
 public class TransferFragment extends Fragment {
@@ -39,14 +50,18 @@ public class TransferFragment extends Fragment {
     private long sessionReceivedBytes = 0;
 
     private String savePath = FileIndexer.getDefaultSavePath();
-    private String browsePath = FileIndexer.getDefaultSavePath();
+    private String browsePath = BrowseSession.transferBrowsePath;
 
     private FileAdapter browseAdapter;
     private FileAdapter recentAdapter;
+    private FileAdapter searchAdapter;
+    private FileAdapter sessionAdapter;
+    private volatile boolean queueCancelled = false;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         binding = FragmentTransferBinding.inflate(inflater, container, false);
+        if (browsePath == null) browsePath = FileIndexer.getDefaultSavePath();
         setupUI();
         ensureIndexWarm();
         return binding.getRoot();
@@ -95,11 +110,58 @@ public class TransferFragment extends Fragment {
         });
 
         setupBrowseList();
+        setupSearchTab();
         setupRecentList();
+        setupSessionList();
+        setupTabs();
         GlassBlur.applyFromPrefs(binding.transferSidebarRoot, requireContext());
-        showTransferTab();
+        binding.transferTabs.check(R.id.tab_transfer);
     }
 
+    private void setupSessionList() {
+        sessionAdapter = new FileAdapter();
+        binding.sessionQueueList.setLayoutManager(new LinearLayoutManager(requireContext()));
+        binding.sessionQueueList.setAdapter(sessionAdapter);
+        sessionAdapter.setOnItemClickListener(new FileAdapter.OnItemClickListener() {
+            @Override
+            public void onItemClick(FileItem item) {
+                Toast.makeText(getContext(), item.getDetails(), Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onItemLongClick(FileItem item) {
+                // no-op
+            }
+        });
+        binding.btnCancelQueue.setOnClickListener(v -> {
+            queueCancelled = true;
+            Toast.makeText(getContext(), "Finishing current file…", Toast.LENGTH_SHORT).show();
+        });
+        renderSessionQueue();
+    }
+
+    /** Session rows straight from the queue file — the same file the uploader writes. */
+    private void renderSessionQueue() {
+        if (binding == null) return;
+        List<FileItem> rows = new ArrayList<>();
+        for (TransferQueue.Entry entry : TransferQueue.entries(requireContext())) {
+            File f = new File(entry.path);
+            rows.add(new FileItem(f.getName(), entry.path, entry.status, false, 0));
+        }
+        sessionAdapter.submitList(rows);
+        binding.sessionQueueEmpty.setVisibility(rows.isEmpty() ? View.VISIBLE : View.GONE);
+        binding.sessionQueueList.setVisibility(rows.isEmpty() ? View.GONE : View.VISIBLE);
+    }
+
+    private void setQueueActive(boolean active) {
+        if (binding == null) return;
+        binding.btnCancelQueue.setVisibility(active ? View.VISIBLE : View.GONE);
+    }
+
+    private void setQueueStatus(String text) {
+        if (binding == null) return;
+        binding.sessionQueueStatus.setText(text);
+    }
     private void setupRecentList() {
         recentAdapter = new FileAdapter();
         binding.recentTransfersList.setLayoutManager(new LinearLayoutManager(requireContext()));
@@ -179,14 +241,222 @@ public class TransferFragment extends Fragment {
                 }
             }
         });
+
+        binding.btnBrowseUp.setOnClickListener(v -> {
+            File parent = new File(browsePath).getParentFile();
+            if (parent != null) {
+                loadBrowseDirectory(parent.getAbsolutePath());
+            } else {
+                Toast.makeText(getContext(), "Already at the top", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        binding.browseFilter.addTextChangedListener(new android.text.TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+            }
+
+            @Override
+            public void afterTextChanged(android.text.Editable s) {
+                applyBrowseFilter(s != null ? s.toString() : "");
+            }
+        });
+    }
+
+    private final List<FileItem> browseFiles = new ArrayList<>();
+
+    private void applyBrowseFilter(String query) {
+        if (binding == null) return;
+        if (query == null || query.trim().isEmpty()) {
+            browseAdapter.submitList(new ArrayList<>(browseFiles));
+            return;
+        }
+        String q = query.trim().toLowerCase();
+        List<FileItem> filtered = new ArrayList<>();
+        for (FileItem item : browseFiles) {
+            if (item.getName().toLowerCase().contains(q)) {
+                filtered.add(item);
+            }
+        }
+        browseAdapter.submitList(filtered);
+    }
+
+    private void setupSearchTab() {
+        searchAdapter = new FileAdapter();
+        binding.searchResultsList.setLayoutManager(new LinearLayoutManager(requireContext()));
+        binding.searchResultsList.setAdapter(searchAdapter);
+
+        searchAdapter.setOnItemClickListener(new FileAdapter.OnItemClickListener() {
+            @Override
+            public void onItemClick(FileItem item) {
+                if (item.isDirectory()) {
+                    // Browse inside this tab — independent stack, Up returns.
+                    enterSearchFolder(item.getPath());
+                }
+            }
+
+            @Override
+            public void onItemLongClick(FileItem item) {
+                // no-op
+            }
+        });
+        searchAdapter.setOnSelectionChangedListener(count -> updateSearchSendButton());
+
+        binding.btnSearchUp.setOnClickListener(v -> searchUp());
+
+        binding.btnSearchSelect.setOnClickListener(v -> {
+            searchAdapter.setSelectionMode(!searchAdapter.isSelectionMode());
+            binding.btnSearchSelect.setText(searchAdapter.isSelectionMode() ? "Done" : "Select");
+            updateSearchSendButton();
+        });
+        binding.btnSearchSend.setOnClickListener(v -> uploadSearchSelected());
+        binding.btnRunSearch.setOnClickListener(v -> runSearchTab());
+        binding.searchInput.setOnEditorActionListener((v, actionId, event) -> {
+            boolean isSearch = actionId == EditorInfo.IME_ACTION_SEARCH
+                    || (event != null && event.getKeyCode() == KeyEvent.KEYCODE_ENTER);
+            if (isSearch) {
+                runSearchTab();
+                return true;
+            }
+            return false;
+        });
+        updateSearchSendButton();
+    }
+
+    private void updateSearchSendButton() {
+        if (binding == null) return;
+        int count = searchAdapter != null ? searchAdapter.getSelectedPaths().size() : 0;
+        binding.btnSearchSend.setEnabled(count > 0);
+        binding.btnSearchSend.setText(count > 0 ? "Send (" + count + ")" : "Send");
+    }
+
+    private void runSearchTab() {
+        String query = binding.searchInput.getText() != null
+                ? binding.searchInput.getText().toString().trim() : "";
+        if (query.isEmpty()) {
+            Toast.makeText(getContext(), "Enter a file name to search", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        String dir = PathRegistry.moduleDir(getContext(), "search");
+        if (dir.isEmpty()) {
+            Toast.makeText(getContext(), "Storage not ready", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        String out = dir + "/transfer-search-tab.json";
+        PathCache.remember("transfer-search-tab", out);
+        binding.searchResultsHint.setText("Searching…");
+        NativeEngine.searchIndexAsync(query, 50, out, rawJson -> {
+            if (binding == null) return;
+            if ("busy".equals(PathCache.reason(rawJson))) {
+                binding.searchResultsHint.setText("Busy — try again");
+                return;
+            }
+            renderSearchResults(PathCache.readFile(PathCache.envelopePath(rawJson)));
+        });
+    }
+
+    /** Files first, then their distinct parent folders (tap a folder to browse it here). */
+    private void renderSearchResults(String content) {
+        List<FileItem> rows = new ArrayList<>();
+        List<String> folders = new ArrayList<>();
+        if (content != null) {
+            try {
+                JSONArray matches = new JSONObject(content).optJSONArray("matches");
+                if (matches != null) {
+                    for (int i = 0; i < matches.length(); i++) {
+                        String path = matches.getString(i);
+                        File f = new File(path);
+                        rows.add(new FileItem(f.getName(), path, "File", false, 0));
+                        String parent = f.getParent();
+                        if (parent != null && !folders.contains(parent)) {
+                            folders.add(parent);
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        for (String folder : folders) {
+            File f = new File(folder);
+            rows.add(new FileItem(f.getName(), folder, "Folder — tap to browse", true, 0));
+        }
+        searchResultRows.clear();
+        searchResultRows.addAll(rows);
+        searchNavStack.clear();
+        searchAdapter.submitList(new ArrayList<>(rows));
+        binding.searchResultsHint.setText(rows.isEmpty()
+                ? "No matches — try Refresh index"
+                : rows.size() + " result(s)");
+    }
+
+    /** Independent folder stack for the Search tab — results persist underneath. */
+    private final List<String> searchNavStack = new ArrayList<>();
+    private final List<FileItem> searchResultRows = new ArrayList<>();
+
+    private void enterSearchFolder(String path) {
+        searchNavStack.add(path);
+        listSearchFolder(path);
+    }
+
+    private void searchUp() {
+        if (binding == null) return;
+        if (searchNavStack.isEmpty()) {
+            Toast.makeText(getContext(), "Already showing results", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        searchNavStack.remove(searchNavStack.size() - 1);
+        if (searchNavStack.isEmpty()) {
+            searchAdapter.submitList(new ArrayList<>(searchResultRows));
+            binding.searchResultsHint.setText(searchResultRows.isEmpty()
+                    ? "No matches — try Refresh index"
+                    : searchResultRows.size() + " result(s)");
+        } else {
+            listSearchFolder(searchNavStack.get(searchNavStack.size() - 1));
+        }
+    }
+
+    private void listSearchFolder(String path) {
+        if (binding == null) return;
+        List<FileItem> rows = new ArrayList<>();
+        File[] children = new File(path).listFiles();
+        if (children != null) {
+            Arrays.sort(children, Comparator
+                    .comparing((File f) -> !f.isDirectory())
+                    .thenComparing(f -> f.getName().toLowerCase()));
+            for (File c : children) {
+                if (c.isDirectory()) {
+                    rows.add(new FileItem(c.getName(), c.getAbsolutePath(), "Folder", true, 0));
+                } else {
+                    rows.add(new FileItem(c.getName(), c.getAbsolutePath(), formatSize(c.length()), false, c.length()));
+                }
+            }
+        }
+        searchAdapter.submitList(rows);
+        binding.searchResultsHint.setText(path);
+    }
+
+    private void setupTabs() {
+        binding.transferTabs.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
+            if (!isChecked) return;
+            if (checkedId == R.id.tab_guide) binding.transferViewFlipper.setDisplayedChild(0);
+            else if (checkedId == R.id.tab_transfer) binding.transferViewFlipper.setDisplayedChild(1);
+            else if (checkedId == R.id.tab_search) binding.transferViewFlipper.setDisplayedChild(2);
+            else if (checkedId == R.id.tab_browse) binding.transferViewFlipper.setDisplayedChild(3);
+            else if (checkedId == R.id.tab_network) binding.transferViewFlipper.setDisplayedChild(4);
+        });
     }
 
     private void showTransferTab() {
-        binding.transferViewFlipper.setDisplayedChild(0);
+        binding.transferTabs.check(R.id.tab_transfer);
     }
 
     private void showBrowseTab() {
-        binding.transferViewFlipper.setDisplayedChild(1);
+        binding.transferTabs.check(R.id.tab_browse);
         loadBrowseDirectory(browsePath);
         if (!binding.transferDrawerLayout.isDrawerOpen(GravityCompat.END)) {
             binding.transferDrawerLayout.openDrawer(GravityCompat.END);
@@ -195,27 +465,20 @@ public class TransferFragment extends Fragment {
 
     private void loadBrowseDirectory(String path) {
         browsePath = path;
+        BrowseSession.transferBrowsePath = path;
         binding.browseCurrentPath.setText(path);
 
+        // Plain directory listing — no index involved. The native index only
+        // serves global name search; browsing one folder never needs it.
         List<FileItem> items = new ArrayList<>();
-        FileIndexer indexer = FileIndexer.getInstance();
-
-        List<String> cached = indexer.getContentsOfFolder(path);
-        if (cached.isEmpty() && !indexer.isCacheEmpty()) {
-            File dir = new File(path);
-            File[] children = dir.listFiles();
-            if (children != null) {
-                for (File c : children) {
-                    if (c.isDirectory()) {
-                        items.add(new FileItem(c.getName(), c.getAbsolutePath(), "Folder", true, 0));
-                    }
-                }
-            }
-        } else {
-            for (String p : cached) {
-                File f = new File(p);
-                if (f.isDirectory()) {
-                    items.add(new FileItem(f.getName(), p, "Folder", true, 0));
+        File[] children = new File(path).listFiles();
+        if (children != null) {
+            Arrays.sort(children, Comparator
+                    .comparing((File f) -> !f.isDirectory())
+                    .thenComparing(f -> f.getName().toLowerCase()));
+            for (File c : children) {
+                if (c.isDirectory()) {
+                    items.add(new FileItem(c.getName(), c.getAbsolutePath(), "Folder", true, 0));
                 }
             }
         }
@@ -228,37 +491,64 @@ public class TransferFragment extends Fragment {
             }
         }
 
-        browseAdapter.submitList(items);
+        browseFiles.clear();
+        browseFiles.addAll(items);
+        String filter = binding.browseFilter.getText() != null
+                ? binding.browseFilter.getText().toString() : "";
+        applyBrowseFilter(filter);
     }
 
+    /** Index file shared with every other screen; builds it when missing. */
     private void ensureIndexWarm() {
-        FileIndexer indexer = FileIndexer.getInstance();
-        if (indexer.isCacheEmpty()) {
-            appendLog("Indexing local storage (background)…");
-            new Thread(() -> {
-                indexer.refreshCache();
-                runOnUi(() -> appendLog("Index ready · "
-                        + indexer.getIndexedFileCount() + " files, "
-                        + indexer.getIndexedFolderCount() + " folders"));
-            }).start();
-        }
+        NativeEngine.indexMetaAsync(rawMeta -> {
+            if (!isAdded()) return;
+            if (isIndexMissing(rawMeta)) {
+                appendLog("Indexing local storage (background)…");
+                NativeEngine.buildIndexAsync(FileIndexer.DEFAULT_ROOT, rawBuild -> {
+                    if (!isAdded()) return;
+                    appendLog("Index ready · " + buildCount(rawBuild) + " files");
+                });
+            } else {
+                appendLog("Index ready");
+            }
+        });
     }
 
     private void refreshIndexer() {
-        appendLog("Refreshing FileIndexer cache…");
+        appendLog("Refreshing native index…");
         binding.btnRefreshIndexer.setEnabled(false);
-        new Thread(() -> {
-            FileIndexer.getInstance().refreshCache();
-            FileIndexer idx = FileIndexer.getInstance();
-            runOnUi(() -> {
-                binding.btnRefreshIndexer.setEnabled(true);
-                appendLog("Cache refreshed · " + idx.getIndexedFileCount() + " files");
+        NativeEngine.buildIndexAsync(FileIndexer.DEFAULT_ROOT, rawJson -> {
+            if (binding == null) return;
+            binding.btnRefreshIndexer.setEnabled(true);
+            int count = buildCount(rawJson);
+            if (count >= 0) {
+                appendLog("Index refreshed · " + count + " files");
                 Toast.makeText(getContext(), "Index refreshed", Toast.LENGTH_SHORT).show();
-                if (binding.transferViewFlipper.getDisplayedChild() == 1) {
-                    loadBrowseDirectory(browsePath);
-                }
-            });
-        }).start();
+            } else {
+                appendLog("Index refresh failed");
+                Toast.makeText(getContext(), "Index refresh failed", Toast.LENGTH_SHORT).show();
+            }
+                if (binding.transferViewFlipper.getDisplayedChild() == 3) {
+                loadBrowseDirectory(browsePath);
+            }
+        });
+    }
+
+    private static boolean isIndexMissing(String rawMeta) {
+        try {
+            String status = new JSONObject(rawMeta).optString("status", "");
+            return status.equals("missing") || rawMeta.contains("paths_not_initialized");
+        } catch (Exception e) {
+            return true;
+        }
+    }
+
+    private static int buildCount(String rawJson) {
+        try {
+            return new JSONObject(rawJson).optInt("count", -1);
+        } catch (Exception e) {
+            return -1;
+        }
     }
 
     private void updateSavePathLabel() {
@@ -368,32 +658,70 @@ public class TransferFragment extends Fragment {
             return;
         }
 
-        FileIndexer indexer = FileIndexer.getInstance();
-        if (indexer.isCacheEmpty()) {
-            Toast.makeText(getContext(), "Index empty — refreshing…", Toast.LENGTH_SHORT).show();
-            refreshIndexer();
-            return;
-        }
-
         appendLog("Searching index for \"" + name + "\"…");
         setTransferButtonsEnabled(false);
 
-        new Thread(() -> {
-            List<String> matches = indexer.searchFilesByKeyword(name);
-            runOnUi(() -> {
-                setTransferButtonsEnabled(true);
-                if (matches.isEmpty()) {
-                    appendLog("No local files matched \"" + name + "\"");
-                    Toast.makeText(getContext(), "No matches — try Refresh index", Toast.LENGTH_SHORT).show();
-                    return;
+        // Global search runs on the shared native index (same file every
+        // screen reads). Builds it first when missing, then searches.
+        NativeEngine.indexMetaAsync(rawMeta -> {
+            if (!isAdded()) {
+                runOnUi(() -> setTransferButtonsEnabled(true));
+                return;
+            }
+            if (isIndexMissing(rawMeta)) {
+                appendLog("Index missing — building first…");
+                NativeEngine.buildIndexAsync(FileIndexer.DEFAULT_ROOT,
+                        rawBuild -> runOnUi(() -> doUploadSearch(name)));
+            } else {
+                doUploadSearch(name);
+            }
+        });
+    }
+
+    private void doUploadSearch(String name) {
+        String dir = PathRegistry.moduleDir(getContext(), "search");
+        if (dir.isEmpty()) {
+            setTransferButtonsEnabled(true);
+            Toast.makeText(getContext(), "Storage not ready", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        String out = dir + "/transfer-matches.json";
+        PathCache.remember("transfer-search", out);
+        NativeEngine.searchIndexAsync(name, 50, out, rawJson -> {
+            if (!isAdded()) return;
+            setTransferButtonsEnabled(true);
+            if ("busy".equals(PathCache.reason(rawJson))) {
+                Toast.makeText(getContext(), "Search busy — try again", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            List<String> matches = parseIndexMatches(PathCache.readFile(PathCache.envelopePath(rawJson)));
+            if (matches.isEmpty()) {
+                appendLog("No local files matched \"" + name + "\"");
+                Toast.makeText(getContext(), "No matches — try Refresh index", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            if (matches.size() == 1) {
+                confirmSingleUpload(matches.get(0));
+            } else {
+                showMatchPicker(matches);
+            }
+        });
+    }
+
+    private static List<String> parseIndexMatches(String content) {
+        List<String> matches = new ArrayList<>();
+        if (content == null) return matches;
+        try {
+            JSONArray array = new JSONObject(content).optJSONArray("matches");
+            if (array != null) {
+                for (int i = 0; i < array.length(); i++) {
+                    matches.add(array.getString(i));
                 }
-                if (matches.size() == 1) {
-                    confirmSingleUpload(matches.get(0));
-                } else {
-                    showMatchPicker(matches);
-                }
-            });
-        }).start();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return matches;
     }
 
     private void confirmSingleUpload(String absolutePath) {
@@ -426,7 +754,81 @@ public class TransferFragment extends Fragment {
                 .show();
     }
 
+    private void uploadSearchSelected() {
+        List<String> files = filesOnly(searchAdapter.getSelectedPaths());
+        if (files.isEmpty()) {
+            Toast.makeText(getContext(), "Tick files to send first", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        searchAdapter.setSelectionMode(false);
+        binding.btnSearchSelect.setText("Select");
+        updateSearchSendButton();
+        uploadPaths(files);
+    }
+
+    private static List<String> filesOnly(List<String> paths) {
+        List<String> files = new ArrayList<>();
+        if (paths == null) return files;
+        for (String path : paths) {
+            if (path != null && new File(path).isFile()) files.add(path);
+        }
+        return files;
+    }
+
+    private void uploadPaths(List<String> files) {
+        if (!TransferQueue.save(requireContext(), files)) {
+            Toast.makeText(getContext(), "Cannot save queue", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        queueCancelled = false;
+        setQueueActive(true);
+        setTransferButtonsEnabled(false);
+        appendLog("Queue: " + files.size() + " file(s)");
+        renderSessionQueue();
+        uploadNext(0, files, 0);
+    }
+
+    private void uploadNext(int index, List<String> paths, int sent) {
+        if (binding == null) return;
+        if (queueCancelled) {
+            queueCancelled = false;
+            setQueueActive(false);
+            setTransferButtonsEnabled(true);
+            appendLog("Queue cancelled · " + sent + "/" + paths.size() + " sent");
+            setQueueStatus("Queue: cancelled (" + sent + "/" + paths.size() + ")");
+            renderSessionQueue();
+            return;
+        }
+        if (index >= paths.size()) {
+            setQueueActive(false);
+            setTransferButtonsEnabled(true);
+            appendLog("Queue done · " + sent + "/" + paths.size() + " sent");
+            setQueueStatus("Queue: done (" + sent + "/" + paths.size() + ")");
+            Toast.makeText(getContext(), "Sent " + sent + "/" + paths.size(), Toast.LENGTH_SHORT).show();
+            renderSessionQueue();
+            return;
+        }
+        String path = paths.get(index);
+        setQueueStatus("Queue: sending " + (index + 1) + "/" + paths.size());
+        appendLog("[" + (index + 1) + "/" + paths.size() + "] " + new File(path).getName());
+        TransferQueue.setStatus(requireContext(), path, "sending");
+        renderSessionQueue();
+        performUpload(path, ok -> {
+            TransferQueue.setStatus(requireContext(), path, ok ? "done" : "failed");
+            renderSessionQueue();
+            uploadNext(index + 1, paths, ok ? sent + 1 : sent);
+        });
+    }
+
+    private interface UploadDone {
+        void onDone(boolean ok);
+    }
+
     private void performUpload(String absolutePath) {
+        performUpload(absolutePath, null);
+    }
+
+    private void performUpload(String absolutePath, UploadDone onDone) {
         File local = new File(absolutePath);
         String command = "/upload " + absolutePath;
         appendLog("Upload: " + local.getName() + " ← " + absolutePath);
@@ -448,7 +850,8 @@ public class TransferFragment extends Fragment {
                     appendLog(finalResult);
                     setTransferButtonsEnabled(true);
 
-                    if (finalResult != null && finalResult.toLowerCase().contains("success")) {
+                    boolean ok = finalResult != null && finalResult.toLowerCase().contains("success");
+                    if (ok) {
                         long bytes = local.exists() ? local.length() : 0;
                         sessionSentBytes += bytes;
                         updateSessionStats();
@@ -459,6 +862,7 @@ public class TransferFragment extends Fragment {
                         }
                         recordSuccess(false, local.getName(), absolutePath);
                     }
+                    if (onDone != null) onDone.onDone(ok);
                 });
             }
         });

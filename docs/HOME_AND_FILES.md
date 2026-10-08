@@ -24,9 +24,9 @@ This document explains the current architecture of the **Home** and **Files** sc
           └── TransferFragment
 ```
 
-**Rule:** Java + XML only handle UI and navigation.  
-C++ (via `NativeEngine`) does calculations, listing, search, progress, etc.  
-Data moves in **bulk JSON**, not one file at a time.
+**Rule:** Java + XML only handle UI and navigation.
+C++ (via the `bridge/` doorway) computes into files under the private app
+home; JNI carries only `{status, path}` replies, never bulk data.
 
 ---
 
@@ -43,12 +43,14 @@ Data moves in **bulk JSON**, not one file at a time.
 1. `HomeFragment` is shown when the app starts (or when bottom nav “Home” is pressed).
 2. In `setupUI()` it calls:
    ```java
-   NativeEngine.processActionAsync(7, "/storage/emulated/0", callback);
+   Stats.requestSnapshot(context, false, callback);
    ```
-3. C++ (`storage_engine.cpp` → `get_storage_stats`) returns one JSON object containing:
+3. The bridge runs C++ Action 13 (or serves the snapshot file), Java reads the
+   file — one JSON object containing:
    - `total_bytes`, `used_bytes`, `progress_percent`
    - `breakdown` → images / videos / audio / documents / others
-4. Java parses the JSON and fills:
+   - `folders` → top-level folders by size (new in Step 5)
+4. Java parses the file content and fills:
    - progress bar
    - “X GB used of Y GB”
    - category sizes
@@ -73,33 +75,34 @@ No logic is duplicated.
 
 ### Flow – browsing
 1. User opens Files tab (bottom nav or Home shortcut).
-2. `FilesFragment` calls `loadDirectory("/storage/emulated/0")`.
+2. `FilesFragment` calls `loadDirectory(...)` (restores the last folder from
+   `BrowseSession`, else shared-storage root).
 3. That sends **Action ID 3** to C++ with the path.
 4. C++ returns simple JSON: `{ "files": ["name1", "name2", ...] }`.
 5. Java turns each name into a `FileItem` and gives the list to `FileAdapter`.
-6. Tapping a folder calls `loadDirectory(item.getPath())` again.
+6. Tapping a folder calls `loadDirectory(item.getPath())` again; Up climbs.
 
 ### Flow – side panel
 - Hamburger opens the drawer.
 - Menu items just call `loadDirectory(...)` with a known path (Downloads, DCIM, etc.).
 
-### Flow – search (planned)
+### Flow – search
 - User types in the search bar and presses search.
-- Java will send a search Action to C++.
-- C++ returns bulk results (exact matches + related ≈50% matches).
-- Results appear under the “Search results” header.
-- Long-press on a result will offer “Open folder” / “Open file”.
+- Java sends scoped search (Action 8) with an out-file; C++ writes matches there.
+- Java reads the file: exact + related matches appear under the header,
+  previous results show instantly with a "(cached)" tag while fresh ones build.
+- Long-press on a result offers open / delete flows.
 
 ---
 
-## Document viewer (next)
+## Document viewer
 
 When the user taps a **file** (not a folder):
 
 1. Show a small dialog: “Open” / “Cancel”.
 2. If Open → start `DocumentActivity` (already declared in Manifest).
-3. That Activity takes over the whole window and is specialised for viewing/editing.
-4. Communication with C++ for rendering will be added later (after libraries are chosen).
+3. Text-like files render through the C++ `preview` module (Action 19:
+   capped lines, binary refused). Rich formats wait on third_party engines.
 
 ---
 
@@ -119,9 +122,10 @@ Change a colour once → whole app updates.
 | ID | Purpose | Called from |
 |----|---------|-------------|
 | 3  | List directory | FilesFragment |
-| 7  | Storage stats + breakdown | HomeFragment |
+| 8  | Scoped search → result file | FilesFragment |
+| 13 | Cached stats → snapshot file | bridge/Stats (Home, Storage) |
 
-More IDs will be added for search, transfer progress, document open, etc.
+Full table lives in `native/FUTURE_JNI_AND_CPP23.md`.
 
 ---
 
@@ -129,5 +133,5 @@ More IDs will be added for search, transfer progress, document open, etc.
 
 - **Fragments own their layout.** MainActivity only switches them.
 - **Never put business logic in the Activity or XML.**
-- Prefer **one large JSON** over many small JNI calls.
-- Keep UI code thin; push hard work to the C++ side in `native/`.
+- Prefer **files over JNI strings**: C++ writes results, Java reads them.
+- Keep UI code thin; push hard work to the C++ modules in `native/`.

@@ -27,8 +27,9 @@ Do not put business logic in XML.
 |------|--------|
 | `res/values/colors.xml` | Dark theme colours (`wayer_*`) |
 | `res/values-night/colors.xml` | Light theme overrides |
-| `res/values/dimens.xml` | Spacing, radii |
+| `res/values/dimens.xml` | Spacing, radii (`radius_xs` for flat rows) |
 | `res/values/themes.xml` | Material3 theme wiring |
+| `res/values/strings.xml` | Every UI string (no literals in layouts) |
 
 Prefer `@color/wayer_text_primary` over hard-coded `#FFFFFF`.
 
@@ -59,6 +60,9 @@ app:cardCornerRadius="@dimen/radius_md"
 app:strokeColor="@color/wayer_outline"
 app:strokeWidth="1dp"
 ```
+
+Flat list rows (`item_file.xml`) skip the stroke and use `@dimen/radius_xs` —
+separation comes from spacing + surface contrast.
 
 ### RecyclerView
 Lists (Files, large files). Needs an Adapter in Java (`FileAdapter`).
@@ -123,11 +127,13 @@ binding.emptyState.setVisibility(View.GONE);
 
 | Screen | Layout |
 |--------|--------|
-| Shell | `activity_main.xml` |
+| Shell | `activity_main.xml` (scrollable toggle bar) |
 | Home | `fragment_home.xml` |
 | Files | `fragment_files.xml` + `item_file.xml` + drawer menus |
-| Storage | `fragment_storage.xml` |
-| Transfer | `fragment_transfer.xml` |
+| Storage | `fragment_storage.xml` (summary only) |
+| Transfer | `fragment_transfer.xml` (Guide/Transfer/Search/Browse/Network) |
+| Cleaner | `fragment_cleaner.xml` + `item_cleaner_card.xml` |
+| Internals | `fragment_internal.xml` |
 | Viewers | `activity_document/image/video.xml` |
 
 ---
