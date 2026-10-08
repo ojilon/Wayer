@@ -25,3 +25,5 @@ native/third_party/*
 keystore.properties
 *.jks
 *.keystore
+
+build/
