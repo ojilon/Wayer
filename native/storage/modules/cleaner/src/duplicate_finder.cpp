@@ -5,6 +5,7 @@
 #include <wayer/core/text.hpp>
 #include <wayer/storage/walker.hpp>
 
+#include <algorithm>
 #include <array>
 #include <cstdint>
 #include <filesystem>
@@ -43,18 +44,45 @@ namespace {
     }
     
     // Cheap partial hash: first 4 KiB mixed with size.
-    uint64_t partial_hash(const fs::path& p, uint64_t size) {
+    // returns false when file cannot be opened - caller must SKIP.
+    bool try_partial_hash(const fs::path& p, uint64_t size, uint64_t& out) {
         std::ifstream f(p, std::ios::binary);
-        if (!f) return size ^ 0x9E3779B97F4A7C15ULL;
+        if (!f) return false;
+        
         uint64_t h = fnv1a_stream(f, 4096);
-        return h ^ (size * 0x9E3779B97F4A7C15ULL);
+        out = h ^ (size * 0x9E3779B97F4A7C15ULL);
+
+        return true;
     }
     
-    // Full hash only used to CONFIRM a partial-hash collision.
-    uint64_t full_hash(const fs::path& p) {
+    // returns false when file cannot be opened - caller must skip, not group
+    bool try_full_hash(const fs::path& p, uint64_t& out) {
         std::ifstream f(p, std::ios::binary);
-        if (!f) return 0;
-        return fnv1a_stream(f);
+        if (!f) return false;
+
+        out = fnv1a_stream(f);
+        return true;
+    }
+
+    // Final guard: hash says "maybe equal", bytes say "sure".
+    // Returns false on any open/read trouble — caller treats as "not proven".
+    bool files_byte_equal(const fs::path& a, const fs::path& b) {
+        std::ifstream fa(a, std::ios::binary);
+        std::ifstream fb(b, std::ios::binary);
+        if (!fa || !fb) return false;
+        std::array<char, 8192> bufa{};
+        std::array<char, 8192> bufb{};
+        while (true) {
+            fa.read(bufa.data(), static_cast<std::streamsize>(bufa.size()));
+            fb.read(bufb.data(), static_cast<std::streamsize>(bufb.size()));
+            std::streamsize ga = fa.gcount();
+            std::streamsize gb = fb.gcount();
+            if (ga != gb) return false;
+            if (ga == 0) return true; // both hit end together
+            for (std::streamsize i = 0; i < ga; ++i) {
+                if (bufa[static_cast<size_t>(i)] != bufb[static_cast<size_t>(i)]) return false;
+            }
+        }
     }
     
     } // namespace
@@ -75,7 +103,12 @@ namespace {
             if (paths.size() < 2) continue; // unique size, can't be a dup
     
             std::unordered_map<uint64_t, std::vector<fs::path>> by_partial;
-            for (auto& p : paths) by_partial[partial_hash(p, size_entry.first)].push_back(p);
+            for (auto& p : paths) {
+                uint64_t h = 0;
+                if (!try_partial_hash(p, size_entry.first, h)) continue;
+
+                by_partial[h].push_back(p);
+            }
     
             // Step 3: confirm with full hash only for partial-hash collisions.
             for (auto& partial_entry : by_partial) {
@@ -83,14 +116,42 @@ namespace {
                 if (candidates.size() < 2) continue;
     
                 std::unordered_map<uint64_t, std::vector<fs::path>> by_full;
-                for (auto& p : candidates) by_full[full_hash(p)].push_back(p);
+                for (auto& p : candidates) {
+                    uint64_t h = 0;
+                    if (!try_full_hash(p, h)) continue;
+
+                    by_full[h].push_back(p);
+                }
     
                 for (auto& full_entry : by_full) {
-                    if (full_entry.second.size() > 1) duplicate_groups.push_back(full_entry.second);
+                    std::vector<fs::path>& same_hash = full_entry.second;
+                    if (same_hash.size() < 2) continue;
+                    // Hash is only a hint: split by real byte content.
+                    std::vector<std::vector<fs::path>> verified;
+                    for (auto& p : same_hash) {
+                        bool placed = false;
+                        for (auto& v : verified) {
+                            if (files_byte_equal(v.front(), p)) {
+                                v.push_back(p);
+                                placed = true;
+                                break;
+                            }
+                        }
+                        if (!placed) verified.push_back({p});
+                    }
+                    for (auto& v : verified) {
+                        if (v.size() > 1) duplicate_groups.push_back(v);
+                    }
                 }
             }
         }
     
+        for (auto& g : duplicate_groups) std::sort(g.begin(), g.end());
+        std::sort(duplicate_groups.begin(), duplicate_groups.end(),
+                  [](const std::vector<fs::path>& a, const std::vector<fs::path>& b) {
+                      return a.front() < b.front();
+                  });
+
         std::string json = R"({"duplicate_groups":[)";
         for (size_t g = 0; g < duplicate_groups.size(); ++g) {
             json += "[";
