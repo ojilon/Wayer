@@ -44,8 +44,12 @@ public class CleanerFragment extends Fragment {
 
     private FragmentCleanerBinding binding;
     private FileAdapter adapter;
-    // groups[i] = list of full paths that are duplicates of each other
-    private final List<List<String>> groups = new ArrayList<>();
+    // groups[i] = exact duplicates (identical bytes, byte-verified in C++).
+    // related groups are display-only and never auto-deleted (see render below).
+    private final List<List<DupEntry>> groups = new ArrayList<>();
+    // Keep rule for theSuggested keeper: "newest" | "oldest" | "shortest".
+    // Change this constant (or wire to a spinner) — C++ stays unchanged.
+    private String keepRule = "newest";
     private FileAdapter largeAdapter;
     private CleanerCardAdapter cardAdapter;
     private final List<CleanerCardAdapter.Card> cards = new ArrayList<>();
@@ -138,17 +142,57 @@ public class CleanerFragment extends Fragment {
                 if (dupGroups != null) {
                     for (int g = 0; g < dupGroups.length(); g++) {
                         JSONArray group = dupGroups.getJSONArray(g);
-                        List<String> paths = new ArrayList<>();
+                        List<DupEntry> entries = new ArrayList<>();
                         for (int i = 0; i < group.length(); i++) {
-                            String path = group.getString(i);
-                            paths.add(path);
-                            String name = path.substring(path.lastIndexOf('/') + 1);
-                            flat.add(new FileItem(
-                                    name, path,
-                                    "Copy " + (i + 1) + " of " + group.length(),
-                                    false, 0));
+                            Object raw = group.opt(i);
+                            DupEntry e;
+                            if (raw instanceof JSONObject) {
+                                JSONObject o = (JSONObject) raw;
+                                e = new DupEntry(o.optString("path", ""),
+                                        o.optLong("size", 0), o.optLong("mtime", 0));
+                            } else {
+                                // Legacy v1 shape: bare path strings.
+                                e = new DupEntry(group.getString(i), 0, 0);
+                            }
+                            if (e.path.isEmpty()) continue;
+                            entries.add(e);
                         }
-                        groups.add(paths);
+                        if (entries.size() < 2) continue;
+                        groups.add(entries);
+                        int keeper = pickKeeper(entries, keepRule);
+                        for (int i = 0; i < entries.size(); i++) {
+                            DupEntry e = entries.get(i);
+                            String name = e.path.substring(e.path.lastIndexOf('/') + 1);
+                            String mark = (i == keeper) ? "KEEP? " : "Copy " + (i + 1) + " of " + entries.size();
+                            flat.add(new FileItem(name, e.path,
+                                    mark + " · " + formatSize(e.size) + " · " + formatDate(e.mtime),
+                                    false, e.size));
+                        }
+                    }
+                }
+                // Related files: same normalized name, different versions.
+                // Display only — no keeper, no delete affordance beyond open.
+                JSONArray related = root.optJSONArray("related_groups");
+                if (related != null) {
+                    for (int g = 0; g < related.length(); g++) {
+                        JSONObject rg = related.optJSONObject(g);
+                        if (rg == null) continue;
+                        String key = rg.optString("key", "");
+                        JSONArray files = rg.optJSONArray("files");
+                        if (files == null || files.length() < 2) continue;
+                        for (int i = 0; i < files.length(); i++) {
+                            JSONObject o = files.optJSONObject(i);
+                            if (o == null) continue;
+                            String path = o.optString("path", "");
+                            if (path.isEmpty()) continue;
+                            long size = o.optLong("size", 0);
+                            long mtime = o.optLong("mtime", 0);
+                            String name = path.substring(path.lastIndexOf('/') + 1);
+                            flat.add(new FileItem(name, path,
+                                    "Related to '" + key + "' · " + formatSize(size)
+                                            + " · " + formatDate(mtime) + " · review only",
+                                    false, size));
+                        }
                     }
                 }
             } catch (JSONException e) {
@@ -249,10 +293,11 @@ public class CleanerFragment extends Fragment {
 
     private void confirmDeleteOne(FileItem item) {
         new AlertDialog.Builder(requireContext())
-                .setTitle("Delete this copy?")
-                .setMessage(item.getPath())
-                .setPositiveButton("Delete", (d, w) -> {
-                    FileMutator.Result r = FileMutator.delete(item.getPath());
+                .setTitle("Move this copy to holding?")
+                .setMessage(item.getPath() + "\nHeld 30 days under files/wayer/trash — not permanent.")
+                .setPositiveButton("Move to holding", (d, w) -> {
+                    String trashRoot = PathRegistry.root(requireContext()) + "/trash";
+                    FileMutator.Result r = FileMutator.moveToTrash(item.getPath(), trashRoot);
                     Toast.makeText(getContext(), r.message, Toast.LENGTH_SHORT).show();
                     if (r.ok) {
                         NativeCache.invalidateStatsSnapshot(getContext());
@@ -331,7 +376,7 @@ public class CleanerFragment extends Fragment {
     private void updateCardStatus() {
         if (cardAdapter == null) return;
         int dupFiles = 0;
-        for (List<String> group : groups) dupFiles += group.size();
+        for (List<DupEntry> group : groups) dupFiles += group.size();
         cardAdapter.setStatus(0, groups.isEmpty()
                 ? "No duplicates"
                 : groups.size() + " groups · " + dupFiles + " files");
@@ -343,10 +388,11 @@ public class CleanerFragment extends Fragment {
 
     private void confirmDeleteLarge(FileItem item) {
         new AlertDialog.Builder(requireContext())
-                .setTitle("Delete large file?")
+                .setTitle("Move large file to holding?")
                 .setMessage(item.getName() + "\n" + item.getDetails())
-                .setPositiveButton("Delete", (d, w) -> {
-                    FileMutator.Result r = FileMutator.delete(item.getPath());
+                .setPositiveButton("Move to holding", (d, w) -> {
+                    String trashRoot = PathRegistry.root(requireContext()) + "/trash";
+                    FileMutator.Result r = FileMutator.moveToTrash(item.getPath(), trashRoot);
                     Toast.makeText(getContext(), r.message, Toast.LENGTH_SHORT).show();
                     if (r.ok) {
                         NativeCache.invalidateStatsSnapshot(getContext());
@@ -362,6 +408,47 @@ public class CleanerFragment extends Fragment {
         if (bytes < 1024 * 1024) return String.format("%.1f KB", bytes / 1024.0);
         if (bytes < 1024L * 1024 * 1024) return String.format("%.1f MB", bytes / (1024.0 * 1024));
         return String.format("%.1f GB", bytes / (1024.0 * 1024 * 1024));
+    }
+
+    private static String formatDate(long mtimeUnix) {
+        if (mtimeUnix <= 0) return "unknown date";
+        try {
+            java.text.SimpleDateFormat f = new java.text.SimpleDateFormat("yyyy-MM-dd",
+                    java.util.Locale.US);
+            return f.format(new java.util.Date(mtimeUnix * 1000));
+        } catch (Exception e) {
+            return "unknown date";
+        }
+    }
+
+    /** One exact-duplicate file with eraser info. Chosen-folder rule is done by path prefix in UI. */
+    private static class DupEntry {
+        final String path;
+        final long size;
+        final long mtime;
+        DupEntry(String path, long size, long mtime) {
+            this.path = path; this.size = size; this.mtime = mtime;
+        }
+    }
+
+    /** Keeper suggestion only — user still confirms. shortest = shortest full path. */
+    private static int pickKeeper(List<DupEntry> entries, String rule) {
+        if (entries.isEmpty()) return 0;
+        int best = 0;
+        for (int i = 1; i < entries.size(); i++) {
+            DupEntry a = entries.get(best);
+            DupEntry b = entries.get(i);
+            if ("oldest".equals(rule)) {
+                long am = a.mtime == 0 ? Long.MAX_VALUE : a.mtime;
+                long bm = b.mtime == 0 ? Long.MAX_VALUE : b.mtime;
+                if (bm < am) best = i;
+            } else if ("shortest".equals(rule)) {
+                if (b.path.length() < a.path.length()) best = i;
+            } else { // "newest" default
+                if (b.mtime > a.mtime) best = i;
+            }
+        }
+        return best;
     }
 
     @Override

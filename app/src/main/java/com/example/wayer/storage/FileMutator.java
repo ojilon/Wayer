@@ -127,6 +127,81 @@ public class FileMutator {
     }
 
     // -------------------------------------------------------------------------
+    // Holding folder (safe delete staging) — use for duplicates, not delete().
+    // Moves into <trashRoot>/yyyy-MM-dd/<name> with _1 suffix on collision.
+    // Never overwrites. Returns new trash path in message on success.
+    // -------------------------------------------------------------------------
+
+    public static Result moveToTrash(String fullPath, String trashRoot) {
+        if (fullPath == null || fullPath.trim().isEmpty()) {
+            return Result.fail("Invalid path");
+        }
+        if (trashRoot == null || trashRoot.trim().isEmpty()) {
+            return Result.fail("Trash not ready");
+        }
+        try {
+            File src = new File(fullPath);
+            if (!src.exists()) return Result.fail("Does not exist");
+            String canonicalSrc = src.getCanonicalPath();
+            String canonicalTrash = new File(trashRoot).getCanonicalPath();
+            // Guard: never trash the trash itself, app root, or storage root.
+            if (canonicalSrc.equals(canonicalTrash)
+                    || canonicalTrash.startsWith(canonicalSrc + File.separator)
+                    || canonicalSrc.startsWith(canonicalTrash + File.separator)) {
+                return Result.fail("Refused: inside holding folder");
+            }
+            if (canonicalSrc.equals("/") || canonicalSrc.equals("/storage/emulated/0")) {
+                return Result.fail("Refused: storage root");
+            }
+            String date = new java.text.SimpleDateFormat("yyyy-MM-dd",
+                    java.util.Locale.US).format(new java.util.Date());
+            File dayDir = new File(new File(trashRoot), date);
+            if (!dayDir.isDirectory() && !dayDir.mkdirs()) {
+                return Result.fail("Cannot create holding folder");
+            }
+            File dest = uniqueDest(dayDir, src.getName());
+            if (src.renameTo(dest)) {
+                return Result.success("Held: " + dest.getAbsolutePath());
+            }
+            // Cross-volume fallback: copy bytes then delete original.
+            if (copyFileBytes(src, dest) && deleteRecursive(src)) {
+                return Result.success("Held: " + dest.getAbsolutePath());
+            }
+            // Partial copy cleanup — never leave half-file in trash.
+            try { //noinspection ResultOfMethodCallIgnored
+                dest.delete(); } catch (Exception ignored) { }
+            return Result.fail("Move failed (permission or in use)");
+        } catch (Exception e) {
+            return Result.fail("Move failed: " + e.getMessage());
+        }
+    }
+
+    private static File uniqueDest(File dir, String name) {
+        File dest = new File(dir, name);
+        if (!dest.exists()) return dest;
+        int dot = name.lastIndexOf('.');
+        String stem = (dot > 0) ? name.substring(0, dot) : name;
+        String ext = (dot > 0) ? name.substring(dot) : "";
+        for (int i = 1; i < 1000; i++) {
+            File cand = new File(dir, stem + "_" + i + ext);
+            if (!cand.exists()) return cand;
+        }
+        return new File(dir, stem + "_" + System.currentTimeMillis() + ext);
+    }
+
+    private static boolean copyFileBytes(File src, File dest) {
+        try (java.io.InputStream in = new java.io.FileInputStream(src);
+             java.io.OutputStream out = new java.io.FileOutputStream(dest)) {
+            byte[] buf = new byte[8192];
+            int n;
+            while ((n = in.read(buf)) > 0) out.write(buf, 0, n);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    // -------------------------------------------------------------------------
     // Write text (logs, small configs)
     // -------------------------------------------------------------------------
 

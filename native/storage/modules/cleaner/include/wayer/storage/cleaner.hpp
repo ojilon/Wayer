@@ -1,5 +1,9 @@
 #pragma once
 // wayer_storage_cleaner — duplicates + large-file helpers.
+// find_duplicates v2 JSON:
+// {"version":2,"duplicate_groups":[[{path,size,mtime}...]],"related_groups":[{key,files:[...]}]}
+// related_groups is display-only (never auto-delete). Contract kept:
+// *_to_file writes out_path, returns {"status":"ok","path":...} only.
 #include <cstdint>
 #include <string>
 
