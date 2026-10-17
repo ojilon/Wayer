@@ -30,3 +30,6 @@ keystore.properties
 *.keystore
 
 build/
+
+#build-test files
+native/build-test/*
