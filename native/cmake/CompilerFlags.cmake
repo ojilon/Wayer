@@ -19,17 +19,17 @@ if(NOT TARGET project_warnings)
         target_compile_options(project_warnings INTERFACE
             -Wall
             -Wextra          # Reasonable and standard additional warnings
-            -Wpedantic       # Warn if you violate pure ISO C++
+            -Wpedantic       # Warn if you violate pure ISO C/C11
             -Wshadow         # Warn if a local variable shadows another variable
-            -Wnon-virtual-dtor # Warn if a class has virtual functions but no virtual destructor
             -Wcast-align     # Warn about pointer casts that increase alignment
             -Wunused         # Warn about any unused variables/functions
-            -Woverloaded-virtual # Warn if you accidentally overload instead of override
             -Wconversion     # Warn about implicit type conversions that may lose data
             -Wsign-conversion # Warn about implicit sign conversions
             -Wnull-dereference # Warn if a null dereference is detected
             -Wdouble-promotion # Warn if float is implicitly promoted to double
             -Wformat=2       # Security checks on printf/scanf style functions
+            $<$<COMPILE_LANGUAGE:CXX>:-Wnon-virtual-dtor> # Warn if a class has virtual functions but no virtual destructor (C++ only)
+            $<$<COMPILE_LANGUAGE:CXX>:-Woverloaded-virtual> # Warn if you accidentally overload instead of override (C++ only)
         )
         # GCC-only deep static analyzer: opt-in, it is slow and noisy on C++.
         if(WAYER_ENABLE_ANALYZER)
@@ -44,7 +44,6 @@ if(NOT TARGET project_warnings)
             -Wextra
             -Wpedantic
             -Wshadow
-            -Wnon-virtual-dtor
             -Wcast-align
             -Woverloaded-virtual
             -Wconversion
@@ -52,6 +51,7 @@ if(NOT TARGET project_warnings)
             -Wnull-dereference
             -Wdouble-promotion
             -Wformat=2
+            $<$<COMPILE_LANGUAGE:CXX>:-Wnon-virtual-dtor> # C++ only
         )
     endif()
 
