@@ -28,8 +28,7 @@ namespace wayer::storage {
     // At most this many top-level folders ship in the document.
     constexpr std::size_t kMaxFolders = 50;
     
-    std::string write_storage_stats(const std::string& root_path, const std::string& out_path,
-                                    uint64_t known_device_bytes) {
+    std::string write_storage_stats(const std::string& root_path, const std::string& out_path, uint64_t known_device_bytes) {
         struct statvfs stat {};
         if (statvfs(root_path.c_str(), &stat) != 0) {
             return R"({"status":"error","reason":"statvfs_failed"})";
