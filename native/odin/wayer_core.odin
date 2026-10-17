@@ -152,9 +152,13 @@ route_action :: proc(action_id: int, payload: string) -> cstring {
 		return reply_c(wayer_apply_organize_file(cs(parts[0]), cs(parts[1])))
 
 	case ACTION_GET_CACHED_STATS:
+		
 		parts := split_payload(payload)
 		if len(parts) < 3 { return reply(BAD_PAYLOAD) }
+		
 		max_age, _ := strconv.parse_int(parts[2], 10)
+
+		//check if the cache is fresh one 
 		cached := wayer_read_cache_if_fresh(cs(parts[0]), c.int(max_age))
 		if len(cached) > 0 {
 			return reply(fmt.tprintf(`{"status":"ok","path":"%s"}`, wayer_json_escape(cs(parts[0]))))
