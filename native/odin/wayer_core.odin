@@ -5,6 +5,7 @@ import "core:c"
 import "core:fmt"
 import "core:strconv"
 import "core:strings"
+import storage "../storage/src"
 
 ACTION_PING             :: 1
 ACTION_GET_STATUS       :: 2
@@ -41,7 +42,6 @@ foreign shim {
 	wayer_plan_organize_to_file   :: proc(root, out_path: cstring) -> cstring ---
 	wayer_apply_organize_file     :: proc(plan_path, report_path: cstring) -> cstring ---
 	wayer_read_cache_if_fresh     :: proc(cache_path: cstring, max_age: c.int) -> cstring ---
-	wayer_write_storage_stats     :: proc(root, cache_path: cstring, known_bytes: u64) -> cstring ---
 	wayer_build_index             :: proc(root: cstring) -> cstring ---
 	wayer_index_meta              :: proc() -> cstring ---
 	wayer_search_index_to_file    :: proc(query: cstring, max_results: u64, out_path: cstring) -> cstring ---
@@ -167,7 +167,7 @@ route_action :: proc(action_id: int, payload: string) -> cstring {
 		if len(parts) > 3 {
 			if v, ok := strconv.parse_u64(parts[3], 10); ok { known_bytes = v }
 		}
-		return reply_c(wayer_write_storage_stats(cs(parts[1]), cs(parts[0]), known_bytes))
+		return reply(storage.write_storage_stats(parts[1], parts[0], known_bytes))
 
 	case ACTION_INIT_APP_PATHS:
 		return init_app_paths(payload)
