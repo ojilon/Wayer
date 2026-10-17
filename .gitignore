@@ -32,4 +32,4 @@ keystore.properties
 build/
 
 #build-test files
-native/build-test/*
+native/build-test/
