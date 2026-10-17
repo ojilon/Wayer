@@ -27,8 +27,7 @@ public final class Bridge {
      * runs only if nobody else holds that file, and releases it after.
      * Refused jobs answer {"status":"error","reason":"busy"} on the UI thread.
      */
-    public static void run(int actionId, String payload, String leasePath,
-                           String leaseOwner, NativeEngine.Callback callback) {
+    public static void run(int actionId, String payload, String leasePath, String leaseOwner, NativeEngine.Callback callback) {
         executor.execute(() -> {
             String result;
             String owner = leaseOwner != null ? leaseOwner : "bridge";
