@@ -15,6 +15,7 @@ import com.example.wayer.bridge.Stats;
 import com.example.wayer.core.ThemePrefs;
 import com.example.wayer.core.UiChrome;
 import com.example.wayer.databinding.FragmentStorageBinding;
+import com.example.wayer.bridge.StatsSnapshot;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -90,59 +91,36 @@ public class StorageFragment extends Fragment {
 
     private void handleStatsResult(String rawJson) {
         if (binding == null) return;
-
         try {
-            JSONObject data = new JSONObject(rawJson);
-            if (data.has("error")) {
-                binding.storageSummary.setText("Error loading storage");
-                return;
+            StatsSnapshot s = StatsSnapshot.parse(rawJson);
+    
+            binding.storageSummary.setText(
+                    formatSize(s.usedBytes) + " used of " + formatSize(s.totalBytes));
+            binding.storageFree.setText(formatSize(s.freeBytes) + " free");
+    
+            if (binding.catImages != null) binding.catImages.setText(formatSize(s.images));
+            if (binding.catVideos != null) binding.catVideos.setText(formatSize(s.videos));
+            if (binding.catAudio != null) binding.catAudio.setText(formatSize(s.audio));
+            if (binding.catDocuments != null) binding.catDocuments.setText(formatSize(s.documents));
+            if (binding.catSystem != null) binding.catSystem.setText(formatSize(s.system));
+            if (binding.catOthers != null) binding.catOthers.setText(formatSize(s.others));
+            // foreign if you still show it:
+            // if (binding.catForeign != null) binding.catForeign.setText(formatSize(s.foreign));
+    
+            if (binding.catTotal != null) {
+                binding.catTotal.setText(formatSize(s.categoriesTotal()));
             }
-
-            int progress = data.getInt("progress_percent");
-            long used = data.getLong("used_bytes");
-            long total = data.getLong("total_bytes");
-            long free = data.optLong("free_bytes", total - used);
-            
-
-            binding.storageProgress.setProgress(progress);
-            binding.storageSummary.setText(formatSize(used) + " used of " + formatSize(total));
-            binding.storageFree.setText(formatSize(free) + " free");
-
-            if (data.has("breakdown")) {
-                JSONObject b = data.getJSONObject("breakdown");
-                long images = b.optLong("images", 0);
-                long videos = b.optLong("videos", 0);
-                long audio = b.optLong("audio", 0);
-                long docs = b.optLong("documents", 0);
-                long sys = b.optLong("system", 0);
-                long others = b.optLong("others", 0);
-
-                if(binding.catImages != null) binding.catImages.setText(formatSize(images));
-                if(binding.catVideos != null) binding.catVideos.setText(formatSize(videos));
-                if(binding.catAudio != null) binding.catAudio.setText(formatSize(audio));
-                if(binding.catDocuments != null) binding.catDocuments.setText(formatSize(docs));
-                if(binding.catSystem != null) binding.catSystem.setText(formatSize(sys));
-                if(binding.catOthers != null) binding.catOthers.setText(formatSize(others));
-
-                updateBarWeights(images, videos, audio, docs, sys, others);
+    
+            if (binding.storageRing != null) {
+                binding.storageRing.setCategoryBytes(
+                        s.images, s.videos, s.audio, s.documents, s.system, s.others);
             }
-        } catch (JSONException e) {
+        } catch (Exception e) {
             e.printStackTrace();
-            binding.storageSummary.setText("Failed to parse storage data");
+            binding.storageSummary.setText("Failed to load storage data");
         }
     }
 
-    private void updateBarWeights(long images, long videos, long audio, long docs,long sys, long others) {
-        long sum = images + videos + audio + docs + sys +  others;
-        if (sum <= 0) sum = 1;
-
-        setWeight(binding.barImages, images, sum);
-        setWeight(binding.barVideos, videos, sum);
-        setWeight(binding.barAudio, audio, sum);
-        setWeight(binding.barDocs, docs, sum);
-        setWeight(binding.barSys, sys, sum);
-        setWeight(binding.barOthers, others, sum);
-    }
 
     private void setWeight(View view, long value, long total) {
         ViewGroup.LayoutParams lp = view.getLayoutParams();
