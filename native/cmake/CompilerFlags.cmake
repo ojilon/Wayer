@@ -4,9 +4,8 @@
 # We attach these to most of our own targets via the INTERFACE library
 # "project_warnings". Third-party code (sqlite) deliberately does NOT use them.
 #
-# Important: some flags only make sense for C++. We guard those with
-#   $<$<COMPILE_LANGUAGE:CXX>:...>
-# so the pure-C file jni/wayer_engine.c does not get C++-only options.
+# Note: $<COMPILE_LANGUAGE:CXX> is only used on compile OPTIONS (allowed).
+# It must NOT be used on target_compile_features (CMake rejects that).
 # =============================================================================
 
 cmake_minimum_required(VERSION 3.22.1)
@@ -19,11 +18,9 @@ option(WAYER_WARNINGS_AS_ERRORS
 if(NOT TARGET project_warnings)
     add_library(project_warnings INTERFACE)
 
-    # Ask for C++23 when the translation unit is C++.
-    # (C files ignore this generator expression.)
-    target_compile_features(project_warnings INTERFACE
-        $<$<COMPILE_LANGUAGE:CXX>:cxx_std_23>
-    )
+    # C++23 for C++ TUs. Plain form only — no $<COMPILE_LANGUAGE:...> here.
+    # C files that link this target simply ignore the C++ feature.
+    target_compile_features(project_warnings INTERFACE cxx_std_23)
 
     # -----------------------------------------------------------------------
     # GCC
@@ -41,7 +38,7 @@ if(NOT TARGET project_warnings)
             -Wnull-dereference
             -Wdouble-promotion
             -Wformat=2
-            # C++-only:
+            # C++-only options (generator expression is legal on compile_options):
             $<$<COMPILE_LANGUAGE:CXX>:-Wnon-virtual-dtor>
             $<$<COMPILE_LANGUAGE:CXX>:-Woverloaded-virtual>
         )
@@ -77,7 +74,7 @@ if(NOT TARGET project_warnings)
     if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
         target_compile_options(project_warnings INTERFACE
             -fstack-protector-strong
-            -fvisibility=hidden          # hide symbols unless we export them
+            -fvisibility=hidden
             $<$<CONFIG:Debug>:-fno-omit-frame-pointer>
         )
         # _FORTIFY_SOURCE needs optimisation; skip it in Debug (-O0).
