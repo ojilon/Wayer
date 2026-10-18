@@ -87,8 +87,15 @@ set(ODIN_OBJ_DIR "${CMAKE_CURRENT_BINARY_DIR}/odin_objs")
 set(ODIN_OUTPUT_PREFIX "${ODIN_OBJ_DIR}/wayer_core_odin")
 set(ODIN_ARCHIVE "${CMAKE_CURRENT_BINARY_DIR}/libwayer_core_odin.a")
 
-file(GLOB ODIN_SRC CONFIGURE_DEPENDS
+file(GLOB_RECURSE ODIN_SRC CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/odin/*.odin"
+    "${CMAKE_CURRENT_SOURCE_DIR}/core/*.odin"
+    "${CMAKE_CURRENT_SOURCE_DIR}/storage/*.odin"
+    "${CMAKE_CURRENT_SOURCE_DIR}/documents/*.odin"
+    "${CMAKE_CURRENT_SOURCE_DIR}/transfer/*.odin"
+    "${CMAKE_CURRENT_SOURCE_DIR}/media/*.odin"
+    "${CMAKE_CURRENT_SOURCE_DIR}/preview/*.odin"
+    "${CMAKE_CURRENT_SOURCE_DIR}/shim/*.odin"
 )
 
 if(ANDROID)

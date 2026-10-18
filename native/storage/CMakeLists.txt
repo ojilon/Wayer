@@ -1,5 +1,3 @@
-# wayer_storage — local FS, app cache files, index (no JNI)
-
 # Optional submodules (search / cleaner / organizer) — may be INTERFACE until split
 add_subdirectory(modules/search)
 add_subdirectory(modules/cleaner)
