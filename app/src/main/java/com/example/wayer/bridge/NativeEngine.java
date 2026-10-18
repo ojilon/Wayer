@@ -1,32 +1,54 @@
 package com.example.wayer.bridge;
 
+/**
+ * Single doorway from Java into the native engine.
+ *
+ * Action IDs must stay in sync with the constants in
+ *   native/odin/wayer_core.odin
+ * (and the thin C trampoline in native/jni/wayer_engine.c).
+ *
+ * Most work is still done by the C++ modules via the shim; Odin currently
+ * owns the router and the first storage pieces (stats snapshot).
+ */
 public class NativeEngine {
 
-    // Action IDs must match native/jni/wayer_engine.cpp.
-    public static final int ACTION_PING = 1;
-    public static final int ACTION_GET_STATUS = 2;
-    public static final int ACTION_LIST_FILES = 3;
+    // ---------------------------------------------------------------------
+    // Action IDs — keep these identical to the Odin side
+    // ---------------------------------------------------------------------
+    public static final int ACTION_PING             = 1;
+    public static final int ACTION_GET_STATUS       = 2;
+    public static final int ACTION_LIST_FILES       = 3;
     public static final int ACTION_GET_NETWORK_INFO = 4;
     public static final int ACTION_FILTER_DOCUMENTS = 5;
-    public static final int ACTION_START_LISTENER = 6;
+    public static final int ACTION_START_LISTENER   = 6;
+
+    /**
+     * Legacy ID. The old direct "get storage stats" path is gone.
+     * Use {@link #ACTION_GET_CACHED_STATS} instead (it either returns the
+     * cached snapshot or rebuilds it through the Odin write_storage_stats).
+     * Kept only so old log lines / comments remain searchable.
+     */
+    @Deprecated
     public static final int ACTION_GET_STORAGE_STATS = 7;
-    public static final int ACTION_SEARCH_FILES = 8;
+
+    public static final int ACTION_SEARCH_FILES     = 8;
     public static final int ACTION_FIND_LARGE_FILES = 9;
-    public static final int ACTION_FIND_DUPLICATES = 10;
-    public static final int ACTION_PLAN_ORGANIZE = 11;
-    public static final int ACTION_APPLY_ORGANIZE = 12;
+    public static final int ACTION_FIND_DUPLICATES  = 10;
+    public static final int ACTION_PLAN_ORGANIZE    = 11;
+    public static final int ACTION_APPLY_ORGANIZE   = 12;
     public static final int ACTION_GET_CACHED_STATS = 13;
-    public static final int ACTION_INIT_APP_PATHS = 14;
-    public static final int ACTION_BUILD_INDEX = 15;
+    public static final int ACTION_INIT_APP_PATHS   = 14;
+    public static final int ACTION_BUILD_INDEX      = 15;
     public static final int ACTION_INVALIDATE_CACHE = 16;
-    public static final int ACTION_INDEX_META = 17;
-    public static final int ACTION_SEARCH_INDEX = 18;
-    public static final int ACTION_READ_TEXT_FILE = 19;
+    public static final int ACTION_INDEX_META       = 17;
+    public static final int ACTION_SEARCH_INDEX     = 18;
+    public static final int ACTION_READ_TEXT_FILE   = 19;
 
     public interface Callback {
         void onResult(String result);
     }
 
+    // Native methods implemented in jni/wayer_engine.c
     public static native void initEngine();
     public static native String processAction(int actionId, String payload);
 
@@ -111,7 +133,8 @@ public class NativeEngine {
 
     /** Read-only text preview via the wayer_preview module (capped, binary refused). */
     public static void readTextFileAsync(String path, int maxBytes, Callback callback) {
-        processActionAsync(ACTION_READ_TEXT_FILE, (path != null ? path : "") + "|" + maxBytes, callback);
+        processActionAsync(ACTION_READ_TEXT_FILE,
+                (path != null ? path : "") + "|" + maxBytes, callback);
     }
 
     // Every call runs through Bridge's single executor: one native file job

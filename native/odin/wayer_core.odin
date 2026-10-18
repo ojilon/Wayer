@@ -1,3 +1,17 @@
+// =============================================================================
+// wayer_core.odin — Odin entry package
+//
+// This is the package that CMake asks Odin to build (native/odin/).
+// It owns:
+//   - the action-id router (wayer_route_action)
+//   - the exported C ABI that jni/wayer_engine.c calls
+//
+// Other Odin packages (storage, core_heart, …) live next to their C++ twins
+// under native/<module>/src/*.odin and are imported relatively.
+// Drop a new .odin file anywhere under native/, import it from here (or from
+// an already-imported package), and CMake will pick it up automatically.
+// =============================================================================
+
 package wayer_core
 
 import "base:runtime"
@@ -7,12 +21,14 @@ import "core:strconv"
 import "core:strings"
 import storage "../storage/src"
 
+// Action IDs — must stay identical to NativeEngine.java
 ACTION_PING             :: 1
 ACTION_GET_STATUS       :: 2
 ACTION_LIST_FILES       :: 3
 ACTION_GET_NETWORK_INFO :: 4
 ACTION_FILTER_DOCUMENTS :: 5
 ACTION_START_LISTENER   :: 6
+// 7 was the old direct GET_STORAGE_STATS; now unused (see GET_CACHED_STATS)
 ACTION_SEARCH_FILES     :: 8
 ACTION_FIND_LARGE_FILES :: 9
 ACTION_FIND_DUPLICATES  :: 10

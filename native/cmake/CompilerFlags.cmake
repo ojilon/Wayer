@@ -1,43 +1,58 @@
-# ============================================================================
-# CompilerFlags.cmake - Reusable Modern C++ Strict Safety Configuration
-# ============================================================================
+# =============================================================================
+# CompilerFlags.cmake — shared warning / safety flags
+#
+# We attach these to most of our own targets via the INTERFACE library
+# "project_warnings". Third-party code (sqlite) deliberately does NOT use them.
+#
+# Important: some flags only make sense for C++. We guard those with
+#   $<$<COMPILE_LANGUAGE:CXX>:...>
+# so the pure-C file jni/wayer_engine.c does not get C++-only options.
+# =============================================================================
+
 cmake_minimum_required(VERSION 3.22.1)
 
-option(WAYER_ENABLE_ANALYZER "Enable GCC -fanalyzer (slow, noisy on C++)" OFF)
-option(WAYER_WARNINGS_AS_ERRORS "Treat warnings as errors (enable in CI/release, not by default)" OFF)
+option(WAYER_ENABLE_ANALYZER
+    "Enable GCC -fanalyzer (slow and noisy on C++)" OFF)
+option(WAYER_WARNINGS_AS_ERRORS
+    "Treat warnings as errors (nice for CI, noisy for day-to-day work)" OFF)
 
 if(NOT TARGET project_warnings)
     add_library(project_warnings INTERFACE)
 
-    # 1. Enforce Modern C++ Standards
-    # NOTE: CXX_EXTENSIONS is set project-wide (set(CMAKE_CXX_EXTENSIONS OFF)
-    # in the top-level CMakeLists); set() has no INTERFACE mode.
-    target_compile_features(project_warnings INTERFACE cxx_std_23)
+    # Ask for C++23 when the translation unit is C++.
+    # (C files ignore this generator expression.)
+    target_compile_features(project_warnings INTERFACE
+        $<$<COMPILE_LANGUAGE:CXX>:cxx_std_23>
+    )
 
-    # 2a. Strict warning flags for GCC (unchanged set)
+    # -----------------------------------------------------------------------
+    # GCC
+    # -----------------------------------------------------------------------
     if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
         target_compile_options(project_warnings INTERFACE
             -Wall
-            -Wextra          # Reasonable and standard additional warnings
-            -Wpedantic       # Warn if you violate pure ISO C/C11
-            -Wshadow         # Warn if a local variable shadows another variable
-            -Wcast-align     # Warn about pointer casts that increase alignment
-            -Wunused         # Warn about any unused variables/functions
-            -Wconversion     # Warn about implicit type conversions that may lose data
-            -Wsign-conversion # Warn about implicit sign conversions
-            -Wnull-dereference # Warn if a null dereference is detected
-            -Wdouble-promotion # Warn if float is implicitly promoted to double
-            -Wformat=2       # Security checks on printf/scanf style functions
-            $<$<COMPILE_LANGUAGE:CXX>:-Wnon-virtual-dtor> # Warn if a class has virtual functions but no virtual destructor (C++ only)
-            $<$<COMPILE_LANGUAGE:CXX>:-Woverloaded-virtual> # Warn if you accidentally overload instead of override (C++ only)
+            -Wextra
+            -Wpedantic
+            -Wshadow
+            -Wcast-align
+            -Wunused
+            -Wconversion
+            -Wsign-conversion
+            -Wnull-dereference
+            -Wdouble-promotion
+            -Wformat=2
+            # C++-only:
+            $<$<COMPILE_LANGUAGE:CXX>:-Wnon-virtual-dtor>
+            $<$<COMPILE_LANGUAGE:CXX>:-Woverloaded-virtual>
         )
-        # GCC-only deep static analyzer: opt-in, it is slow and noisy on C++.
         if(WAYER_ENABLE_ANALYZER)
             target_compile_options(project_warnings INTERFACE -fanalyzer)
         endif()
     endif()
 
-    # 2b. Strict warning flags for Clang / AppleClang (this is what the NDK uses)
+    # -----------------------------------------------------------------------
+    # Clang (what the Android NDK uses)
+    # -----------------------------------------------------------------------
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
         target_compile_options(project_warnings INTERFACE
             -Wall
@@ -45,25 +60,27 @@ if(NOT TARGET project_warnings)
             -Wpedantic
             -Wshadow
             -Wcast-align
-            -Woverloaded-virtual
             -Wconversion
             -Wsign-conversion
             -Wnull-dereference
             -Wdouble-promotion
             -Wformat=2
-            $<$<COMPILE_LANGUAGE:CXX>:-Wnon-virtual-dtor> # C++ only
+            # C++-only:
+            $<$<COMPILE_LANGUAGE:CXX>:-Wnon-virtual-dtor>
+            $<$<COMPILE_LANGUAGE:CXX>:-Woverloaded-virtual>
         )
     endif()
 
-    # 2c. Hardening for GCC/Clang (MSVC is not used by this project).
-    # JNI entry points stay exported via JNIEXPORT despite -fvisibility=hidden.
+    # -----------------------------------------------------------------------
+    # Hardening flags shared by GCC and Clang
+    # -----------------------------------------------------------------------
     if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
         target_compile_options(project_warnings INTERFACE
             -fstack-protector-strong
-            -fvisibility=hidden
+            -fvisibility=hidden          # hide symbols unless we export them
             $<$<CONFIG:Debug>:-fno-omit-frame-pointer>
         )
-        # _FORTIFY_SOURCE requires optimization; Debug (-O0) is excluded.
+        # _FORTIFY_SOURCE needs optimisation; skip it in Debug (-O0).
         target_compile_definitions(project_warnings INTERFACE
             $<$<NOT:$<CONFIG:Debug>>:_FORTIFY_SOURCE=2>
         )
