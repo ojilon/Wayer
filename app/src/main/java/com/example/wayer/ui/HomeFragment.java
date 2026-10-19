@@ -9,27 +9,35 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.core.view.GravityCompat;
 import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.example.wayer.R;
+import com.example.wayer.bridge.AppDirs;
+import com.example.wayer.bridge.NativeCache;
+import com.example.wayer.bridge.NativeEngine;
+import com.example.wayer.bridge.PathCache;
+import com.example.wayer.bridge.Stats;
 import com.example.wayer.core.GlassBlur;
 import com.example.wayer.core.MainActivity;
-import com.example.wayer.bridge.Stats;
 import com.example.wayer.core.ThemePrefs;
 import com.example.wayer.core.UiChrome;
 import com.example.wayer.databinding.FragmentHomeBinding;
 import com.example.wayer.transfer.RecentTransfersStore;
 
-import org.json.JSONException;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
 import java.util.List;
 
-public class HomeFragment extends Fragment {
+public class HomeFragment extends Fragment implements DaySectionAdapter.Listener {
 
     private FragmentHomeBinding binding;
+    private DaySectionAdapter daysAdapter;
 
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
         binding = FragmentHomeBinding.inflate(inflater, container, false);
         setupUI();
         setupSidebar();
@@ -80,64 +88,107 @@ public class HomeFragment extends Fragment {
     }
 
     private void setupUI() {
-        Stats.requestSnapshot(getContext(), false, rawJson -> {
-            // Safety check: ensure fragment context is still valid
-            if (binding == null || getActivity() == null) return;
+        
+        // --- day grid ---
+        daysAdapter = new DaySectionAdapter(this);
+        binding.homeDaysList.setLayoutManager(new LinearLayoutManager(requireContext()));
+        binding.homeDaysList.setAdapter(daysAdapter);
+        binding.homeDaysStatus.setText("Indexing files…");
 
-            // Crucial: Push the UI rendering modifications safely back onto the Main UI Thread
-            getActivity().runOnUiThread(() -> {
-                if (binding == null) return;
+        loadFilesByDay();
 
-                try {
-                    JSONObject data = new JSONObject(rawJson);
-
-                    int progress = data.getInt("progress_percent");
-                    long usedBytes = data.getLong("used_bytes");
-                    long totalBytes = data.getLong("total_bytes");
-
-                    binding.storageProgress.setProgress(progress);
-                    binding.storageSummary.setText(
-                        formatSize(usedBytes) + " used of " + formatSize(totalBytes)
-                    );
-
-                    if (data.has("breakdown")) {
-                        JSONObject b = data.getJSONObject("breakdown");
-                        
-                        // Safety Null Checks added to prevent missing XML views from breaking builds
-                        if (binding.catImages != null) binding.catImages.setText(formatSize(b.optLong("images", 0)));
-                        if (binding.catVideos != null) binding.catVideos.setText(formatSize(b.optLong("videos", 0)));
-                        if (binding.catAudio != null) binding.catAudio.setText(formatSize(b.optLong("audio", 0)));
-                        if (binding.catDocuments != null) binding.catDocuments.setText(formatSize(b.optLong("documents", 0)));
-                        if (binding.catOthers != null) binding.catOthers.setText(formatSize(b.optLong("others", 0)));
-                        if (binding.catForeign != null) binding.catForeign.setText(formatSize(b.optLong("foreign", 0)));
-                        if (binding.catSystem != null) binding.catSystem.setText(formatSize(b.optLong("system", 0)));
-
-                        
-                    }
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                    binding.storageSummary.setText("Failed to load storage info");
-                }
-            });
-        });
-
+        // shortcuts (unchanged)
         binding.actionFiles.setOnClickListener(v ->
-            ((MainActivity) requireActivity()).navigateTo(R.id.nav_files)
-        );
-
+                ((MainActivity) requireActivity()).navigateTo(R.id.nav_files));
         binding.actionTransfer.setOnClickListener(v ->
-            ((MainActivity) requireActivity()).navigateTo(R.id.nav_transfer)
-        );
-
+                ((MainActivity) requireActivity()).navigateTo(R.id.nav_transfer));
         binding.actionStorage.setOnClickListener(v ->
-            ((MainActivity) requireActivity()).navigateTo(R.id.nav_storage)
-        );
-
+                ((MainActivity) requireActivity()).navigateTo(R.id.nav_storage));
         binding.actionTerminal.setOnClickListener(v ->
-            Toast.makeText(getContext(), "Terminal – coming soon", Toast.LENGTH_SHORT).show()
-        );
+                Toast.makeText(getContext(), "Terminal – coming soon", Toast.LENGTH_SHORT).show());
 
         refreshRecentTransfersHint();
+    }
+
+    /**
+     * 1) Build / refresh index (paths + size + mtime) into cache/index/files.json
+     * 2) Group that file by day into cache/index/files_by_day.json
+     * 3) Read the by-day JSON and show it
+     */
+    private void loadFilesByDay() {
+        String root = AppDirs.externalRoot().getPath();
+
+        NativeEngine.buildIndexAsync(requireContext(), root, buildRaw -> {
+            if (binding == null || getActivity() == null) return;
+
+            NativeEngine.groupIndexByDayAsync(requireContext(), 14, 50, groupRaw -> {
+                if (binding == null || getActivity() == null) return;
+
+                String path = PathCache.envelopePath(groupRaw);
+                String json = PathCache.readFile(path);
+                if (json == null) {
+                    json = PathCache.readFile(NativeCache.filesByDayPath(requireContext()));
+                }
+                final String content = json;
+                getActivity().runOnUiThread(() -> applyDaysJson(content));
+            });
+        });
+    }
+
+    private void applyDaysJson(String json) {
+        if (binding == null) return;
+        if (json == null || json.isEmpty()) {
+            binding.homeDaysStatus.setText("No day data yet");
+            daysAdapter.submit(new ArrayList<>());
+            return;
+        }
+        try {
+            JSONObject root = new JSONObject(json);
+            if (root.has("error")) {
+                binding.homeDaysStatus.setText("Error: " + root.optString("error"));
+                return;
+            }
+            JSONArray days = root.optJSONArray("days");
+            List<DaySection> list = new ArrayList<>();
+            if (days != null) {
+                for (int i = 0; i < days.length(); i++) {
+                    JSONObject d = days.getJSONObject(i);
+                    DaySection section = new DaySection(d.optString("day", ""));
+                    JSONArray files = d.optJSONArray("files");
+                    if (files != null) {
+                        for (int j = 0; j < files.length(); j++) {
+                            JSONObject f = files.getJSONObject(j);
+                            section.files.add(new DaySection.FileEntry(
+                                    f.optString("path", ""),
+                                    f.optString("name", ""),
+                                    f.optString("kind", "other"),
+                                    f.optLong("size", 0),
+                                    f.optLong("mtime", 0)
+                            ));
+                        }
+                    }
+                    list.add(section);
+                }
+            }
+            daysAdapter.submit(list);
+            binding.homeDaysStatus.setText(
+                    list.isEmpty() ? "No recent files" : (list.size() + " day(s)"));
+        } catch (Exception e) {
+            binding.homeDaysStatus.setText("Failed to parse day list");
+        }
+    }
+
+    @Override
+    public void onSeeMore(DaySection section) {
+        // v1: toast; later open a full list fragment with section.day
+        Toast.makeText(getContext(),
+                "See more: " + section.day + " (" + section.files.size() + " files)",
+                Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    public void onFileClick(DaySection.FileEntry file) {
+        FileOpenHelper.open(requireContext(), file.path);
     }
 
     private String formatSize(long bytes) {
@@ -148,13 +199,15 @@ public class HomeFragment extends Fragment {
     }
 
     private void refreshRecentTransfersHint() {
+        if (binding == null) return;
         List<RecentTransfersStore.Entry> list = RecentTransfersStore.load(requireContext());
         if (list.isEmpty()) {
             binding.recentTransfersEmpty.setText("No recent transfers");
         } else {
             RecentTransfersStore.Entry e = list.get(0);
             binding.recentTransfersEmpty.setText(
-                    (e.download ? "↓ " : "↑ ") + e.name + " · and " + Math.max(0, list.size() - 1) + " more");
+                    (e.download ? "↓ " : "↑ ") + e.name + " · and "
+                            + Math.max(0, list.size() - 1) + " more");
         }
     }
 

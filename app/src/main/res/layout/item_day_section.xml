@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingTop="@dimen/spacing_sm"
+    android:paddingBottom="@dimen/spacing_sm">
+
+    <!-- thin top line -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/wayer_outline_glass" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingTop="@dimen/spacing_sm">
+
+        <TextView
+            android:id="@+id/day_label"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textColor="@color/wayer_text_primary"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:text="2026-10-18" />
+
+        <ImageButton
+            android:id="@+id/day_more"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="See more files for this day"
+            android:src="@android:drawable/ic_menu_more"
+            app:tint="@color/wayer_text_primary" />
+    </LinearLayout>
+
+    <!-- up to 4 preview slots -->
+    <LinearLayout
+        android:id="@+id/day_previews"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="@dimen/spacing_sm">
+
+        <ImageView android:id="@+id/prev0" android:layout_width="0dp" android:layout_height="56dp" android:layout_weight="1" android:layout_margin="2dp" android:scaleType="centerCrop" android:background="@color/wayer_surface" android:contentDescription="@null" />
+        <ImageView android:id="@+id/prev1" android:layout_width="0dp" android:layout_height="56dp" android:layout_weight="1" android:layout_margin="2dp" android:scaleType="centerCrop" android:background="@color/wayer_surface" android:contentDescription="@null" />
+        <ImageView android:id="@+id/prev2" android:layout_width="0dp" android:layout_height="56dp" android:layout_weight="1" android:layout_margin="2dp" android:scaleType="centerCrop" android:background="@color/wayer_surface" android:contentDescription="@null" />
+        <ImageView android:id="@+id/prev3" android:layout_width="0dp" android:layout_height="56dp" android:layout_weight="1" android:layout_margin="2dp" android:scaleType="centerCrop" android:background="@color/wayer_surface" android:contentDescription="@null" />
+    </LinearLayout>
+</LinearLayout>

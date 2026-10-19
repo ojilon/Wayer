@@ -49,7 +49,6 @@ foreign import shim "system:wayer_shim"
 
 @(default_calling_convention = "c")
 foreign shim {
-	wayer_list_files              :: proc(path: cstring) -> cstring ---
 	wayer_get_network_info        :: proc() -> cstring ---
 	wayer_filter_documents        :: proc(payload: cstring) -> cstring ---
 	wayer_start_listener          :: proc(port: c.int) -> cstring ---

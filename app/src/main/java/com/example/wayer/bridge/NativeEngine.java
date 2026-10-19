@@ -1,4 +1,5 @@
 package com.example.wayer.bridge;
+import android.content.Context;
 
 /**
  * Single doorway from Java into the native engine.

@@ -85,71 +85,27 @@
                         <TextView
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:text="@string/nav_storage"
+                            android:layout_marginTop="@dimen/spacing_md"
+                            android:text="Recent by day"
                             android:textColor="@color/wayer_text_primary"
                             android:textSize="18sp"
                             android:textStyle="bold" />
-
+                
                         <TextView
-                            android:id="@+id/storage_summary"
+                            android:id="@+id/home_days_status"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/spacing_xs"
+                            android:text="Loading…"
+                            android:textColor="@color/wayer_text_secondary"
+                            android:textSize="13sp" />
+                
+                        <androidx.recyclerview.widget.RecyclerView
+                            android:id="@+id/home_days_list"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="@dimen/spacing_sm"
-                            android:text="@string/storage_summary"
-                            android:textColor="@color/wayer_text_secondary"
-                            android:textSize="14sp" />
-
-                        <ProgressBar
-                            android:id="@+id/storage_progress"
-                            style="?android:attr/progressBarStyleHorizontal"
-                            android:layout_width="match_parent"
-                            android:layout_height="8dp"
-                            android:layout_marginTop="@dimen/spacing_md"
-                            android:max="100"
-                            android:progress="0" />
-
-                        <LinearLayout
-                            android:id="@+id/storage_breakdown"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="@dimen/spacing_md"
-                            android:orientation="vertical">
-
-                            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:paddingTop="@dimen/spacing_xs" android:paddingBottom="@dimen/spacing_xs">
-                                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/layout_fragment_home_text_9" android:textColor="@color/wayer_text_secondary" android:textSize="13sp" />
-                                <TextView android:id="@+id/cat_images" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/cat_images" android:textColor="@color/wayer_text_primary" android:textSize="13sp" />
-                            </LinearLayout>
-
-                            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:paddingTop="@dimen/spacing_xs" android:paddingBottom="@dimen/spacing_xs">
-                                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/layout_fragment_home_text_10" android:textColor="@color/wayer_text_secondary" android:textSize="13sp" />
-                                <TextView android:id="@+id/cat_videos" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/cat_images" android:textColor="@color/wayer_text_primary" android:textSize="13sp" />
-                            </LinearLayout>
-
-                            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:paddingTop="@dimen/spacing_xs" android:paddingBottom="@dimen/spacing_xs">
-                                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/layout_fragment_home_text_11" android:textColor="@color/wayer_text_secondary" android:textSize="13sp" />
-                                <TextView android:id="@+id/cat_audio" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/cat_images" android:textColor="@color/wayer_text_primary" android:textSize="13sp" />
-                            </LinearLayout>
-
-                            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:paddingTop="@dimen/spacing_xs" android:paddingBottom="@dimen/spacing_xs">
-                                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/layout_fragment_home_text_12" android:textColor="@color/wayer_text_secondary" android:textSize="13sp" />
-                                <TextView android:id="@+id/cat_documents" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/cat_images" android:textColor="@color/wayer_text_primary" android:textSize="13sp" />
-                            </LinearLayout>
-
-                            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:paddingTop="@dimen/spacing_xs" android:paddingBottom="@dimen/spacing_xs">
-                                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/layout_fragment_home_text_13" android:textColor="@color/wayer_text_secondary" android:textSize="13sp" />
-                                <TextView android:id="@+id/cat_foreign" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/cat_images" android:textColor="@color/wayer_text_primary" android:textSize="13sp" />
-                            </LinearLayout>
-
-                            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:paddingTop="@dimen/spacing_xs" android:paddingBottom="@dimen/spacing_xs">
-                                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/layout_fragment_home_text_14" android:textColor="@color/wayer_text_secondary" android:textSize="13sp" />
-                                <TextView android:id="@+id/cat_system" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/cat_images" android:textColor="@color/wayer_text_primary" android:textSize="13sp" />
-                            </LinearLayout>
-                            
-                            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:paddingTop="@dimen/spacing_xs" android:paddingBottom="@dimen/spacing_xs">
-                                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/layout_fragment_home_text_15" android:textColor="@color/wayer_text_secondary" android:textSize="13sp" />
-                                <TextView android:id="@+id/cat_others" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/cat_images" android:textColor="@color/wayer_text_primary" android:textSize="13sp" />
-                            </LinearLayout>
-                        </LinearLayout>
+                            android:nestedScrollingEnabled="false" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
