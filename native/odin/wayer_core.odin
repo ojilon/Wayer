@@ -41,6 +41,7 @@ ACTION_INVALIDATE_CACHE :: 16
 ACTION_INDEX_META       :: 17
 ACTION_SEARCH_INDEX     :: 18
 ACTION_READ_TEXT_FILE   :: 19
+ACTION_GROUP_INDEX_BY_DAY :: 21
 
 BAD_PAYLOAD :: `{"status":"error","reason":"bad_payload"}`
 
@@ -58,15 +59,20 @@ foreign shim {
 	wayer_plan_organize_to_file   :: proc(root, out_path: cstring) -> cstring ---
 	wayer_apply_organize_file     :: proc(plan_path, report_path: cstring) -> cstring ---
 	wayer_read_cache_if_fresh     :: proc(cache_path: cstring, max_age: c.int) -> cstring ---
-	wayer_build_index             :: proc(root: cstring) -> cstring ---
-	wayer_index_meta              :: proc() -> cstring ---
-	wayer_search_index_to_file    :: proc(query: cstring, max_results: u64, out_path: cstring) -> cstring ---
 	wayer_read_text_file          :: proc(path: cstring, max_bytes: u64) -> cstring ---
 	wayer_invalidate_cache        :: proc(payload: cstring) -> c.bool ---
 	wayer_init_app_paths          :: proc(app_root: cstring) -> cstring --- // returns final JSON reply
 	wayer_json_escape             :: proc(s: cstring) -> cstring ---
 	wayer_log_info                :: proc(tag, msg: cstring) ---
 	wayer_log_error               :: proc(tag, msg: cstring) ---
+	wayer_list_files :: proc(path: cstring) -> cstring ---
+}
+// Index lives in the same .so (wayer_storage / index_c.c)
+foreign {
+	wayer_build_index :: proc(root, index_path: cstring) -> cstring ---
+	wayer_index_meta :: proc(index_path: cstring) -> cstring ---
+	wayer_search_index_to_file :: proc(query: cstring, max_results: u64, out_path, index_path: cstring) -> cstring ---
+	wayer_group_index_by_day :: proc(index_path, out_path: cstring, max_days, max_per_day: c.int) -> cstring ---
 }
 
 // Per-thread so concurrent JNI calls don't stomp each other.
@@ -188,26 +194,37 @@ route_action :: proc(action_id: int, payload: string) -> cstring {
 	case ACTION_INIT_APP_PATHS:
 		return init_app_paths(payload)
 	case ACTION_BUILD_INDEX:
-		return reply_c(wayer_build_index(cs(payload)))
+		//payload root | index_path
+		parts := split_payload(payload)
+		if len(parts) < 2 || len(parts[0]) == 0 || len(parts[1]) == 0 {
+			return reply(BAD_PAYLOAD)
+		}
+		return reply_c(wayer_build_index(cs(parts[0]), cs(parts[1])))
 	case ACTION_INDEX_META:
-		return reply_c(wayer_index_meta())
+		// payload: index_path
+		if len(payload) == 0 { return reply(BAD_PAYLOAD) }
+		return reply_c(wayer_index_meta(cs(payload)))
 
 	case ACTION_SEARCH_INDEX:
+		// payload: out_path|max_results|query...   + we need index_path
+		// Use: out_path|index_path|max_results|query
 		parts := split_payload(payload)
-		if len(parts) == 0 || len(parts[0]) == 0 { return reply(BAD_PAYLOAD) }
+		if len(parts) < 2 || len(parts[0]) == 0 || len(parts[1]) == 0 {
+			return reply(BAD_PAYLOAD)
+		}
 		max_results := u64(50)
-		query_from := 1
-		if len(parts) > 1 && all_digits(parts[1]) {
-			if v, ok := strconv.parse_u64(parts[1], 10); ok {
+		query_from := 2
+		if len(parts) > 2 && all_digits(parts[2]) {
+			if v, ok := strconv.parse_u64(parts[2], 10); ok {
 				max_results = v
-				query_from = 2
+				query_from = 3
 			}
 		}
 		query := ""
 		if query_from < len(parts) {
 			query = strings.join(parts[query_from:], "|", context.temp_allocator)
 		}
-		return reply_c(wayer_search_index_to_file(cs(query), max_results, cs(parts[0])))
+		return reply_c(wayer_search_index_to_file(cs(query), max_results, cs(parts[0]), cs(parts[1])))
 
 	case ACTION_READ_TEXT_FILE:
 		path, max_bytes := split_trailing_number(payload, 0)
@@ -218,6 +235,22 @@ route_action :: proc(action_id: int, payload: string) -> cstring {
 			return reply(`{"status":"invalidated"}`)
 		}
 		return reply(`{"status":"missing"}`)
+
+	case ACTION_GROUP_INDEX_BY_DAY:
+		// payload: out_path|index_path|max_days|max_per_day
+		parts := split_payload(payload)
+		if len(parts) < 2 || len(parts[0]) == 0 || len(parts[1]) == 0 {
+			return reply(BAD_PAYLOAD)
+		}
+		max_days := 14
+		max_per_day := 50
+		if len(parts) > 2 {
+			if v, ok := strconv.parse_int(parts[2], 10); ok { max_days = v }
+		}
+		if len(parts) > 3 {
+			if v, ok := strconv.parse_int(parts[3], 10); ok { max_per_day = v }
+		}
+		return reply_c(wayer_group_index_by_day(cs(parts[1]), cs(parts[0]), c.int(max_days), c.int(max_per_day)))
 	}
 
 	wayer_log_error("WayerEngine", "unknown action from Java")

@@ -18,7 +18,7 @@ add_library(wayer_storage STATIC
     src/analyse_storage_space.cpp
     src/dir_walk_android.c
     src/extension_map.cpp
-    src/index.cpp
+    src/index_c.c
     src/list_files.cpp
     src/safety.cpp
     src/stats_db.cpp

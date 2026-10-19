@@ -79,20 +79,6 @@ namespace {
         return keep(wayer::storage::write_storage_stats(root, cache_path, known_bytes));
     }
     
-    const char* wayer_build_index(const char* root) {
-        return keep(wayer::storage::build_index(root));
-    }
-    
-    const char* wayer_index_meta() {
-        return keep(wayer::storage::index_meta());
-    }
-    
-    const char* wayer_search_index_to_file(const char* query, uint64_t max_results,
-                                           const char* out_path) {
-        return keep(wayer::storage::search_index_to_file(
-            query, static_cast<std::size_t>(max_results), out_path));
-    }
-    
     const char* wayer_read_text_file(const char* path, uint64_t max_bytes) {
         return keep(wayer::preview::read_text_file(
             path, static_cast<std::size_t>(max_bytes)));

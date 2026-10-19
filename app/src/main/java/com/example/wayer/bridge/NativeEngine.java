@@ -44,6 +44,40 @@ public class NativeEngine {
     public static final int ACTION_SEARCH_INDEX     = 18;
     public static final int ACTION_READ_TEXT_FILE   = 19;
 
+    public static final int ACTION_GROUP_INDEX_BY_DAY = 21;
+
+    /** Build index: root|indexPath */
+    public static void buildIndexAsync(Context context, String root, Callback callback) {
+        String index = NativeCache.indexFilePath(context);
+        String r = root != null ? root : "";
+        Bridge.run(ACTION_BUILD_INDEX, r + "|" + index, index, "index", callback);
+    }
+    
+    /** Meta: pass index path as payload */
+    public static void indexMetaAsync(Context context, Callback callback) {
+        processActionAsync(ACTION_INDEX_META, NativeCache.indexFilePath(context), callback);
+    }
+    
+    /** Search: outPath|indexPath|maxResults|query */
+    public static void searchIndexAsync(Context context, String query, int maxResults,
+                                        String outPath, Callback callback) {
+        String index = NativeCache.indexFilePath(context);
+        Bridge.run(ACTION_SEARCH_INDEX,
+                (outPath != null ? outPath : "") + "|" + index + "|" + maxResults
+                        + "|" + (query != null ? query : ""),
+                outPath, "search", callback);
+    }
+    
+    /** Group index → by-day JSON at outPath */
+    public static void groupIndexByDayAsync(Context context, int maxDays, int maxPerDay,
+                                            Callback callback) {
+        String index = NativeCache.indexFilePath(context);
+        String out = NativeCache.filesByDayPath(context);
+        Bridge.run(ACTION_GROUP_INDEX_BY_DAY,
+                out + "|" + index + "|" + maxDays + "|" + maxPerDay,
+                out, "files-by-day", callback);
+    }
+
     public interface Callback {
         void onResult(String result);
     }

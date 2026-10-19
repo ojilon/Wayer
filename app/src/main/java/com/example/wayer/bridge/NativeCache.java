@@ -56,5 +56,10 @@ public final class NativeCache {
         return cache.isEmpty() ? "" : cache + "/index/files.json";
     }
 
+    public static String filesByDayPath(Context context) {
+        String cache = PathRegistry.cacheDir(context);
+        return cache.isEmpty() ? "" : cache + "/index/files_by_day.json";
+    }
+
     private NativeCache() {}
 }
