@@ -1,20 +1,32 @@
 /*
  * index_c.c — file-backed index + search + group-by-day (C only).
- * Uses opendir/readdir/stat only (Android 10 seccomp safe).
+ * Uses opendir/readdir/stat only (Android 10 seccomp safe — no statx).
+ *
+ * Stack safety:
+ *  - GroupUd is heap-allocated (~few MB); never on the thread stack.
+ *  - walk_dir uses a depth limit and smaller path buffers.
  */
 #include "wayer/storage/index_c.h"
 
 #include <ctype.h>
 #include <dirent.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
-#include <limits.h>
 
-/* ---------- thread-local reply ---------- */
+/* Shorter than PATH_MAX so recursion and heap structs stay small */
+#define WAYER_PATH_MAX 512
+#define WAYER_MAX_WALK_DEPTH 32
+
+#define MAX_DAY_FILES 64
+#define MAX_DAYS_CAP  32
+
+/* ---------- thread-local reply (never free) ---------- */
 static __thread char g_reply[512];
 
 static const char *reply_fmt(const char *fmt, ...) {
@@ -24,9 +36,6 @@ static const char *reply_fmt(const char *fmt, ...) {
     va_end(ap);
     return g_reply;
 }
-
-/* need stdarg */
-#include <stdarg.h>
 
 /* ---------- json escape into FILE ---------- */
 static void json_escape_fp(FILE *fp, const char *s) {
@@ -43,7 +52,7 @@ static void json_escape_fp(FILE *fp, const char *s) {
         case '\t': fputs("\\t", fp); break;
         default:
             if (c < 0x20) fprintf(fp, "\\u%04x", c);
-            else fputc(c, fp);
+            else fputc((int)c, fp);
         }
     }
 }
@@ -58,17 +67,18 @@ static const char *kind_from_name(const char *name) {
         ext[n++] = (char)tolower((unsigned char)*p);
     ext[n] = 0;
     if (!strcmp(ext, ".jpg") || !strcmp(ext, ".jpeg") || !strcmp(ext, ".png") ||
-        !strcmp(ext, ".webp") || !strcmp(ext, ".gif") || !strcmp(ext, ".heic"))
+        !strcmp(ext, ".webp") || !strcmp(ext, ".gif") || !strcmp(ext, ".heic") ||
+        !strcmp(ext, ".bmp"))
         return "image";
     if (!strcmp(ext, ".mp4") || !strcmp(ext, ".mkv") || !strcmp(ext, ".avi") ||
-        !strcmp(ext, ".webm") || !strcmp(ext, ".3gp"))
+        !strcmp(ext, ".webm") || !strcmp(ext, ".3gp") || !strcmp(ext, ".mov"))
         return "video";
     if (!strcmp(ext, ".mp3") || !strcmp(ext, ".wav") || !strcmp(ext, ".flac") ||
-        !strcmp(ext, ".m4a") || !strcmp(ext, ".ogg"))
+        !strcmp(ext, ".m4a") || !strcmp(ext, ".ogg") || !strcmp(ext, ".aac"))
         return "audio";
     if (!strcmp(ext, ".pdf") || !strcmp(ext, ".txt") || !strcmp(ext, ".doc") ||
         !strcmp(ext, ".docx") || !strcmp(ext, ".xls") || !strcmp(ext, ".xlsx") ||
-        !strcmp(ext, ".md") || !strcmp(ext, ".py"))
+        !strcmp(ext, ".md") || !strcmp(ext, ".py") || !strcmp(ext, ".csv"))
         return "document";
     if (!strcmp(ext, ".apk") || !strcmp(ext, ".obb"))
         return "foreign";
@@ -89,7 +99,7 @@ static int is_excluded_name(const char *name, const char *parent_name) {
     return 0;
 }
 
-/* parent folder name of path (last component of dirname) */
+/* last component of the parent directory of path */
 static void parent_folder_name(const char *path, char *out, size_t out_sz) {
     out[0] = 0;
     if (!path || out_sz == 0) return;
@@ -104,6 +114,11 @@ static void parent_folder_name(const char *path, char *out, size_t out_sz) {
     out[n] = 0;
 }
 
+static const char *basename_c(const char *path) {
+    const char *s = strrchr(path, '/');
+    return s ? s + 1 : path;
+}
+
 /* ---------- recursive walk → append JSON objects to fp ---------- */
 struct WalkCtx {
     FILE *fp;
@@ -111,7 +126,9 @@ struct WalkCtx {
     size_t count;
 };
 
-static void walk_dir(struct WalkCtx *ctx, const char *dir) {
+static void walk_dir(struct WalkCtx *ctx, const char *dir, int depth) {
+    if (!ctx || !dir || depth > WAYER_MAX_WALK_DEPTH) return;
+
     DIR *dp = opendir(dir);
     if (!dp) return;
 
@@ -125,16 +142,10 @@ static void walk_dir(struct WalkCtx *ctx, const char *dir) {
              (ent->d_name[1] == '.' && ent->d_name[2] == 0)))
             continue;
 
-        if (is_excluded_name(ent->d_name, parent_name)) {
-            /* still skip entering excluded dirs */
-            char full[PATH_MAX];
-            snprintf(full, sizeof(full), "%s/%s", dir, ent->d_name);
-            struct stat st;
-            if (stat(full, &st) == 0 && S_ISDIR(st.st_mode)) continue;
-            if (stat(full, &st) == 0 && S_ISDIR(st.st_mode)) continue;
-        }
+        if (is_excluded_name(ent->d_name, parent_name))
+            continue;
 
-        char full[PATH_MAX];
+        char full[WAYER_PATH_MAX];
         if ((size_t)snprintf(full, sizeof(full), "%s/%s", dir, ent->d_name) >= sizeof(full))
             continue;
 
@@ -142,8 +153,7 @@ static void walk_dir(struct WalkCtx *ctx, const char *dir) {
         if (stat(full, &st) != 0) continue;
 
         if (S_ISDIR(st.st_mode)) {
-            if (is_excluded_name(ent->d_name, parent_name)) continue;
-            walk_dir(ctx, full);
+            walk_dir(ctx, full, depth + 1);
             continue;
         }
         if (!S_ISREG(st.st_mode)) continue;
@@ -168,13 +178,14 @@ const char *wayer_build_index(const char *root, const char *index_path) {
         return reply_fmt("{\"error\":\"bad_payload\"}");
 
     /* mkdir parent of index_path */
-    char dirbuf[PATH_MAX];
-    snprintf(dirbuf, sizeof(dirbuf), "%s", index_path);
+    char dirbuf[WAYER_PATH_MAX];
+    if ((size_t)snprintf(dirbuf, sizeof(dirbuf), "%s", index_path) >= sizeof(dirbuf))
+        return reply_fmt("{\"error\":\"path_too_long\"}");
+
     char *slash = strrchr(dirbuf, '/');
     if (slash) {
         *slash = 0;
-        /* recursive mkdir simple */
-        char tmp[PATH_MAX];
+        char tmp[WAYER_PATH_MAX];
         size_t len = strlen(dirbuf);
         for (size_t i = 1; i < len; i++) {
             if (dirbuf[i] == '/') {
@@ -194,7 +205,7 @@ const char *wayer_build_index(const char *root, const char *index_path) {
     fputs("\",\"files\":[", fp);
 
     struct WalkCtx ctx = {.fp = fp, .first = 1, .count = 0};
-    walk_dir(&ctx, root);
+    walk_dir(&ctx, root, 0);
 
     fputs("]}", fp);
     if (fclose(fp) != 0) return reply_fmt("{\"error\":\"index_write_failed\"}");
@@ -216,7 +227,7 @@ const char *wayer_index_meta(const char *index_path) {
         index_path, (long long)st.st_size, (long long)st.st_mtime);
 }
 
-/* ---------- tiny streaming helpers for search / group ---------- */
+/* ---------- streaming helpers for search / group ---------- */
 typedef struct {
     FILE *fp;
     char buf[8192];
@@ -239,8 +250,7 @@ static int parse_json_string(Stream *s, char *out, size_t out_sz) {
     char c;
     while (stream_next(s, &c)) {
         if (c == '"') {
-            if (n < out_sz) out[n] = 0;
-            else if (out_sz) out[out_sz - 1] = 0;
+            if (out_sz) out[n < out_sz ? n : out_sz - 1] = 0;
             return 1;
         }
         if (c == '\\') {
@@ -254,7 +264,7 @@ static int parse_json_string(Stream *s, char *out, size_t out_sz) {
             }
         }
         if (n + 1 < out_sz) out[n++] = c;
-        else n++; /* overflow: keep reading but truncate */
+        else n++;
     }
     return 0;
 }
@@ -284,25 +294,21 @@ static int seek_files_array(Stream *s) {
     return 0;
 }
 
-/*
- * Iterate objects in files array.
- * For each object, calls on_file(path, size, mtime, kind, userdata).
- * Supports both old "path" strings and new objects (reads path/size/mtime/kind).
- */
 typedef void (*FileCb)(const char *path, long long size, long long mtime,
                        const char *kind, void *ud);
 
 static void foreach_index_file(Stream *s, FileCb cb, void *ud) {
     if (!seek_files_array(s)) return;
     char c;
-    char path[PATH_MAX];
+    char path[WAYER_PATH_MAX];
     char kind[32];
     char key[32];
+
     while (stream_next(s, &c)) {
         if (c == ']') return;
         if (c == ',' || c == ' ' || c == '\t' || c == '\n' || c == '\r') continue;
 
-        /* old format: plain string */
+        /* old format: plain string path */
         if (c == '"') {
             if (!parse_json_string(s, path, sizeof(path))) return;
             cb(path, 0, 0, "other", ud);
@@ -311,8 +317,7 @@ static void foreach_index_file(Stream *s, FileCb cb, void *ud) {
         if (c != '{') return;
 
         path[0] = 0;
-        kind[0] = 0;
-        strcpy(kind, "other");
+        snprintf(kind, sizeof(kind), "other");
         long long size = 0, mtime = 0;
 
         while (stream_next(s, &c)) {
@@ -320,30 +325,36 @@ static void foreach_index_file(Stream *s, FileCb cb, void *ud) {
             if (c == ',' || c == ' ' || c == '\t' || c == '\n' || c == '\r') continue;
             if (c != '"') return;
             if (!parse_json_string(s, key, sizeof(key))) return;
+
+            /* skip to value */
             while (stream_next(s, &c)) {
-                if (c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == ':') {
-                    if (c == ':') break;
-                    continue;
+                if (c == ' ' || c == '\t' || c == '\n' || c == '\r') continue;
+                if (c == ':') {
+                    while (stream_next(s, &c)) {
+                        if (c == ' ' || c == '\t' || c == '\n' || c == '\r') continue;
+                        break;
+                    }
                 }
                 break;
             }
+
             if (c == '"') {
-                char val[PATH_MAX];
+                char val[WAYER_PATH_MAX];
                 if (!parse_json_string(s, val, sizeof(val))) return;
                 if (!strcmp(key, "path")) snprintf(path, sizeof(path), "%s", val);
                 else if (!strcmp(key, "kind")) snprintf(kind, sizeof(kind), "%s", val);
             } else {
-                /* number */
                 char num[32];
                 size_t ni = 0;
-                num[ni++] = c;
-                while (stream_next(s, &c)) {
-                    if ((c >= '0' && c <= '9') || c == '-') {
-                        if (ni + 1 < sizeof(num)) num[ni++] = c;
-                    } else break;
+                if (c == '-' || (c >= '0' && c <= '9')) {
+                    num[ni++] = c;
+                    while (stream_next(s, &c)) {
+                        if ((c >= '0' && c <= '9')) {
+                            if (ni + 1 < sizeof(num)) num[ni++] = c;
+                        } else break;
+                    }
                 }
                 num[ni] = 0;
-                /* put back delimiter roughly: we consumed one past number */
                 long long v = atoll(num);
                 if (!strcmp(key, "size")) size = v;
                 else if (!strcmp(key, "mtime")) mtime = v;
@@ -367,7 +378,7 @@ static void search_cb(const char *path, long long size, long long mtime,
                       const char *kind, void *ud) {
     (void)size; (void)mtime; (void)kind;
     struct SearchUd *su = (struct SearchUd *)ud;
-    char tmp[PATH_MAX];
+    char tmp[WAYER_PATH_MAX];
     snprintf(tmp, sizeof(tmp), "%s", path);
     ascii_lower_inplace(tmp);
     if (su->q_lower[0] && strstr(tmp, su->q_lower) == NULL) return;
@@ -422,13 +433,10 @@ const char *wayer_search_index_to_file(const char *query, uint64_t max_results,
     return reply_fmt("{\"status\":\"ok\",\"path\":\"%s\"}", out_path);
 }
 
-/* ---------- GROUP BY DAY ---------- */
-#define MAX_DAY_FILES 64
-#define MAX_DAYS_CAP  32
-
+/* ---------- GROUP BY DAY (heap — do NOT put on stack) ---------- */
 struct DayFile {
-    char path[PATH_MAX];
-    char name[256];
+    char path[WAYER_PATH_MAX];
+    char name[128];
     char kind[16];
     long long size;
     long long mtime;
@@ -453,15 +461,10 @@ static void day_from_mtime(long long mtime, char *out, size_t out_sz) {
     strftime(out, out_sz, "%Y-%m-%d", &tm);
 }
 
-static const char *basename_c(const char *path) {
-    const char *s = strrchr(path, '/');
-    return s ? s + 1 : path;
-}
-
 static void group_cb(const char *path, long long size, long long mtime,
                      const char *kind, void *ud) {
     struct GroupUd *g = (struct GroupUd *)ud;
-    if (mtime <= 0) return;
+    if (mtime <= 0 || !path || !path[0]) return;
 
     char day[16];
     day_from_mtime(mtime, day, sizeof(day));
@@ -480,7 +483,6 @@ static void group_cb(const char *path, long long size, long long mtime,
         snprintf(b->day, sizeof(b->day), "%s", day);
     }
 
-    /* insert by mtime desc, keep max_per_day */
     if (b->n < g->max_per_day) {
         struct DayFile *f = &b->files[b->n++];
         snprintf(f->path, sizeof(f->path), "%s", path);
@@ -489,7 +491,6 @@ static void group_cb(const char *path, long long size, long long mtime,
         f->size = size;
         f->mtime = mtime;
     } else {
-        /* replace oldest if newer */
         int oldest = 0;
         for (int i = 1; i < b->n; i++)
             if (b->files[i].mtime < b->files[oldest].mtime) oldest = i;
@@ -529,23 +530,30 @@ const char *wayer_group_index_by_day(const char *index_path, const char *out_pat
     FILE *in = fopen(index_path, "rb");
     if (!in) return reply_fmt("{\"error\":\"index_missing\"}");
 
-    struct GroupUd g;
-    memset(&g, 0, sizeof(g));
-    g.max_per_day = max_per_day;
+    /* Heap only — this struct is multi-MB; stack causes SIGSEGV on Android */
+    struct GroupUd *g = (struct GroupUd *)calloc(1, sizeof(struct GroupUd));
+    if (!g) {
+        fclose(in);
+        return reply_fmt("{\"error\":\"oom\"}");
+    }
+    g->max_per_day = max_per_day;
 
     Stream st = {.fp = in, .pos = 0, .len = 0};
-    foreach_index_file(&st, group_cb, &g);
+    foreach_index_file(&st, group_cb, g);
     fclose(in);
 
-    qsort(g.days, (size_t)g.ndays, sizeof(g.days[0]), day_cmp_desc);
-    int use_days = g.ndays < max_days ? g.ndays : max_days;
+    qsort(g->days, (size_t)g->ndays, sizeof(g->days[0]), day_cmp_desc);
+    int use_days = g->ndays < max_days ? g->ndays : max_days;
 
     FILE *out = fopen(out_path, "wb");
-    if (!out) return reply_fmt("{\"error\":\"write_failed\"}");
+    if (!out) {
+        free(g);
+        return reply_fmt("{\"error\":\"write_failed\"}");
+    }
 
     fputs("{\"status\":\"ok\",\"days\":[", out);
     for (int d = 0; d < use_days; d++) {
-        struct DayBucket *b = &g.days[d];
+        struct DayBucket *b = &g->days[d];
         qsort(b->files, (size_t)b->n, sizeof(b->files[0]), file_mtime_desc);
         if (d) fputc(',', out);
         fputs("{\"day\":\"", out);
@@ -553,9 +561,9 @@ const char *wayer_group_index_by_day(const char *index_path, const char *out_pat
         fputs("\",\"files\":[", out);
         for (int i = 0; i < b->n; i++) {
             if (i) fputc(',', out);
-            fprintf(out, "{\"path\":\"");
+            fputs("{\"path\":\"", out);
             json_escape_fp(out, b->files[i].path);
-            fprintf(out, "\",\"name\":\"");
+            fputs("\",\"name\":\"", out);
             json_escape_fp(out, b->files[i].name);
             fprintf(out, "\",\"size\":%lld,\"mtime\":%lld,\"kind\":\"%s\"}",
                     b->files[i].size, b->files[i].mtime, b->files[i].kind);
@@ -564,5 +572,6 @@ const char *wayer_group_index_by_day(const char *index_path, const char *out_pat
     }
     fputs("]}", out);
     fclose(out);
+    free(g);
     return reply_fmt("{\"status\":\"ok\",\"path\":\"%s\"}", out_path);
 }
