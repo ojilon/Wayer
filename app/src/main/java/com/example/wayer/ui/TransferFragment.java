@@ -504,7 +504,7 @@ public class TransferFragment extends Fragment {
             if (!isAdded()) return;
             if (isIndexMissing(rawMeta)) {
                 appendLog("Indexing local storage (background)…");
-                NativeEngine.buildIndexAsync(FileIndexer.DEFAULT_ROOT, rawBuild -> {
+                NativeEngine.buildIndexAsync(requireContext(), FileIndexer.DEFAULT_ROOT, rawBuild -> {
                     if (!isAdded()) return;
                     appendLog("Index ready · " + buildCount(rawBuild) + " files");
                 });
@@ -517,7 +517,7 @@ public class TransferFragment extends Fragment {
     private void refreshIndexer() {
         appendLog("Refreshing native index…");
         binding.btnRefreshIndexer.setEnabled(false);
-        NativeEngine.buildIndexAsync(FileIndexer.DEFAULT_ROOT, rawJson -> {
+        NativeEngine.buildIndexAsync(requireContext(), FileIndexer.DEFAULT_ROOT, rawJson -> {
             if (binding == null) return;
             binding.btnRefreshIndexer.setEnabled(true);
             int count = buildCount(rawJson);
@@ -670,7 +670,7 @@ public class TransferFragment extends Fragment {
             }
             if (isIndexMissing(rawMeta)) {
                 appendLog("Index missing — building first…");
-                NativeEngine.buildIndexAsync(FileIndexer.DEFAULT_ROOT,
+                NativeEngine.buildIndexAsync(requireContext(), FileIndexer.DEFAULT_ROOT,
                         rawBuild -> runOnUi(() -> doUploadSearch(name)));
             } else {
                 doUploadSearch(name);
