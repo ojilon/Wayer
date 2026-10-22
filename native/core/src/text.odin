@@ -15,6 +15,15 @@ ascii_lower :: proc(s: string) -> string {
 	return result
 }
 
+//a wrapper to C
+@(export, cdecl)
+ascii_lower_c :: proc(c_str: cstring) -> cstring {
+	if c_str == nil do return nil 
+
+	odin_res := ascii_lower(string(c_str))
+	return strings.clone_to_cstring(odin_res, context.temp_allocator)
+}
+
 // write_text_file writes content to path (creating parents, truncating)
 // Returns true only when the file verifies afterwards
 // Mirrors wayer::core::write_text_file
