@@ -3,6 +3,7 @@
 add_library(wayer_transfer STATIC
     src/transfer_engine.cpp
     src/transfer_placeholder.cpp
+    src/transfer_shim.c
 )
 
 target_include_directories(wayer_transfer

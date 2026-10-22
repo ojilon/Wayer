@@ -6,8 +6,6 @@ import "core:os"
 import "core:strings"
 
 import core_heart "../../core/src"
-import extension_map
-import safety
 
 // list_files returns JSON list of files in a directory (non-recursive)
 // Mirrors wayer::storage::list_files
