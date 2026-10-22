@@ -6,10 +6,10 @@
 //   - the action-id router (wayer_route_action)
 //   - the exported C ABI that jni/wayer_engine.c calls
 //
-// Other Odin packages (storage, core_heart, …) live next to their C++ twins
-// under native/<module>/src/*.odin and are imported relatively.
-// Drop a new .odin file anywhere under native/, import it from here (or from
-// an already-imported package), and CMake will pick it up automatically.
+// Other Odin packages (storage, core_heart, documents, transfer, preview, media)
+// live next to their C++ twins under native/<module>/src/*.odin and are imported
+// relatively. Drop a new .odin file anywhere under native/, import it from here
+// (or from an already-imported package), and CMake will pick it up automatically.
 // =============================================================================
 
 package wayer_core
@@ -19,7 +19,13 @@ import "core:c"
 import "core:fmt"
 import "core:strconv"
 import "core:strings"
+
+import core_heart "../core/src"
 import storage "../storage/src"
+import documents "../documents/src"
+import transfer "../transfer/src"
+import preview "../preview/src"
+import media "../media/src"
 
 // Action IDs — must stay identical to NativeEngine.java
 ACTION_PING             :: 1
@@ -45,27 +51,6 @@ ACTION_GROUP_INDEX_BY_DAY :: 21
 
 BAD_PAYLOAD :: `{"status":"error","reason":"bad_payload"}`
 
-foreign import shim "system:wayer_shim"
-
-@(default_calling_convention = "c")
-foreign shim {
-	wayer_get_network_info        :: proc() -> cstring ---
-	wayer_filter_documents        :: proc(payload: cstring) -> cstring ---
-	wayer_start_listener          :: proc(port: c.int) -> cstring ---
-	wayer_search_files_to_file    :: proc(root, query, out_path: cstring) -> cstring ---
-	wayer_find_large_files_to_file :: proc(root: cstring, min_bytes: u64, max_results: c.int, out_path: cstring) -> cstring ---
-	wayer_find_duplicates_to_file :: proc(root, out_path: cstring) -> cstring ---
-	wayer_plan_organize_to_file   :: proc(root, out_path: cstring) -> cstring ---
-	wayer_apply_organize_file     :: proc(plan_path, report_path: cstring) -> cstring ---
-	wayer_read_cache_if_fresh     :: proc(cache_path: cstring, max_age: c.int) -> cstring ---
-	wayer_read_text_file          :: proc(path: cstring, max_bytes: u64) -> cstring ---
-	wayer_invalidate_cache        :: proc(payload: cstring) -> c.bool ---
-	wayer_init_app_paths          :: proc(app_root: cstring) -> cstring --- // returns final JSON reply
-	wayer_json_escape             :: proc(s: cstring) -> cstring ---
-	wayer_log_info                :: proc(tag, msg: cstring) ---
-	wayer_log_error               :: proc(tag, msg: cstring) ---
-	wayer_list_files :: proc(path: cstring) -> cstring ---
-}
 // Index lives in the same .so (wayer_storage / index_c.c)
 foreign {
 	wayer_build_index :: proc(root, index_path: cstring) -> cstring ---
@@ -123,7 +108,20 @@ init_app_paths :: proc(raw: string) -> cstring {
 	if !strings.has_suffix(root, "/wayer") {
 		root = strings.concatenate({root, "/wayer"}, context.temp_allocator)
 	}
-	return reply_c(wayer_init_app_paths(cs(root)))
+	// Call core_heart's ensure_app_dirs and write_paths_manifest
+	report := core_heart.ensure_app_dirs(root)
+	core_heart.set_app_paths(report.paths)
+	manifest := core_heart.write_paths_manifest(report)
+	
+	// Build JSON reply matching C++ format
+	json := fmt.tprintf(`{"status":"paths_set","manifest":"%s","all_ready":%s,"root":"%s","cache":"%s","temp":"%s","logs":"%s"}`,
+		core_heart.json_escape(manifest),
+		core_heart.bool_to_string(report.all_ready()),
+		core_heart.json_escape(report.paths.root),
+		core_heart.json_escape(report.paths.cache),
+		core_heart.json_escape(report.paths.temp),
+		core_heart.json_escape(report.paths.logs))
+	return reply(json)
 }
 
 route_action :: proc(action_id: int, payload: string) -> cstring {
@@ -133,56 +131,56 @@ route_action :: proc(action_id: int, payload: string) -> cstring {
 	case ACTION_GET_STATUS:
 		return reply(`{"status": "ready", "engine": "Odin"}`)
 	case ACTION_LIST_FILES:
-		return reply_c(wayer_list_files(cs(payload)))
+		return reply(storage.list_files(payload))
 	case ACTION_GET_NETWORK_INFO:
-		return reply_c(wayer_get_network_info())
+		return reply(transfer.get_network_info())
 	case ACTION_FILTER_DOCUMENTS:
-		return reply_c(wayer_filter_documents(cs(payload)))
+		return reply(documents.filter_documents(payload))
 	case ACTION_START_LISTENER:
-		return reply_c(wayer_start_listener(8080))
+		return reply(transfer.start_listener(8080))
 
 	case ACTION_SEARCH_FILES:
 		parts := split_payload(payload)
 		if len(parts) < 3 || len(parts[1]) == 0 { return reply(BAD_PAYLOAD) }
 		query := strings.join(parts[2:], "|", context.temp_allocator)
-		return reply_c(wayer_search_files_to_file(cs(parts[0]), cs(query), cs(parts[1])))
+		return reply(storage.search_files_to_file(parts[0], query, parts[1]))
 
 	case ACTION_FIND_LARGE_FILES:
 		parts := split_payload(payload)
 		if len(parts) < 4 || len(parts[3]) == 0 { return reply(BAD_PAYLOAD) }
-		root := parts[0] if len(parts[0]) > 0 else "/storage/emulated/0"
+		root := parts[0]
+		if len(root) == 0 { root = "/storage/emulated/0" }
 		min_bytes := u64(10 * 1024 * 1024)
 		max_results := 50
 		if v, ok := strconv.parse_u64(parts[1], 10); ok { min_bytes = v }
 		if v, ok := strconv.parse_int(parts[2], 10); ok { max_results = v }
-		return reply_c(wayer_find_large_files_to_file(cs(root), min_bytes, c.int(max_results), cs(parts[3])))
+		return reply(storage.find_large_files_to_file(root, min_bytes, max_results, parts[3]))
 
 	case ACTION_FIND_DUPLICATES:
 		parts := split_payload(payload)
 		if len(parts) < 2 || len(parts[1]) == 0 { return reply(BAD_PAYLOAD) }
-		return reply_c(wayer_find_duplicates_to_file(cs(parts[0]), cs(parts[1])))
+		return reply(storage.find_duplicates_to_file(parts[0], parts[1]))
 
 	case ACTION_PLAN_ORGANIZE:
 		parts := split_payload(payload)
 		if len(parts) < 2 || len(parts[1]) == 0 { return reply(BAD_PAYLOAD) }
-		return reply_c(wayer_plan_organize_to_file(cs(parts[0]), cs(parts[1])))
+		return reply(storage.plan_organize_to_file(parts[0], parts[1]))
 
 	case ACTION_APPLY_ORGANIZE:
 		parts := split_payload(payload)
 		if len(parts) < 2 || len(parts[0]) == 0 || len(parts[1]) == 0 { return reply(BAD_PAYLOAD) }
-		return reply_c(wayer_apply_organize_file(cs(parts[0]), cs(parts[1])))
+		return reply(storage.apply_organize_file(parts[0], parts[1]))
 
 	case ACTION_GET_CACHED_STATS:
-		
 		parts := split_payload(payload)
 		if len(parts) < 3 { return reply(BAD_PAYLOAD) }
 		
 		max_age, _ := strconv.parse_int(parts[2], 10)
 
-		//check if the cache is fresh one 
-		cached := wayer_read_cache_if_fresh(cs(parts[0]), c.int(max_age))
+		// Check if the cache is fresh
+		cached := storage.read_cache_if_fresh(parts[0], max_age)
 		if len(cached) > 0 {
-			return reply(fmt.tprintf(`{"status":"ok","path":"%s"}`, wayer_json_escape(cs(parts[0]))))
+			return reply(fmt.tprintf(`{"status":"ok","path":"%s"}`, core_heart.json_escape(parts[0])))
 		}
 		known_bytes := u64(0)
 		if len(parts) > 3 {
@@ -193,7 +191,7 @@ route_action :: proc(action_id: int, payload: string) -> cstring {
 	case ACTION_INIT_APP_PATHS:
 		return init_app_paths(payload)
 	case ACTION_BUILD_INDEX:
-		//payload root | index_path
+		// payload: root|index_path
 		parts := split_payload(payload)
 		if len(parts) < 2 || len(parts[0]) == 0 || len(parts[1]) == 0 {
 			return reply(BAD_PAYLOAD)
@@ -205,8 +203,7 @@ route_action :: proc(action_id: int, payload: string) -> cstring {
 		return reply_c(wayer_index_meta(cs(payload)))
 
 	case ACTION_SEARCH_INDEX:
-		// payload: out_path|max_results|query...   + we need index_path
-		// Use: out_path|index_path|max_results|query
+		// payload: out_path|index_path|max_results|query
 		parts := split_payload(payload)
 		if len(parts) < 2 || len(parts[0]) == 0 || len(parts[1]) == 0 {
 			return reply(BAD_PAYLOAD)
@@ -227,10 +224,10 @@ route_action :: proc(action_id: int, payload: string) -> cstring {
 
 	case ACTION_READ_TEXT_FILE:
 		path, max_bytes := split_trailing_number(payload, 0)
-		return reply_c(wayer_read_text_file(cs(path), max_bytes))
+		return reply(preview.read_text_file(path, max_bytes))
 
 	case ACTION_INVALIDATE_CACHE:
-		if wayer_invalidate_cache(cs(payload)) {
+		if storage.invalidate_cache(payload) {
 			return reply(`{"status":"invalidated"}`)
 		}
 		return reply(`{"status":"missing"}`)
@@ -252,14 +249,14 @@ route_action :: proc(action_id: int, payload: string) -> cstring {
 		return reply_c(wayer_group_index_by_day(cs(parts[1]), cs(parts[0]), c.int(max_days), c.int(max_per_day)))
 	}
 
-	wayer_log_error("WayerEngine", "unknown action from Java")
+	core_heart.error("WayerEngine", "unknown action from Java")
 	return reply(`{"error": "unknown_action"}`)
 }
 
 @(export)
 wayer_init_engine :: proc "c" () {
 	context = runtime.default_context()
-	wayer_log_info("WayerEngine", "Odin engine initialized")
+	core_heart.info("WayerEngine", "Odin engine initialized")
 }
 
 @(export)
@@ -267,4 +264,118 @@ wayer_route_action :: proc "c" (action_id: c.int, payload: cstring) -> cstring {
 	context = runtime.default_context() // `proc "c"` has no context; Odin code needs one
 	defer free_all(context.temp_allocator)
 	return route_action(int(action_id), string(payload))
+}
+
+// C ABI exports for functions that are implemented in Odin (not in C shim)
+// These replace the wayer_shim.cpp C++ shim
+@(export)
+wayer_list_files :: proc "c" (path: cstring) -> cstring {
+	context = runtime.default_context()
+	defer free_all(context.temp_allocator)
+	return cs(storage.list_files(string(path)))
+}
+
+@(export)
+wayer_get_network_info :: proc "c" () -> cstring {
+	context = runtime.default_context()
+	defer free_all(context.temp_allocator)
+	return cs(transfer.get_network_info())
+}
+
+@(export)
+wayer_filter_documents :: proc "c" (payload: cstring) -> cstring {
+	context = runtime.default_context()
+	defer free_all(context.temp_allocator)
+	return cs(documents.filter_documents(string(payload)))
+}
+
+@(export)
+wayer_start_listener :: proc "c" (port: c.int) -> cstring {
+	context = runtime.default_context()
+	defer free_all(context.temp_allocator)
+	return cs(transfer.start_listener(int(port)))
+}
+
+@(export)
+wayer_search_files_to_file :: proc "c" (root, query, out_path: cstring) -> cstring {
+	context = runtime.default_context()
+	defer free_all(context.temp_allocator)
+	return cs(storage.search_files_to_file(string(root), string(query), string(out_path)))
+}
+
+@(export)
+wayer_find_large_files_to_file :: proc "c" (root: cstring, min_bytes: u64, max_results: c.int, out_path: cstring) -> cstring {
+	context = runtime.default_context()
+	defer free_all(context.temp_allocator)
+	return cs(storage.find_large_files_to_file(string(root), min_bytes, int(max_results), string(out_path)))
+}
+
+@(export)
+wayer_find_duplicates_to_file :: proc "c" (root, out_path: cstring) -> cstring {
+	context = runtime.default_context()
+	defer free_all(context.temp_allocator)
+	return cs(storage.find_duplicates_to_file(string(root), string(out_path)))
+}
+
+@(export)
+wayer_plan_organize_to_file :: proc "c" (root, out_path: cstring) -> cstring {
+	context = runtime.default_context()
+	defer free_all(context.temp_allocator)
+	return cs(storage.plan_organize_to_file(string(root), string(out_path)))
+}
+
+@(export)
+wayer_apply_organize_file :: proc "c" (plan_path, report_path: cstring) -> cstring {
+	context = runtime.default_context()
+	defer free_all(context.temp_allocator)
+	return cs(storage.apply_organize_file(string(plan_path), string(report_path)))
+}
+
+@(export)
+wayer_read_cache_if_fresh :: proc "c" (cache_path: cstring, max_age: c.int) -> cstring {
+	context = runtime.default_context()
+	defer free_all(context.temp_allocator)
+	return cs(storage.read_cache_if_fresh(string(cache_path), int(max_age)))
+}
+
+@(export)
+wayer_read_text_file :: proc "c" (path: cstring, max_bytes: u64) -> cstring {
+	context = runtime.default_context()
+	defer free_all(context.temp_allocator)
+	return cs(preview.read_text_file(string(path), max_bytes))
+}
+
+@(export)
+wayer_invalidate_cache :: proc "c" (cache_path: cstring) -> c.bool {
+	context = runtime.default_context()
+	defer free_all(context.temp_allocator)
+	return storage.invalidate_cache(string(cache_path))
+}
+
+@(export)
+wayer_init_app_paths :: proc "c" (app_root: cstring) -> cstring {
+	context = runtime.default_context()
+	defer free_all(context.temp_allocator)
+	return cs(init_app_paths(string(app_root)))
+}
+
+@(export)
+wayer_json_escape :: proc "c" (s: cstring) -> cstring {
+	context = runtime.default_context()
+	defer free_all(context.temp_allocator)
+	return cs(core_heart.json_escape(string(s)))
+}
+
+@(export)
+wayer_log_info :: proc "c" (tag, msg: cstring) {
+	context = runtime.default_context()
+	defer free_all(context.temp_allocator)
+	core_heart.info(string(tag), string(msg))
+}
+
+@(export)
+wayer_log_error :: proc "c" (tag, msg: cstring) {
+	context = runtime.default_context()
+	defer free_all(context.temp_allocator)
+	core_heart.error(string(tag), string(msg))
 }

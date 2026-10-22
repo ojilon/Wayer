@@ -22,3 +22,8 @@ json_escape :: proc(s: string) -> string {
 	}
 	return strings.to_string(sb)
 }
+
+bool_to_string :: proc(b: bool) -> string {
+	if b { return "true" }
+	return "false"
+}
