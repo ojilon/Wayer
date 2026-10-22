@@ -39,13 +39,6 @@ android {
                 abiFilters.addAll(abiProperty.split(",").collect { it.trim() }.findAll { !it.isEmpty() })
             }
         }
-
-        externalNativeBuild {
-            cmake {
-                cppFlags "-std=c++23"
-                arguments "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
-            }
-        }
     }
 
     signingConfigs {
@@ -85,13 +78,6 @@ android {
         targetCompatibility JavaVersion.VERSION_17
     }
 
-    externalNativeBuild {
-        cmake {
-            path file("../native/CMakeLists.txt")
-            version "3.22.1"
-        }
-    }
-
     testOptions {
         unitTests {
             includeAndroidResources = false
@@ -120,6 +106,70 @@ dependencies {
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
 }
 
+
+// Zig build task - builds libwayer_core.so using zig build
+tasks.register("buildZigLib") {
+    doLast {
+        def ndkDir = android.ndkDirectory
+        def abiFilters = project.findProperty("aurora.abiFilters") as String ?: "arm64-v8a"
+        def abi = abiFilters.split(",")[0].trim()
+        
+        def zigTarget
+        def zigSubtarget
+        switch (abi) {
+            case "arm64-v8a":
+                zigTarget = "aarch64-linux-android"
+                zigSubtarget = ""
+                break
+            case "armeabi-v7a":
+                zigTarget = "arm-linux-android"
+                zigSubtarget = ""
+                break
+            case "x86_64":
+                zigTarget = "x86_64-linux-android"
+                zigSubtarget = ""
+                break
+            case "x86":
+                zigTarget = "i386-linux-android"
+                zigSubtarget = ""
+                break
+            default:
+                throw new GradleException("Unsupported ABI: ${abi}")
+        }
+        
+        def zigCmd = "zig build -Dtarget=${zigTarget}${zigSubtarget ? '-' + zigSubtarget : ''} --prefix zig-out"
+        def buildDir = file("../native/zig")
+        
+        // Use NDK's zig if available, otherwise system zig
+        def ndkZig = file("${ndkDir}/toolchains/llvm/prebuilt/${org.gradle.internal.os.OperatingSystem.current().name.toLowerCase()}-x86_64/bin/zig")
+        def zigExe = ndkZig.exists() ? ndkZig.absolutePath : "zig"
+        
+        def proc = [zigExe, "build", "-Dtarget=${zigTarget}${zigSubtarget ? '-' + zigSubtarget : ''}", "--prefix", "zig-out"].execute(null, buildDir)
+        proc.waitFor()
+        
+        def exitCode = proc.exitValue()
+        if (exitCode != 0) {
+            def err = proc.err.text
+            def out = proc.in.text
+            throw new GradleException("Zig build failed (exit ${exitCode}):\n${out}\n${err}")
+        }
+        
+        // Copy the built library to jniLibs
+        def srcLib = file("${buildDir}/zig-out/lib/libwayer_core.so")
+        def destDir = file("src/main/jniLibs/${abi}")
+        destDir.mkdirs()
+        copy {
+            from srcLib
+            into destDir
+        }
+        logger.lifecycle("Zig library copied to ${destDir}/libwayer_core.so")
+    }
+}
+
+// Ensure Zig build runs before native compilation
+tasks.named("preBuild").configure {
+    dependsOn "buildZigLib"
+}
 
 // Copies the freshest NDK compile_commands.json to a stable, gitignored path
 // (repo-root build/) so clangd finds it without digging through app/.cxx
@@ -150,7 +200,7 @@ tasks.register("copyCompileCommands") {
 }
 
 afterEvaluate {
-    tasks.matching { it.name.startsWith("externalNativeBuild") }.configureEach {
+    tasks.named("buildZigLib").configure {
         finalizedBy "copyCompileCommands"
     }
 }
