@@ -6,6 +6,13 @@ import "core:strings"
 
 import core_heart "../../core/src"
 
+foreign import libc  "system:c"
+
+@(default_calling_convention = "c")
+foreign libc {
+	wayer_is_directory :: proc(path: cstring) -> c.int ---
+}
+
 // TARGET_EXTENSIONS mirrors the C++ TARGET_EXTENSIONS
 TARGET_EXTENSIONS :: [5]string {
 	".pdf", ".epub", ".docx", ".txt", ".md",
@@ -15,8 +22,7 @@ TARGET_EXTENSIONS :: [5]string {
 // Mirrors wayer::documents::filter_documents
 filter_documents :: proc(path: string) -> string {
 	// Check if directory exists
-	info, err := os.stat(path)
-	if err != nil || !info.is_dir() {
+	if wayer_is_directory(cstring(path)) == 0 {
 		return `{"error": "invalid_directory"}`
 	}
 	
