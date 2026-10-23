@@ -1,6 +1,6 @@
 package search
 
-import "vendor:libc"
+import "vendor:libc-shim"
 import "core:fmt"
 import "core:os"
 import "core:strings"
