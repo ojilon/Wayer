@@ -73,7 +73,7 @@ log :: proc(level: LogLevel, tag: string, msg: string) {
 			prefix = "[E]"
 		}
 		// Use stderr explicitly; WASI/host builds have it.
-		fmt.fprintf(os.stream_from_handle(os.stderr, context.allocator), "%s[%s] %s\n", prefix, tag, msg)
+		fmt.fprintf(os.stream_from_handle(os.stderr), "%s[%s] %s\n", prefix, tag, msg)
 	}
 }
 
