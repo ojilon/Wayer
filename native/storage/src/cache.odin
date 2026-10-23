@@ -9,7 +9,7 @@ import core_heart "../../core/src"
 write_cache :: proc(cache_path: string, json: string) {
 	// Find parent directory
 	last_slash := -1
-	for i := 0; i < len(cache_path); i++ {
+	for i in 0 .. len(cache_path) {
 		if cache_path[i] == '/' || cache_path[i] == '\\' {
 			last_slash = i
 		}

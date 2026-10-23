@@ -4,7 +4,6 @@
 package storage
 
 import "core:c"
-import "core:crypto/fnv"
 import "core:fmt"
 import "core:hash"
 import "core:io"
