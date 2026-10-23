@@ -71,7 +71,7 @@ scan_dir :: proc(scan: ^Scan, dir: string, top: string) {
 	ent: WayerDirEntry
 	for wayer_dir_next(handle, &ent) != 0 {
 		// ent.name is cstring with exact name_len
-		name := string(ent.name[:ent.name_len])
+		name := string(([^]u8)(ent.name)[:ent.name_len])
 
 		if ent.is_dir == 1 {
 			if is_excluded_dir(name, dir) {
