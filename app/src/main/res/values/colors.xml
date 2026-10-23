@@ -49,7 +49,8 @@
     <color name="wayer_outline">#3A4254</color>
     <color name="wayer_outline_variant">#2A3040</color>
     <color name="wayer_outline_glass">#1EA0A8B8</color>
-    <color name="wayer_divider">#0FFF_FFFF</color> <!-- 6% white — subtle row divider -->
+    <!-- Corrected 6% white divider (Hex approximation for 6% opacity is 0F) -->
+    <color name="wayer_divider">#0FFFFFFF</color>
     <color name="wayer_scrim">#660A0C10</color>      <!-- bottom nav scrim -->
 
     <!-- Category accents -->
