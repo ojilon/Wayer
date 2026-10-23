@@ -31,6 +31,7 @@
 
 package storage
 
+import "base:runtime"
 import "core:c"
 import "core:fmt"
 import "core:strings"
@@ -162,6 +163,7 @@ WalkCtx :: struct {
 // from `ud` and forwards to the Odin proc. Defined at package scope because
 // Odin forbids nested `extern "c"` procs inside another proc.
 walk_trampoline :: proc "c" (path: cstring, name: cstring, size: i64, mtime: i64, ud: rawptr) {
+	context = runtime.default_context()
 	ctx := cast(^WalkCtx)ud
 	// cstring → Odin string: use string() with known NUL termination.
 	// For safety we use strings.clone_from_cstring or manual length.
