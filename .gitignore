@@ -33,3 +33,7 @@ build/
 
 #build-test files
 native/build-test/
+
+
+*.example
+*.log
