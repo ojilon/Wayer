@@ -44,7 +44,7 @@ foreign import android_fs "system:c"
 @(default_calling_convention = "c")
 foreign android_fs {
 	wayer_fs_stat       :: proc(path: cstring, size_out: ^i64, mtime_out: ^i64, is_dir_out: ^c.int) -> c.int ---
-	wayer_fs_mkdir_p    :: proc(path: cstring) -> c.int ---
+	//wayer_fs_mkdir_p    :: proc(path: cstring) -> c.int ---
 	wayer_fs_write_file :: proc(path: cstring, data: rawptr, n: c.size_t) -> c.int ---
 }
 
