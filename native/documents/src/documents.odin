@@ -28,6 +28,7 @@ package documents
 
 import "core:fmt"
 import "core:strings"
+import "core:c"
 
 import core_heart "../../core/src"
 
