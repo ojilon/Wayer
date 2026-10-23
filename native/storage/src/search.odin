@@ -31,7 +31,6 @@
 
 package storage
 
-import "vendor:libc-shim"
 import "core:fmt"
 import "core:strings"
 import "core:c"
