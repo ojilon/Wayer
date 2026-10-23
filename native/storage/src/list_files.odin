@@ -43,7 +43,8 @@ list_files :: proc(path: string) -> string {
 	first := true
 	ent: WayerFsEntry
 	for wayer_fs_readdir(d, &ent) != 0 {
-		name := string(ent.name[:ent.name_len])
+		//turn the cstring + length to odin string with zero allocation
+		name := string((^[]u8)(ent.name)[:ent.name_len])
 		if !first {
 			strings.write_string(&sb, ",")
 		}
