@@ -59,7 +59,9 @@ log :: proc(level: LogLevel, tag: string, msg: string) {
 		case .Error:
 			prio = ANDROID_LOG_ERROR
 		}
-		__android_log_print(prio, ctag, "%s", cmsg)
+
+		//make the string a literal c string
+		__android_log_print(prio, ctag, "%s"c, cmsg)
 	} else {
 		// Host fallback — use os.stderr which is ^os.File in Odin Oct 2025.
 		// fmt.fprintln handles ^os.File as io.Writer via os.stream_from_handle.
