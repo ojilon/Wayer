@@ -1,31 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
-
 <!--
-  Light theme tokens (used when night mode is OFF).
-  Naming follows DayNight: values = dark default, values-night = light variant.
--->
+  Light theme tokens (used when night mode is OFF) — updated Oct 2025.
 
+  Mirrors dark tokens structurally so any layout referencing
+  @color/wayer_* works in both themes without conditional code.
+  Light surfaces are paper-white with cool grey dividers; brand stays
+  the same blue but text flips to ink for contrast.
+-->
 <resources>
 
     <!-- Core surfaces -->
-    <color name="wayer_background">#EEF0F5</color>
-    <color name="wayer_surface">#E6FFFFFF</color>
+    <color name="wayer_background">#F5F7FB</color>
+    <color name="wayer_surface">#FFFFFF</color>
     <color name="wayer_surface_solid">#FFFFFF</color>
-    <color name="wayer_surface_variant">#E4E8F0</color>
-    <color name="wayer_surface_elevated">#F2FFFFFF</color>
-    <color name="wayer_glass">#B3FFFFFF</color>
-    <color name="wayer_glass_highlight">#66FFFFFF</color>
+    <color name="wayer_surface_variant">#E8ECF2</color>
+    <color name="wayer_surface_elevated">#F0F3F8</color>
+    <color name="wayer_surface_container">#EEF1F6</color>
+    <color name="wayer_glass">#CCFFFFFF</color>
+    <color name="wayer_glass_highlight">#40FFFFFF</color>
 
     <!-- Brand -->
     <color name="wayer_primary">#3B5BDB</color>
     <color name="wayer_primary_dark">#2B4AC7</color>
-    <color name="wayer_primary_container">#DCE4FF</color>
+    <color name="wayer_primary_container">#E0E8FF</color>
     <color name="wayer_on_primary">#FFFFFF</color>
 
     <!-- Text -->
     <color name="wayer_text_primary">#1A1D26</color>
     <color name="wayer_text_secondary">#5C6575</color>
     <color name="wayer_text_disabled">#9AA3B5</color>
+    <color name="wayer_text_hint">#8A94A8</color>
 
     <!-- Status -->
     <color name="wayer_success">#2E9E6A</color>
@@ -35,15 +39,17 @@
 
     <!-- Borders -->
     <color name="wayer_outline">#C5CAD6</color>
-    <color name="wayer_outline_variant">#DCE0E8</color>
-    <color name="wayer_outline_glass">#66A0A8B8</color>
+    <color name="wayer_outline_variant">#E2E6EC</color>
+    <color name="wayer_outline_glass">#330A0C10</color>
+    <color name="wayer_divider">#0A1A1D26</color>
+    <color name="wayer_scrim">#40FFFFFF</color>
 
-    <!-- Category accents -->
+    <!-- Category accents — slightly deeper for light bg -->
     <color name="wayer_cat_images">#E85D3C</color>
     <color name="wayer_cat_videos">#1E88E5</color>
     <color name="wayer_cat_audio">#8E24AA</color>
     <color name="wayer_cat_docs">#43A047</color>
     <color name="wayer_cat_others">#607D8B</color>
-    <color name="wayer_cat_sys">#FFD54F</color>
+    <color name="wayer_cat_sys">#FF8F00</color>
 
 </resources>

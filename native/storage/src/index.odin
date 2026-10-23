@@ -1,74 +1,112 @@
+// =============================================================================
+// index.odin — file-backed index bridge (thin Odin wrapper over index_c.c)
+//
+// Part of package storage. The heavy lifting (walk → JSON spill, search via
+// streaming parser, group-by-day) lives in C (index_c.c) because it needs
+// heap-allocated GroupUd (~MB) and NDK readdir/stat on API 29.
+// Odin only validates payloads, clamps limits, and forwards via FFI.
+//
+// Why C for the index?
+//   * GroupUd can be up to 32 days × 64 files × ~512 B path ≈ 1 MiB; putting
+//     it on Odin's stack would overflow (Android default stack 1 MiB). C
+//     malloc's it on the heap.
+//   * Walking with readdir/stat must use bionic-safe calls; C does this
+//     directly without touching Odin's core:os.
+//   * Streaming parser (Stream) reads files.json without loading it all into
+//     memory — Java's Transfer search may run over an index with 50k entries.
+//
+// Actions exposed to wayer_core.odin
+//   build_index(root, index_path)               → {"path","count"}
+//   index_meta(index_path)                      → {"status":"ready","bytes",...} | missing
+//   search_index_to_file(query, max, out, idx)  → {"status":"ok","path"} (matches spilled)
+//   group_index_by_day(idx, out, days, per_day) → {"status":"ok","path"}
+//
+// All `*_to_file` variants keep JNI replies tiny; Java reads the file.
+//
+// Mirrors: wayer::storage::build_index, index_meta etc. in index.hpp / index_c.c
+// =============================================================================
+
 package storage
 
 import "core:c"
-import "core:fmt"
 import "core:strings"
 
 import core_heart "../../core/src"
 
-// C ABI functions (defined in index_c.c, declared in wayer_core.odin)
+// ---------------------------------------------------------------------------
+// C ABI — from native/storage/src/index_c.c / index_c.h
+// ---------------------------------------------------------------------------
+
+foreign import index_c "system:c"
+
 @(default_calling_convention = "c")
-foreign {
-	wayer_build_index         :: proc(root, index_path: cstring) -> cstring ---
-	wayer_index_meta          :: proc(index_path: cstring) -> cstring ---
+foreign index_c {
+	wayer_build_index          :: proc(root, index_path: cstring) -> cstring ---
+	wayer_index_meta           :: proc(index_path: cstring) -> cstring ---
 	wayer_search_index_to_file :: proc(query: cstring, max_results: u64, out_path, index_path: cstring) -> cstring ---
 	wayer_group_index_by_day   :: proc(index_path, out_path: cstring, max_days, max_per_day: c.int) -> cstring ---
 }
 
-cs :: proc(s: string) -> cstring {
-	return strings.clone_to_cstring(s, context.temp_allocator)
-}
+// cs is already defined in fs_android.odin (same package) — reuse it.
+// To avoid redefinition, we rely on the single `cs` from fs_android.odin.
+// If this file declares its own, Odin will error with duplicate. So we use
+// the existing one. For documentation we note its signature:
+//   cs :: proc(s: string) -> cstring  // clone to cstring on temp_allocator
 
-reply :: proc(s: string) -> string {
-	return s
-}
+// ---------------------------------------------------------------------------
+// Thin wrappers — validation + clamping before FFI
+// ---------------------------------------------------------------------------
 
-// Build index from root directory
+// build_index walks root and spills files.json to index_path.
+// Returns C reply JSON (caller in wayer_core.odin wraps with reply()).
 build_index :: proc(root: string, index_path: string) -> string {
 	if len(root) == 0 || len(index_path) == 0 {
 		return `{"error":"bad_payload"}`
 	}
-	return reply(string(wayer_build_index(cs(root), cs(index_path))))
+	return string(wayer_build_index(cs(root), cs(index_path)))
 }
 
-// Get index metadata
+// index_meta returns metadata for index_path (bytes, mtime) without the listing.
 index_meta :: proc(index_path: string) -> string {
 	if len(index_path) == 0 {
 		return `{"error":"bad_payload"}`
 	}
-	return reply(string(wayer_index_meta(cs(index_path))))
+	return string(wayer_index_meta(cs(index_path)))
 }
 
-// Search index and write results to file
+// search_index_to_file searches index_path for query, spills matches to out_path.
 search_index_to_file :: proc(query: string, max_results: u64, out_path: string, index_path: string) -> string {
 	if len(out_path) == 0 || len(index_path) == 0 {
 		return `{"error":"bad_payload"}`
 	}
-	if max_results == 0 {
-		max_results = 50
+	limit := max_results
+	if limit == 0 {
+		limit = 50
 	}
-	if max_results > 200 {
-		max_results = 200
+	if limit > 200 {
+		limit = 200
 	}
-	return reply(string(wayer_search_index_to_file(cs(query), max_results, cs(out_path), cs(index_path))))
+	return string(wayer_search_index_to_file(cs(query), limit, cs(out_path), cs(index_path)))
 }
 
-// Group index entries by day
+// group_index_by_day groups index entries by modification day, spills to out_path.
 group_index_by_day :: proc(index_path: string, out_path: string, max_days: int, max_per_day: int) -> string {
 	if len(index_path) == 0 || len(out_path) == 0 {
 		return `{"error":"bad_payload"}`
 	}
-	if max_days <= 0 {
-		max_days = 14
+	days := max_days
+	if days <= 0 {
+		days = 14
 	}
-	if max_days > 32 {
-		max_days = 32
+	if days > 32 {
+		days = 32
 	}
-	if max_per_day <= 0 {
-		max_per_day = 50
+	per_day := max_per_day
+	if per_day <= 0 {
+		per_day = 50
 	}
-	if max_per_day > 64 {
-		max_per_day = 64
+	if per_day > 64 {
+		per_day = 64
 	}
-	return reply(string(wayer_group_index_by_day(cs(index_path), cs(out_path), c.int(max_days), c.int(max_per_day))))
+	return string(wayer_group_index_by_day(cs(index_path), cs(out_path), c.int(days), c.int(per_day)))
 }

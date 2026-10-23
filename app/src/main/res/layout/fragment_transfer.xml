@@ -168,10 +168,10 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="@dimen/spacing_md"
                         app:cardBackgroundColor="@color/wayer_surface"
-                        app:cardCornerRadius="@dimen/radius_md"
-                        app:strokeColor="@color/wayer_outline_glass"
-                        app:strokeWidth="1dp"
-                        app:cardElevation="0dp">
+                        app:cardCornerRadius="@dimen/radius_sm"
+                        app:strokeColor="@android:color/transparent"
+                        app:strokeWidth="0dp"
+                        app:cardElevation="2dp">
 
                         <LinearLayout
                             android:layout_width="match_parent"
@@ -496,10 +496,10 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="@dimen/spacing_sm"
                         app:cardBackgroundColor="@color/wayer_surface"
-                        app:cardCornerRadius="@dimen/radius_md"
-                        app:strokeColor="@color/wayer_outline_glass"
-                        app:strokeWidth="1dp"
-                        app:cardElevation="0dp">
+                        app:cardCornerRadius="@dimen/radius_sm"
+                        app:strokeColor="@android:color/transparent"
+                        app:strokeWidth="0dp"
+                        app:cardElevation="2dp">
 
                         <LinearLayout
                             android:layout_width="match_parent"
@@ -564,10 +564,10 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="@dimen/spacing_md"
                         app:cardBackgroundColor="@color/wayer_surface"
-                        app:cardCornerRadius="@dimen/radius_md"
-                        app:strokeColor="@color/wayer_outline_glass"
-                        app:strokeWidth="1dp"
-                        app:cardElevation="0dp">
+                        app:cardCornerRadius="@dimen/radius_sm"
+                        app:strokeColor="@android:color/transparent"
+                        app:strokeWidth="0dp"
+                        app:cardElevation="2dp">
 
                         <LinearLayout
                             android:layout_width="match_parent"
@@ -617,10 +617,10 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="@dimen/spacing_sm"
                         app:cardBackgroundColor="@color/wayer_surface"
-                        app:cardCornerRadius="@dimen/radius_md"
-                        app:strokeColor="@color/wayer_outline_glass"
-                        app:strokeWidth="1dp"
-                        app:cardElevation="0dp">
+                        app:cardCornerRadius="@dimen/radius_sm"
+                        app:strokeColor="@android:color/transparent"
+                        app:strokeWidth="0dp"
+                        app:cardElevation="2dp">
 
                         <TextView
                             android:id="@+id/transfer_log"

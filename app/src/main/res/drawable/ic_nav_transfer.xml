@@ -3,9 +3,9 @@
     android:width="24dp"
     android:height="24dp"
     android:viewportWidth="24"
-    android:viewportHeight="24"
-    android:tint="?attr/colorControlNormal">
+    android:viewportHeight="24">
+    <!-- Transfer: opposing arrows (Material sync) -->
     <path
         android:fillColor="@android:color/white"
-        android:pathData="M9,3L5,6.99h3V14h2V6.99h3L9,3zM16,17.01V10h-2v7.01h-3L15,21l4,-3.99h-3z" />
+        android:pathData="M9,3 L5,6.99 H8 V14 H10 V6.99 H13 L9,3 Z M16,10 L11,14 L13,14 V21 H15 V14 H18 L16,10 Z" />
 </vector>

@@ -1,24 +1,33 @@
+// =============================================================================
+// core.odin — package facade for wayer_core's foundation layer.
+//
+// This file is the public surface of package core_heart (native/core/src/).
+// All procedures defined in sibling files (json_util.odin, paths.odin,
+// logging.odin, text.odin) share this package, so they are automatically
+// visible as core_heart.<proc> when imported by wayer_core.odin.
+//
+// Why this file exists
+//   * Documents the package's role for new contributors.
+//   * Provides a single place to bump the module version.
+//   * No re-exports needed — Odin shares same-package symbols implicitly.
+//
+// Android 10 note
+//   Odin code in this package must never call core:os file ops directly.
+//   File I/O goes through the C wrappers in android_fs.c (bionic-safe:
+//   opendir/readdir/stat/open only, no statx which Android 10 seccomp blocks).
+//   Logging uses __android_log_print when ODIN_OS == .Android.
+// =============================================================================
+
 package core_heart
 
+// Module version — bump when the file layout under <root>/wayer changes.
+CORE_VERSION :: 1
 
-// Re-export all procedures
-json_escape :: json_util.json_escape
-bool_to_string :: json_util.bool_to_string
-
-ensure_app_dirs :: paths.ensure_app_dirs
-write_paths_manifest :: paths.write_paths_manifest
-set_app_paths :: paths.set_app_paths
-get_app_paths :: paths.get_app_paths
-all_ready :: paths.all_ready
-is_app_paths_initialized :: paths.is_app_paths_initialized
-AppPaths :: paths.AppPaths
-DirEnsure :: paths.DirEnsure
-AppDirsReport :: paths.AppDirsReport
-
-info :: logging.info
-error :: logging.error
-infof :: logging.infof
-errorf :: logging.errorf
-
-ascii_lower :: text.ascii_lower
-write_text_file :: text.write_text_file
+// All symbols are defined in sibling files:
+//   json_util.odin  → json_escape, bool_to_string
+//   paths.odin      → AppPaths, ensure_app_dirs, write_paths_manifest, set_app_paths, ...
+//   logging.odin    → info, error, infof, errorf, log
+//   text.odin       → ascii_lower, write_text_file
+//
+// They are automatically part of package core_heart; no `import` or alias
+// is required inside the same package.

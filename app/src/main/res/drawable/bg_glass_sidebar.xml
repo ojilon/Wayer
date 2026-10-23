@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Sidebar background — solid surface with subtle top border, not full glass -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
-    <solid android:color="@color/wayer_surface_elevated" />
+    <solid android:color="@color/wayer_surface_solid" />
     <stroke
         android:width="1dp"
-        android:color="@color/wayer_outline_glass" />
+        android:color="@color/wayer_outline_variant" />
 </shape>

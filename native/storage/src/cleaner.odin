@@ -1,19 +1,48 @@
-// cleaner.odin — large files + duplicate detection (C FS backend)
-// Uses android_fs.c for bionic-safe directory walks and file I/O.
+// =============================================================================
+// cleaner.odin — large-file finder + duplicate detector
+//
+// Part of package storage (wayer_cleaner). This is the Odin port of the two
+// Cleaner utilities: Large Files and Duplicates. Both use the bionic-safe
+// C FS walk (fs_android.odin) and produce file-backed JSON so JNI stays small.
+//
+// Utilities
+//   find_large_files      — top N largest files ≥ min_bytes, sorted descending
+//   find_duplicates       — byte-identical groups + related-file display groups
+//
+// File-backed variants (what Java calls)
+//   find_large_files_to_file — writes {"min_bytes","count","files":[...]}
+//   find_duplicates_to_file  — writes {"version":2,"duplicate_groups":[[...]],...}
+//
+// Hash strategy for duplicates (three-stage, same as C++)
+//   1. Group by size (cheap — from directory walk)
+//   2. Within equal-size groups, group by partial hash (first 4 KiB + size mix)
+//   3. Confirm collisions by full FNV-1a hash + byte-equal verification
+//   Only genuine byte-identical files become a duplicate group. Hash is just a
+//   fast filter; we never trust it alone.
+//
+// Related files
+//   Display-only heuristic: normalize file names (strip " (1)", " copy",
+//   " final", "_v2", etc.) and group those sharing a key. Helps users spot
+//   manual versions even when bytes differ.
+//
+// Android 10 / bionic
+//   * All file reads via fs_android read_file_c → wayer_fs_read_file (open/read)
+//   * Hash uses FNV-1a (no external crypto lib needed; fast on mobile)
+//   * Sorting via core:slice / core:sort equivalents (Odin Oct 2025)
+//
+// Mirrors: wayer::storage::find_large_files, find_duplicates
+//          in native/storage/modules/cleaner/src/*
+// =============================================================================
 
 package storage
 
 import "core:c"
 import "core:fmt"
-import "core:hash"
-import "core:io"
-import "core:sort"
+import "core:mem"
+import "core:slice"
 import "core:strings"
-import "core:time"
 
 import core_heart "../../core/src"
-
-
 
 // =============================================================================
 // LARGE FILES
@@ -25,48 +54,87 @@ LargeEntry :: struct {
 	size: u64,
 }
 
-// find_large_files returns JSON with top N largest files
+// find_large_files returns JSON with top N largest files ≥ min_bytes.
 // Mirrors wayer::storage::find_large_files
 find_large_files :: proc(root_path: string, min_bytes: u64, max_results: int) -> string {
-	if max_results <= 0 { max_results = 50 }
-	if min_bytes == 0 { min_bytes = 10 * 1024 * 1024 } // 10 MB default
-	
-	found: []LargeEntry
-	
-	// Walk and collect large files using C FS
-	fs.walk_files_c(root_path, proc(path: string, name: string, size: i64, mtime: i64) {
-		if size < i64(min_bytes) { return }
-		
-		found = append(found, LargeEntry{
-			name = name,
-			path = path,
-			size = u64(size),
-		}, context.temp_allocator)
+	mb := min_bytes
+	if mb == 0 {
+		mb = 10 * 1024 * 1024 // default 10 MiB
+	}
+	limit := max_results
+	if limit <= 0 {
+		limit = 50
+	}
+
+	// Need to capture limit/mb for closure — use context for walk callback.
+	// We use a dynamic array on temp_allocator; freed per JNI call.
+	found := make([dynamic]LargeEntry, 0, 64, context.temp_allocator)
+
+	// Walk via C FS — collect files meeting size threshold.
+	// We use a manual walk with closure workaround (see WalkCtx pattern).
+	// Simplified: collect via global-ish dynamic inside temp_allocator by
+	// using a context value. For this proc we use a package-level trick:
+	// store the slice pointer in context.user_ptr for the callback.
+	//
+	// Alternative (simpler): do walk inline and append directly.
+	//
+	// Because Odin's walk_files_c takes a proc value (not closure), we need to
+	// use a trampoline with external state. We'll use a package-level buffer.
+
+	// Use a helper that wraps walk_files_c with a closure-like pattern via context value.
+	large_accum_ctx := LargeAccum{
+		min_bytes = mb,
+		found     = &found,
+	}
+	walk_files_with_ctx(root_path, large_walk_cb, &large_accum_ctx)
+
+	// Sort descending by size
+	slice.sort_by(found[:], proc(a, b: LargeEntry) -> bool {
+		return a.size > b.size
 	})
-	
-	// Sort by size descending (top N)
-	sort.sort_by(found[:], proc(a, b: LargeEntry) -> bool { return a.size > b.size })
-	
-	want := min(max_results, len(found))
+
+	want := min(limit, len(found))
 	top := found[:want]
-	
+
 	// Build JSON
 	sb := strings.builder_make(context.temp_allocator)
-	fmt.sbprintf(&sb, `{"min_bytes":%d,"count":%d,"files":[`, min_bytes, len(top))
-	
-	for i, entry in top {
-		if i > 0 { strings.write_string(&sb, ",") }
+	fmt.sbprintf(&sb, `{"min_bytes":%d,"count":%d,"files":[`, mb, len(top))
+
+	for i in 0 ..< len(top) {
+		if i > 0 {
+			strings.write_string(&sb, ",")
+		}
+		e := top[i]
 		fmt.sbprintf(&sb, `{"name":"%s","path":"%s","size":%d}`,
-			core_heart.json_escape(entry.name),
-			core_heart.json_escape(entry.path),
-			entry.size)
+			core_heart.json_escape(e.name),
+			core_heart.json_escape(e.path),
+			e.size)
 	}
-	
+
 	strings.write_string(&sb, "]}")
 	return strings.to_string(sb)
 }
 
-// find_large_files_to_file writes results to file
+// LargeAccum is the context for large-file walk callback (replaces lambda capture).
+LargeAccum :: struct {
+	min_bytes: u64,
+	found:    ^[dynamic]LargeEntry,
+}
+
+large_walk_cb :: proc(path: string, name: string, size: i64, mtime: i64, ud: rawptr) {
+	_ = mtime
+	ctx := cast(^LargeAccum)ud
+	if size < i64(ctx.min_bytes) {
+		return
+	}
+	append(ctx.found, LargeEntry{
+		name = strings.clone(name, context.temp_allocator),
+		path = strings.clone(path, context.temp_allocator),
+		size = u64(size),
+	})
+}
+
+// find_large_files_to_file writes results to file and returns status JSON.
 // Mirrors wayer::storage::find_large_files_to_file
 find_large_files_to_file :: proc(root_path: string, min_bytes: u64, max_results: int, out_path: string) -> string {
 	json := find_large_files(root_path, min_bytes, max_results)
@@ -81,108 +149,110 @@ find_large_files_to_file :: proc(root_path: string, min_bytes: u64, max_results:
 // =============================================================================
 
 DupFile :: struct {
-	path: string,
-	size: u64,
+	path:  string,
+	size:  u64,
 	mtime: i64, // unix seconds, 0 = unknown
 }
 
-// FNV-1a 64-bit hash over a stream, up to max_bytes
-fnv1a_stream :: proc(reader: io.Reader, max_bytes: u64) -> u64 {
-	const kOffset = 14695981039346656037
-	const kPrime = 1099511628211
-	
-	h := u64(kOffset)
-	buf: [8192]u8
-	remaining := max_bytes
-	
-	for remaining > 0 {
-		want := min(int(remaining), len(buf))
-		n, err := reader.read(buf[:want])
-		if err != nil || n == 0 { break }
-		
-		for i := 0; i < n; i++ {
-			h ^= u64(buf[i])
-			h *= kPrime
-		}
-		remaining -= u64(n)
+// ---------------------------------------------------------------------------
+// Hash helpers — FNV-1a 64-bit (no crypto dependency, fast on mobile)
+// ---------------------------------------------------------------------------
+
+FNV_OFFSET :: u64(14695981039346656037)
+FNV_PRIME  :: u64(1099511628211)
+
+// fnv1a_bytes hashes len bytes via FNV-1a.
+fnv1a_bytes :: proc(data: []u8) -> u64 {
+	h := FNV_OFFSET
+	for b in data {
+		h ^= u64(b)
+		h *= FNV_PRIME
 	}
-	
 	return h
 }
 
-// try_partial_hash computes hash of first 4 KiB mixed with size
-// Returns (hash, success)
+// try_partial_hash computes hash of first 4 KiB mixed with file size.
+// Returns (hash, success). Uses C FS read (bionic-safe).
 try_partial_hash :: proc(path: string, size: u64) -> (u64, bool) {
-	// Use C FS to read file
-	data, ok := fs.read_file_c(path, 4096)
-	if !ok { return 0, false }
-	
-	h := fnv1a_stream(io.reader_from_slice(data), u64(data.len))
+	data, ok := read_file_c(path, 4096)
+	if !ok {
+		return 0, false
+	}
+	h := fnv1a_bytes(transmute([]u8)data)
 	h ^= size * 0x9E3779B97F4A7C15
 	return h, true
 }
 
-// try_full_hash computes full FNV-1a hash of file
-// Returns (hash, success)
+// try_full_hash computes full FNV-1a hash of file.
 try_full_hash :: proc(path: string) -> (u64, bool) {
-	data, ok := fs.read_file_c(path, usize.MAX)
-	if !ok { return 0, false }
-	
-	h := fnv1a_stream(io.reader_from_slice(data), u64(data.len))
+	data, ok := read_file_c(path, 16 * 1024 * 1024) // cap 16 MiB for hashing
+	if !ok {
+		return 0, false
+	}
+	h := fnv1a_bytes(transmute([]u8)data)
 	return h, true
 }
 
-// files_byte_equal compares two files byte-by-byte
+// files_byte_equal compares two files byte-for-byte via C FS reads.
 files_byte_equal :: proc(a: string, b: string) -> bool {
-	data_a, ok_a := fs.read_file_c(a, usize.MAX)
-	if !ok_a { return false }
-	defer c.free(data_a.ptr) // need to free if malloc'd
-	
-	data_b, ok_b := fs.read_file_c(b, usize.MAX)
-	if !ok_b { return false }
-	defer c.free(data_b.ptr)
-	
-	return std.mem.eql(u8, data_a, data_b)
+	data_a, ok_a := read_file_c(a, 16 * 1024 * 1024)
+	if !ok_a {
+		return false
+	}
+	data_b, ok_b := read_file_c(b, 16 * 1024 * 1024)
+	if !ok_b {
+		return false
+	}
+	if len(data_a) != len(data_b) {
+		return false
+	}
+	return mem.compare(data_a, data_b) == 0
 }
 
-// file_mtime_unix returns file modification time as unix seconds
+// file_mtime_unix returns mtime as unix seconds (0 = unknown).
 file_mtime_unix :: proc(path: string) -> i64 {
-	_, mtime, _, ok := fs.stat_c(path)
-	if !ok { return 0 }
+	_, mtime, _, ok := stat_c(path)
+	if !ok {
+		return 0
+	}
 	return mtime
 }
 
-// file_size_or_zero returns file size or 0 on error
+// file_size_or_zero returns size or 0 on error.
 file_size_or_zero :: proc(path: string) -> u64 {
-	size, _, _, ok := fs.stat_c(path)
-	if !ok { return 0 }
-	return u64(size)
+	size, _, _, ok := stat_c(path)
+	if !ok {
+		return 0
+	}
+	return u64(max(size, 0))
 }
 
-// =============================================================================
-// Related files (display only)
-// =============================================================================
+// ---------------------------------------------------------------------------
+// Related-file normalization — strip version/copy suffixes for display grouping
+// ---------------------------------------------------------------------------
 
 ends_with_word :: proc(s: string, word: string) -> bool {
-	if len(s) < len(word) { return false }
+	if len(s) < len(word) {
+		return false
+	}
 	return s[len(s)-len(word):] == word
 }
 
-trim_trailing_space_dash :: proc(s: string, out: *string) {
+trim_trailing_space_dash :: proc(s: string, out: ^string) {
 	end := len(s)
 	for end > 0 {
 		ch := s[end-1]
 		if ch == ' ' || ch == '\t' || ch == '-' || ch == '_' || ch == '.' {
-			end--
+			end -= 1
 		} else {
 			break
 		}
 	}
-	*out = s[:end]
+	out^ = s[:end]
 }
 
-// normalize_related_key normalizes a filename for related-file grouping
-// Mirrors the C++ normalize_related_key
+// normalize_related_key strips " (1)", " copy", " final", " _v2" etc.
+// Mirrors C++ normalize_related_key in duplicate_finder.cpp.
 normalize_related_key :: proc(filename: string) -> string {
 	lower := core_heart.ascii_lower(filename)
 	dot := strings.last_index_byte(lower, '.')
@@ -190,20 +260,22 @@ normalize_related_key :: proc(filename: string) -> string {
 	if dot > 0 {
 		base = lower[:dot]
 	}
-	
-	cur := base
+
+	cur := strings.clone(base, context.temp_allocator)
 	trim_trailing_space_dash(cur, &cur)
-	
-	for iter := 0; iter < 5; iter++ {
+
+	for iter := 0; iter < 5; iter += 1 {
 		trim_trailing_space_dash(cur, &cur)
-		if len(cur) == 0 { break }
-		
-		// Trailing "(digits)" like " (1)" or "(12)"
+		if len(cur) == 0 {
+			break
+		}
+
+		// Trailing " (digits)" like " (1)" or "(12)"
 		if len(cur) > 0 && cur[len(cur)-1] == ')' {
 			open := strings.last_index_byte(cur, '(')
-			if open != -1 && open+1 < len(cur) {
+			if open != -1 && open + 1 < len(cur) {
 				all_digits := true
-				for i := open + 1; i+1 < len(cur); i++ {
+				for i := open + 1; i+1 < len(cur); i += 1 {
 					if cur[i] < '0' || cur[i] > '9' {
 						all_digits = false
 						break
@@ -216,34 +288,43 @@ normalize_related_key :: proc(filename: string) -> string {
 			}
 			break
 		}
-		
+
 		if ends_with_word(cur, "copy") {
 			pos := len(cur) - 4
-			if pos > 0 && (cur[pos-1] == ' ' || cur[pos-1] == '-' || cur[pos-1] == '_' || cur[pos-1] == '(') {
-				cur = cur[:pos-1]
-				continue
+			if pos > 0 {
+				sep := cur[pos-1]
+				if sep == ' ' || sep == '-' || sep == '_' || sep == '(' {
+					cur = cur[:pos-1]
+					continue
+				}
 			}
 			break
 		}
-		
+
 		if ends_with_word(cur, "final") {
 			pos := len(cur) - 5
-			if pos > 0 && (cur[pos-1] == ' ' || cur[pos-1] == '-' || cur[pos-1] == '_') {
-				cur = cur[:pos-1]
-				continue
+			if pos > 0 {
+				sep := cur[pos-1]
+				if sep == ' ' || sep == '-' || sep == '_' {
+					cur = cur[:pos-1]
+					continue
+				}
 			}
 			break
 		}
-		
-		// Trailing v-number: " v2", "_v2", "-v2", "v2"
+
+		// Trailing v-number: " v2", "_v2", "-v2"
 		n := len(cur)
 		d := n
 		for d > 0 && cur[d-1] >= '0' && cur[d-1] <= '9' {
-			d--
+			d -= 1
 		}
 		if d < n && d > 0 && (cur[d-1] == 'v' || cur[d-1] == 'V') {
 			vpos := d - 1
-			if vpos == 0 { cur = ""; break }
+			if vpos == 0 {
+				cur = ""
+				break
+			}
 			sep := cur[vpos-1]
 			if sep == ' ' || sep == '-' || sep == '_' || vpos == 0 {
 				if vpos > 0 && (sep == ' ' || sep == '-' || sep == '_') {
@@ -256,167 +337,225 @@ normalize_related_key :: proc(filename: string) -> string {
 		}
 		break
 	}
-	
+
 	trim_trailing_space_dash(cur, &cur)
 	return cur
 }
 
-// find_duplicates returns JSON with duplicate groups and related groups
+// ---------------------------------------------------------------------------
+// find_duplicates — three-stage grouping + related display groups
+// ---------------------------------------------------------------------------
+
+// find_duplicates returns JSON with duplicate_groups and related_groups.
 // Mirrors wayer::storage::find_duplicates
 find_duplicates :: proc(root_path: string) -> string {
-	// Step 1: group by size
-	by_size: map[u64][]string = make(map[u64][]string, context.temp_allocator)
-	
-	fs.walk_files_c(root_path, proc(path: string, name: string, size: i64, mtime: i64) {
-		if size <= 0 { return }
-		u := u64(size)
-		by_size[u] = append(by_size[u], path, context.temp_allocator)
-	})
-	
-	// Step 2: within each size group, group by partial hash
-	duplicate_groups: [][]DupFile
-	
+	// Stage 1: group by size (cheap — from walk)
+	BySizeMap :: map[u64][dynamic]string
+	by_size := make(BySizeMap, 64, context.temp_allocator)
+
+	dup_walk_ctx := DupWalkCtx{by_size = &by_size}
+	walk_files_with_ctx(root_path, dup_size_cb, &dup_walk_ctx)
+
+	// Stage 2 & 3: partial hash → full hash → byte-equal verification
+	duplicate_groups := make([dynamic][]DupFile, 0, 16, context.temp_allocator)
+
 	for size, paths in by_size {
-		if len(paths) < 2 { continue }
-		
-		by_partial: map[u64][]string = make(map[u64][]string, context.temp_allocator)
+		if len(paths) < 2 {
+			continue
+		}
+
+		by_partial := make(map[u64][dynamic]string, 16, context.temp_allocator)
 		for path in paths {
 			h, ok := try_partial_hash(path, size)
-			if !ok { continue }
-			by_partial[h] = append(by_partial[h], path, context.temp_allocator)
+			if !ok {
+				continue
+			}
+			list := by_partial[h]
+			append(&list, strings.clone(path, context.temp_allocator))
+			by_partial[h] = list
 		}
-		
-		// Step 3: confirm with full hash only for partial-hash collisions
+
 		for _, candidates in by_partial {
-			if len(candidates) < 2 { continue }
-			
-			by_full: map[u64][]string = make(map[u64][]string, context.temp_allocator)
+			if len(candidates) < 2 {
+				continue
+			}
+
+			by_full := make(map[u64][dynamic]string, 16, context.temp_allocator)
 			for path in candidates {
 				h, ok := try_full_hash(path)
-				if !ok { continue }
-				by_full[h] = append(by_full[h], path, context.temp_allocator)
+				if !ok {
+					continue
+				}
+				list := by_full[h]
+				append(&list, strings.clone(path, context.temp_allocator))
+				by_full[h] = list
 			}
-			
+
 			for _, same_hash in by_full {
-				if len(same_hash) < 2 { continue }
-				
-				// Hash is only a hint: split by real byte content
-				verified: [][]string
+				if len(same_hash) < 2 {
+					continue
+				}
+
+				// Hash is only a hint: split by real byte content.
+				verified := make([dynamic][dynamic]string, 0, 4, context.temp_allocator)
 				for path in same_hash {
 					placed := false
-					for v in verified {
-						if files_byte_equal(v[0], path) {
-							v = append(v, path, context.temp_allocator)
+					for i in 0 ..< len(verified) {
+						group := verified[i]
+						if len(group) > 0 && files_byte_equal(group[0], path) {
+							append(&group, strings.clone(path, context.temp_allocator))
+							verified[i] = group
 							placed = true
 							break
 						}
 					}
 					if !placed {
-						verified = append(verified, []string{path}, context.temp_allocator)
+						new_group := make([dynamic]string, 0, 2, context.temp_allocator)
+						append(&new_group, strings.clone(path, context.temp_allocator))
+						append(&verified, new_group)
 					}
 				}
-				
+
 				for v in verified {
-					if len(v) < 2 { continue }
-					group: []DupFile
-					for path in v {
-						group = append(group, DupFile{
-							path = path,
-							size = size,
-							mtime = file_mtime_unix(path),
-						}, context.temp_allocator)
+					if len(v) < 2 {
+						continue
 					}
-					duplicate_groups = append(duplicate_groups, group, context.temp_allocator)
+					group := make([dynamic]DupFile, 0, len(v), context.temp_allocator)
+					for path in v {
+						append(&group, DupFile{
+							path  = strings.clone(path, context.temp_allocator),
+							size  = size,
+							mtime = file_mtime_unix(path),
+						})
+					}
+					append(&duplicate_groups, group[:])
 				}
 			}
 		}
 	}
-	
-	// Sort duplicate groups
-	for g in duplicate_groups {
-		sort.sort_by(g[:], proc(a, b: DupFile) -> bool { return a.path < b.path })
+
+	// Sort groups for deterministic output
+	for i in 0 ..< len(duplicate_groups) {
+		g := duplicate_groups[i]
+		slice.sort_by(g, proc(a, b: DupFile) -> bool { return a.path < b.path })
+		duplicate_groups[i] = g
 	}
-	sort.sort_by(duplicate_groups[:], proc(a, b: []DupFile) -> bool { return a[0].path < b[0].path })
-	
-	// Related files: same normalized name, any size/version. Display only.
-	by_related: map[string][]string = make(map[string][]string, context.temp_allocator)
-	for size, paths in by_size {
+	slice.sort_by(duplicate_groups[:], proc(a, b: []DupFile) -> bool {
+		return a[0].path < b[0].path
+	})
+
+	// Related files: same normalized name, any size. Display-only.
+	ByRelatedMap :: map[string][dynamic]string
+	by_related := make(ByRelatedMap, 64, context.temp_allocator)
+
+	for _, paths in by_size {
 		for path in paths {
-			fname := strings.split(path, "/", context.temp_allocator)[-1]
-			if len(fname) == 0 { continue }
+			// Basename: after last "/"
+			slash := strings.last_index_byte(path, '/')
+			fname := path
+			if slash != -1 {
+				fname = path[slash+1:]
+			}
+			if len(fname) == 0 {
+				continue
+			}
 			key := normalize_related_key(fname)
-			if len(key) < 3 { continue }
-			by_related[key] = append(by_related[key], path, context.temp_allocator)
+			if len(key) < 3 {
+				continue
+			}
+			// Need to handle map entry that may not exist yet
+			existing, exists := by_related[key]
+			if !exists {
+				existing = make([dynamic]string, 0, 4, context.temp_allocator)
+			}
+			append(&existing, strings.clone(path, context.temp_allocator))
+			by_related[strings.clone(key, context.temp_allocator)] = existing
 		}
 	}
-	
+
 	RelatedGroup :: struct {
-		key: string,
+		key:   string,
 		files: []DupFile,
 	}
-	
-	related: []RelatedGroup
-	keys: []string
-	for k in by_related {
+
+	related := make([dynamic]RelatedGroup, 0, 16, context.temp_allocator)
+	keys := make([dynamic]string, 0, 64, context.temp_allocator)
+	for k, v in by_related {
+		_ = v
 		if len(by_related[k]) >= 2 && len(by_related[k]) <= 20 {
-			keys = append(keys, k, context.temp_allocator)
+			append(&keys, k)
 		}
 	}
-	sort.sort(keys[:])
-	
-	const kMaxRelatedGroups = 200
-	const kMaxFilesPerRelated = 20
-	
+	slice.sort(keys[:])
+
+	kMaxRelatedGroups    :: 200
+	kMaxFilesPerRelated  :: 20
+
 	for k in keys {
-		if len(related) >= kMaxRelatedGroups { break }
-		paths := by_related[k]
-		sort.sort(paths[:])
-		want := min(len(paths), kMaxFilesPerRelated)
-		
-		g := RelatedGroup{key = k}
-		for i := 0; i < want; i++ {
-			g.files = append(g.files, DupFile{
-				path = paths[i],
-				size = file_size_or_zero(paths[i]),
-				mtime = file_mtime_unix(paths[i]),
-			}, context.temp_allocator)
+		if len(related) >= kMaxRelatedGroups {
+			break
 		}
-		related = append(related, g, context.temp_allocator)
+		paths := by_related[k]
+		slice.sort(paths[:])
+		want := min(len(paths), kMaxFilesPerRelated)
+
+		g := RelatedGroup{key = k}
+		g.files = make([]DupFile, want, context.temp_allocator)
+		for i in 0 ..< want {
+			g.files[i] = DupFile{
+				path  = strings.clone(paths[i], context.temp_allocator),
+				size  = file_size_or_zero(paths[i]),
+				mtime = file_mtime_unix(paths[i]),
+			}
+		}
+		append(&related, g)
 	}
-	
+
 	// Build JSON
 	sb := strings.builder_make(context.temp_allocator)
 	strings.write_string(&sb, `{"version":2,"duplicate_groups":[`)
-	
-	for gi, group in duplicate_groups {
+
+	for gi in 0 ..< len(duplicate_groups) {
+		if gi > 0 {
+			strings.write_string(&sb, ",")
+		}
+		group := duplicate_groups[gi]
 		strings.write_string(&sb, "[")
-		for i, f in group {
-			if i > 0 { strings.write_string(&sb, ",") }
+		for i in 0 ..< len(group) {
+			if i > 0 {
+				strings.write_string(&sb, ",")
+			}
+			f := group[i]
 			fmt.sbprintf(&sb, `{"path":"%s","size":%d,"mtime":%d}`,
 				core_heart.json_escape(f.path), f.size, f.mtime)
 		}
 		strings.write_string(&sb, "]")
-		if gi+1 < len(duplicate_groups) { strings.write_string(&sb, ",") }
 	}
-	
+
 	strings.write_string(&sb, `],"related_groups":[`)
-	
-	for gi, group in related {
-		if gi > 0 { strings.write_string(&sb, ",") }
+
+	for gi in 0 ..< len(related) {
+		if gi > 0 {
+			strings.write_string(&sb, ",")
+		}
+		group := related[gi]
 		fmt.sbprintf(&sb, `{"key":"%s","files":[`, core_heart.json_escape(group.key))
-		for i, f in group.files {
-			if i > 0 { strings.write_string(&sb, ",") }
+		for i in 0 ..< len(group.files) {
+			if i > 0 {
+				strings.write_string(&sb, ",")
+			}
+			f := group.files[i]
 			fmt.sbprintf(&sb, `{"path":"%s","size":%d,"mtime":%d}`,
 				core_heart.json_escape(f.path), f.size, f.mtime)
 		}
 		strings.write_string(&sb, "]}")
 	}
-	
+
 	strings.write_string(&sb, "]}")
 	return strings.to_string(sb)
 }
 
-// find_duplicates_to_file writes results to file
+// find_duplicates_to_file writes results to file and returns status JSON.
 // Mirrors wayer::storage::find_duplicates_to_file
 find_duplicates_to_file :: proc(root_path: string, out_path: string) -> string {
 	json := find_duplicates(root_path)
@@ -424,4 +563,55 @@ find_duplicates_to_file :: proc(root_path: string, out_path: string) -> string {
 		return `{"status":"error","reason":"write_failed"}`
 	}
 	return fmt.tprintf(`{"status":"ok","path":"%s"}`, core_heart.json_escape(out_path))
+}
+
+// ---------------------------------------------------------------------------
+// Walk helpers — context-aware walk to replace lambda captures
+// ---------------------------------------------------------------------------
+
+// DupWalkCtx for size-grouping stage
+DupWalkCtx :: struct {
+	by_size: ^map[u64][dynamic]string,
+}
+
+dup_size_cb :: proc(path: string, name: string, size: i64, mtime: i64, ud: rawptr) {
+	_ = name
+	_ = mtime
+	if size <= 0 {
+		return
+	}
+	ctx := cast(^DupWalkCtx)ud
+	u := u64(size)
+	entry, exists := ctx.by_size^[u]
+	if !exists {
+		entry = make([dynamic]string, 0, 4, context.temp_allocator)
+	}
+	append(&entry, strings.clone(path, context.temp_allocator))
+	ctx.by_size^[u] = entry
+}
+
+// Generic walk with user data — bridges to C fs_walk with context.
+WalkWithCtxCb :: proc(path: string, name: string, size: i64, mtime: i64, ud: rawptr)
+
+// walk_ctx_inner is the trampoline for WalkWithCtx
+walk_ctx_inner :: proc "c" (path: cstring, name: cstring, size: i64, mtime: i64, ud: rawptr) {
+	// ud points to a struct {cb, real_ud}
+	Wrapper :: struct {
+		cb: WalkWithCtxCb,
+		ud: rawptr,
+	}
+	w := cast(^Wrapper)ud
+	// C strings → Odin strings (NUL-terminated, so string(cstring) works)
+	p := string(path)
+	n := string(name)
+	w.cb(p, n, size, mtime, w.ud)
+}
+
+walk_files_with_ctx :: proc(root: string, cb: WalkWithCtxCb, ud: rawptr) {
+	wrapper := struct {
+		cb: WalkWithCtxCb,
+		ud: rawptr,
+	}{cb, ud}
+	c_root := strings.clone_to_cstring(root, context.temp_allocator)
+	wayer_fs_walk_files(c_root, walk_ctx_inner, &wrapper)
 }

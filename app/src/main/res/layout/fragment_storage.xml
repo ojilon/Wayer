@@ -46,10 +46,10 @@
 
             <ImageButton
                 android:id="@+id/btn_open_storage_drawer"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@android:drawable/ic_menu_more"
+                android:src="@drawable/ic_action_more"
                 android:contentDescription="@string/btn_open_duplicates_drawer_desc"
                 app:tint="@color/wayer_text_primary" />
         </LinearLayout>
@@ -70,10 +70,10 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     app:cardBackgroundColor="@color/wayer_surface"
-                    app:cardCornerRadius="@dimen/radius_md"
-                    app:strokeColor="@color/wayer_outline_glass"
-                    app:strokeWidth="1dp"
-                    app:cardElevation="0dp">
+                    app:cardCornerRadius="@dimen/radius_sm"
+                    app:strokeColor="@android:color/transparent"
+                    app:strokeWidth="0dp"
+                    app:cardElevation="2dp">
 
                         <LinearLayout
                             android:layout_width="match_parent"
@@ -126,10 +126,10 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/spacing_sm"
                     app:cardBackgroundColor="@color/wayer_surface"
-                    app:cardCornerRadius="@dimen/radius_md"
-                    app:strokeColor="@color/wayer_outline_glass"
-                    app:strokeWidth="1dp"
-                    app:cardElevation="0dp">
+                    app:cardCornerRadius="@dimen/radius_sm"
+                    app:strokeColor="@android:color/transparent"
+                    app:strokeWidth="0dp"
+                    app:cardElevation="2dp">
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -205,11 +205,13 @@
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btn_refresh_storage"
-                    style="@style/Widget.Wayer.GlassButton"
+                    style="@style/Widget.Wayer.Button"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/spacing_lg"
-                    android:text="@string/btn_refresh_storage" />
+                    android:text="@string/btn_refresh_storage"
+                    app:icon="@drawable/ic_action_refresh"
+                    app:iconGravity="textStart" />
 
             </LinearLayout>
         </ScrollView>

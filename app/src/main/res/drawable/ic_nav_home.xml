@@ -3,9 +3,9 @@
     android:width="24dp"
     android:height="24dp"
     android:viewportWidth="24"
-    android:viewportHeight="24"
-    android:tint="?attr/colorControlNormal">
+    android:viewportHeight="24">
+    <!-- Filled house for selected, outline for unselected via tint + NavigationBarView -->
     <path
         android:fillColor="@android:color/white"
-        android:pathData="M10,20v-6h4v6h5v-8h3L12,3 2,12h3v8z" />
+        android:pathData="M12,3 L2,12 L3.5,13.5 L6,11.2 V20 H10 V14 H14 V20 H18 V11.2 L20.5,13.5 L22,12 Z" />
 </vector>

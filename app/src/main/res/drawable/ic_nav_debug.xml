@@ -3,17 +3,13 @@
     android:width="24dp"
     android:height="24dp"
     android:viewportWidth="24"
-    android:viewportHeight="24"
-    android:tint="?attr/colorControlNormal">
+    android:viewportHeight="24">
+    <!-- Internals/debug: terminal/code brackets -->
     <path
         android:fillColor="@android:color/white"
-        android:fillType="evenOdd"
-        android:pathData="M5,3h14a2,2 0 0 1 2,2v14a2,2 0 0 1 -2,2H5a2,2 0 0 1 -2,-2V5a2,2 0 0 1 2,-2zM6.5,6.5v11h11v-11z" />
+        android:pathData="M9,8 L11,10 L9,12 L11,14 L9,16 L6,12 Z M15,8 L18,12 L15,16 L13,14 L15,12 L13,10 Z" />
     <path
-        android:fillColor="@android:color/transparent"
-        android:strokeColor="@android:color/white"
-        android:strokeWidth="1.8"
-        android:strokeLineCap="round"
-        android:strokeLineJoin="round"
-        android:pathData="M9,10.5l2.5,2 -2.5,2M13.5,15.5H17" />
+        android:fillColor="@android:color/white"
+        android:pathData="M5,3 H19 A2,2 0 0 1 21,5 V19 A2,2 0 0 1 19,21 H5 A2,2 0 0 1 3,19 V5 A2,2 0 0 1 5,3 Z M5,5 V19 H19 V5 Z"
+        android:fillAlpha="0.7" />
 </vector>

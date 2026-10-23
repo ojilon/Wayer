@@ -1,3 +1,21 @@
+// =============================================================================
+// logging.odin — thin logging facade for native code
+//
+// Part of package core_heart. On Android it forwards to
+// __android_log_print so logcat tags work (adb logcat -s Wayer*). On host
+// builds (unit tests, desktop) it falls back to stderr.
+//
+// Android bionic note
+//   __android_log_print lives in liblog, linked automatically by the NDK.
+//   We call it via C FFI (system:c) instead of using core:os file logs,
+//   because file-based logging in Odin would need core:os which on Android
+//   10 would use statx-seccomp-blocked paths. The C++ side optionally logs
+//   to <app_root>/logs/; Odin keeps logging to logcat only (file logs are
+//   best-effort and not required for correctness).
+//
+// Mirrors: wayer::core::log::info / error in native/core/src/logging.cpp
+// =============================================================================
+
 package core_heart
 
 import "core:c"
@@ -5,32 +23,35 @@ import "core:fmt"
 import "core:os"
 import "core:strings"
 
-// Log levels
+// ---------------------------------------------------------------------------
+// C FFI — Android log bridge
+// ---------------------------------------------------------------------------
+
+foreign import libc "system:c"
+
+@(default_calling_convention = "c")
+foreign libc {
+	// Android NDK: <android/log.h>. Priority values match android/log.h.
+	__android_log_print :: proc(prio: c.int, tag: cstring, fmt: cstring, msg: cstring) -> c.int ---
+}
+
+// LogLevel mirrors the C++ priority mapping.
 LogLevel :: enum {
 	Info,
 	Error,
 }
 
-// log_to_android uses __android_log_print via C FFI
-// On non-Android, falls back to stderr
-foreign import libc "system:c"
-
-@(default_calling_convention = "c")
-foreign libc {
-	// Android logging
-	__android_log_print :: proc(prio: c.int, tag: cstring, fmt: cstring, msg: cstring) -> c.int ---
-}
-
-// log writes a message with the given level
+// log writes a message with the given level.
+// On Android → __android_log_print; elsewhere → stderr.
 log :: proc(level: LogLevel, tag: string, msg: string) {
 	ctag := strings.clone_to_cstring(tag, context.temp_allocator)
 	cmsg := strings.clone_to_cstring(msg, context.temp_allocator)
-	
-	when ODIN_OS == "android" {
-		// Android log priorities
+
+	when ODIN_OS == .Android {
+		// Android log priorities (from <android/log.h>)
 		ANDROID_LOG_INFO  :: c.int(4)
 		ANDROID_LOG_ERROR :: c.int(6)
-		
+
 		prio: c.int
 		switch level {
 		case .Info:
@@ -40,7 +61,8 @@ log :: proc(level: LogLevel, tag: string, msg: string) {
 		}
 		__android_log_print(prio, ctag, "%s", cmsg)
 	} else {
-		// Fallback to stderr (matches C++ behavior)
+		// Host fallback — use os.stderr which is ^os.File in Odin Oct 2025.
+		// fmt.fprintln handles ^os.File as io.Writer via os.stream_from_handle.
 		prefix: string
 		switch level {
 		case .Info:
@@ -48,29 +70,30 @@ log :: proc(level: LogLevel, tag: string, msg: string) {
 		case .Error:
 			prefix = "[E]"
 		}
-		fmt.fprintf(os.stderr, "%s[%s] %s\n", prefix, tag, msg)
+		// Use stderr explicitly; WASI/host builds have it.
+		fmt.fprintf(os.stream_from_handle(os.stderr, context.allocator), "%s[%s] %s\n", prefix, tag, msg)
 	}
 }
 
-// info logs an info message
+// info logs an informational message.
 // Mirrors wayer::core::log::info
 info :: proc(tag: string, msg: string) {
 	log(.Info, tag, msg)
 }
 
-// error logs an error message
+// error logs an error message.
 // Mirrors wayer::core::log::error
 error :: proc(tag: string, msg: string) {
 	log(.Error, tag, msg)
 }
 
-// infof is a printf-style helper (for compatibility)
+// infof is a C-compat helper for call sites that pass C strings.
 // Mirrors wayer::core::log::infof
 infof :: proc(tag: cstring, msg: cstring) {
 	info(string(tag), string(msg))
 }
 
-// errorf is a printf-style helper (for compatibility)
+// errorf is a C-compat helper for call sites that pass C strings.
 // Mirrors wayer::core::log::errorf
 errorf :: proc(tag: cstring, msg: cstring) {
 	error(string(tag), string(msg))

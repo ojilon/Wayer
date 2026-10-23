@@ -1,11 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-
 <!-- Light configuration (night resources = light UI in this project). -->
-
 <resources>
 
     <style name="Theme.Wayer" parent="Theme.Material3.DayNight.NoActionBar">
-
         <item name="android:statusBarColor">@color/wayer_background</item>
         <item name="android:navigationBarColor">@color/wayer_background</item>
         <item name="android:windowLightStatusBar">true</item>
@@ -23,12 +20,13 @@
         <item name="colorSurfaceVariant">@color/wayer_surface_variant</item>
 
         <item name="colorOutline">@color/wayer_outline</item>
+        <item name="colorOutlineVariant">@color/wayer_outline_variant</item>
         <item name="colorError">@color/wayer_error</item>
 
         <item name="android:fontFamily">sans-serif</item>
 
         <item name="bottomNavigationStyle">@style/Widget.Wayer.BottomNavigation</item>
-        <item name="materialCardViewStyle">@style/Widget.Wayer.GlassCard</item>
+        <item name="materialCardViewStyle">@style/Widget.Wayer.Card</item>
     </style>
 
 </resources>

@@ -1,3 +1,25 @@
+// =============================================================================
+// list_files.odin — single-directory listing (Files tab)
+//
+// Part of package storage. Lists the contents of one directory (non-recursive)
+// for the FilesFragment file browser. Uses the bionic-safe fs_android wrappers
+// instead of core:os.read_dir, which on Android 10 might attempt statx.
+//
+// Output shape (what Java parses with JSONObject):
+//   {"files":["photo.jpg","notes.txt", ...]}
+//
+// Error shape (when path is not a directory or unreadable):
+//   {"error":"invalid_directory"}
+//
+// Why a separate file from walker.odin?
+//   walker.odin recurses for stats; this file is deliberately non-recursive
+//   and returns just names (not full paths) to keep the Files list lightweight.
+//   The Transfer and Cleaner modules use the file-backed index for searches
+//   over the whole tree — this is only for browsing one folder at a time.
+//
+// Mirrors: wayer::storage::list_files in native/storage/src/list_files.cpp
+// =============================================================================
+
 package storage
 
 import "core:fmt"
@@ -5,7 +27,8 @@ import "core:strings"
 
 import core_heart "../../core/src"
 
-
+// list_files returns JSON with file names in `path` (non-recursive).
+// Uses the bionic-safe WayerFsDir API (opendir/readdir/stat, no statx).
 list_files :: proc(path: string) -> string {
 	c_path := strings.clone_to_cstring(path, context.temp_allocator)
 	d := wayer_fs_opendir(c_path)
@@ -16,11 +39,14 @@ list_files :: proc(path: string) -> string {
 
 	sb := strings.builder_make(context.temp_allocator)
 	strings.write_string(&sb, `{"files":[`)
+
 	first := true
 	ent: WayerFsEntry
 	for wayer_fs_readdir(d, &ent) != 0 {
-		name := strings.string_from_ptr(cast([^]u8)ent.name, int(ent.name_len))
-		if !first { strings.write_string(&sb, ",") }
+		name := string(ent.name[:ent.name_len])
+		if !first {
+			strings.write_string(&sb, ",")
+		}
 		first = false
 		fmt.sbprintf(&sb, `"%s"`, core_heart.json_escape(name))
 	}

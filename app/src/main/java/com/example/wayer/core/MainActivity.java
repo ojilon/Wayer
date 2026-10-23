@@ -14,18 +14,28 @@ import com.example.wayer.bridge.NativeEngine;
 import com.example.wayer.databinding.ActivityMainBinding;
 import com.example.wayer.ui.*;
 
+/**
+ * MainActivity — updated Oct 2025 for standard Material3 navigation.
+ *
+ * Changes from previous HorizontalScrollView+ToggleGroup hack:
+ *   * Bottom bar is now a NavigationBarView (Material3) with 6 items from
+ *     menu_bottom_nav.xml. No custom scroll, no 120dp fixed buttons.
+ *   * Listener is setOnItemSelectedListener (not addOnButtonCheckedListener).
+ *   * navigateTo() and scrollBarTo() simplified — no scroll offset needed,
+ *     NavigationBarView handles indicator animation and accessibility.
+ *   * Bottom nav supports badge API (future: show new transfer count).
+ *
+ * Permission flow unchanged (Android 10 legacy vs Android 11+ MANAGE_ALL_FILES).
+ */
 public class MainActivity extends AppCompatActivity {
-    
+
     private ActivityMainBinding binding;
-    
-    // NEW: Register the launcher for the Manage All Files permission settings screen
-    private final ActivityResultLauncher<Intent> manageFilesAccessLauncher = 
+
+    private final ActivityResultLauncher<Intent> manageFilesAccessLauncher =
         registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
-            // This callback triggers when the user returns from the settings screen
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
                 if (android.os.Environment.isExternalStorageManager()) {
                     android.util.Log.i("WayerStorage", "Manage All Files access granted by user.");
-                    // Optional: Call your logic here to start using storage right away
                 } else {
                     android.util.Log.w("WayerStorage", "Manage All Files access denied by user.");
                 }
@@ -35,14 +45,11 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         ThemePrefs.applyStored(this);
-
         super.onCreate(savedInstanceState);
 
         NativeEngine.initEngine();
-        // Give native its app-owned dirs once (cache/temp/logs); required before
-        // BUILD_INDEX / SEARCH_INDEX, otherwise they report paths_not_initialized.
         NativeEngine.initAppPathsAsync(this, result -> android.util.Log.i("WayerNative", "initAppPaths: " + result));
-        
+
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
@@ -52,8 +59,7 @@ public class MainActivity extends AppCompatActivity {
         setupNavigation();
 
         if (savedInstanceState == null) {
-            binding.bottomNavigation.check(R.id.nav_home);
-            scrollBarTo(R.id.nav_home);
+            binding.bottomNavigation.setSelectedItemId(R.id.nav_home);
         }
     }
 
@@ -65,27 +71,23 @@ public class MainActivity extends AppCompatActivity {
 
     private void checkStoragePermissions() {
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-            // Modern Platform Logic (Android 11+)
             if (!android.os.Environment.isExternalStorageManager()) {
                 try {
                     Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
                     intent.addCategory("android.intent.category.DEFAULT");
                     intent.setData(android.net.Uri.parse(String.format("package:%s", getPackageName())));
-                    // MODERNIZED: Use launcher instead of startActivityForResult
                     manageFilesAccessLauncher.launch(intent);
                 } catch (Exception e) {
                     Intent intent = new Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION);
-                    // MODERNIZED: Use launcher instead of startActivityForResult
                     manageFilesAccessLauncher.launch(intent);
                 }
             }
         } else {
-            // Legacy Platform Logic (Android 10 and older)
-            if (checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED || 
+            if (checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED ||
                 checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-                
+
                 requestPermissions(new String[]{
-                    Manifest.permission.READ_EXTERNAL_STORAGE, 
+                    Manifest.permission.READ_EXTERNAL_STORAGE,
                     Manifest.permission.WRITE_EXTERNAL_STORAGE
                 }, 101);
             }
@@ -93,14 +95,16 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setupNavigation() {
-        binding.bottomNavigation.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
-            if (!isChecked) return;
-            if (checkedId == R.id.nav_home) showFragment(new HomeFragment());
-            else if (checkedId == R.id.nav_storage) showFragment(new StorageFragment());
-            else if (checkedId == R.id.nav_transfer) showFragment(new TransferFragment());
-            else if (checkedId == R.id.nav_files) showFragment(new FilesFragment());
-            else if (checkedId == R.id.nav_cleaner) showFragment(new CleanerFragment());
-            else if (checkedId == R.id.nav_internals) showFragment(new InternalFragment());
+        binding.bottomNavigation.setOnItemSelectedListener(item -> {
+            int id = item.getItemId();
+            if (id == R.id.nav_home) showFragment(new HomeFragment());
+            else if (id == R.id.nav_storage) showFragment(new StorageFragment());
+            else if (id == R.id.nav_transfer) showFragment(new TransferFragment());
+            else if (id == R.id.nav_files) showFragment(new FilesFragment());
+            else if (id == R.id.nav_cleaner) showFragment(new CleanerFragment());
+            else if (id == R.id.nav_internals) showFragment(new InternalFragment());
+            else return false;
+            return true;
         });
     }
 
@@ -110,18 +114,14 @@ public class MainActivity extends AppCompatActivity {
             .commit();
     }
 
+    /** Navigate to a bottom-nav destination (used by Home quick actions). */
     public void navigateTo(int itemId) {
-        binding.bottomNavigation.check(itemId);
-        scrollBarTo(itemId);
+        binding.bottomNavigation.setSelectedItemId(itemId);
     }
 
-    /** Keep the selected destination visible inside the scrollable bar. */
+    /** @deprecated no-op since Oct 2025 — bottom bar no longer scrolls */
+    @Deprecated
     private void scrollBarTo(int itemId) {
-        android.view.View item = binding.bottomNavigation.findViewById(itemId);
-        if (item == null) return;
-        binding.bottomNavScroll.post(() -> {
-            int x = item.getLeft() - binding.bottomNavScroll.getWidth() / 4;
-            binding.bottomNavScroll.smoothScrollTo(Math.max(0, x), 0);
-        });
+        // NavigationBarView handles visibility; no scroll needed.
     }
 }

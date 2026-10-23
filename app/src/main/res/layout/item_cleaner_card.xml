@@ -19,9 +19,9 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:cardBackgroundColor="@color/wayer_surface"
-        app:cardCornerRadius="@dimen/radius_md"
-        app:cardElevation="0dp"
-        app:strokeColor="@color/wayer_outline_glass"
+        app:cardCornerRadius="@dimen/radius_sm"
+        app:cardElevation="1dp"
+        app:strokeColor="@color/wayer_outline_variant"
         app:strokeWidth="1dp">
 
         <LinearLayout

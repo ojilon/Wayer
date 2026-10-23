@@ -24,10 +24,10 @@
 
             <ImageButton
                 android:id="@+id/btn_open_drawer"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@android:drawable/ic_menu_sort_by_size"
+                android:src="@drawable/ic_action_more"
                 android:contentDescription="@string/btn_open_drawer_desc"
                 app:tint="@color/wayer_text_primary" />
 
@@ -39,9 +39,10 @@
                 android:layout_marginStart="@dimen/spacing_sm"
                 android:hint="@string/search_layout_hint"
                 style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                app:boxBackgroundColor="@color/wayer_surface"
-                app:boxStrokeColor="@color/wayer_outline_glass"
-                app:hintTextColor="@color/wayer_text_secondary">
+                app:boxBackgroundColor="@color/wayer_surface_variant"
+                app:boxStrokeColor="@color/wayer_outline_variant"
+                app:hintTextColor="@color/wayer_text_secondary"
+                app:startIconDrawable="@drawable/ic_action_search">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/search_input"
@@ -80,7 +81,9 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="@dimen/spacing_sm"
-                android:text="@string/btn_files_up" />
+                android:text="@string/btn_files_up"
+                app:icon="@drawable/ic_action_up"
+                app:iconGravity="textStart" />
 
         </LinearLayout>
 
@@ -103,6 +106,24 @@
             android:layout_weight="1"
             android:clipToPadding="false"
             android:paddingBottom="@dimen/spacing_md" />
+
+        <!-- FAB for quick folder creation — standard Material pattern -->
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="@dimen/spacing_md">
+
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                android:id="@+id/fab_new_folder"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:contentDescription="Create new folder"
+                android:src="@drawable/ic_folder"
+                android:tint="@color/wayer_on_primary"
+                app:tint="@color/wayer_on_primary"
+                app:fabCustomSize="56dp" />
+        </FrameLayout>
 
         <LinearLayout
             android:id="@+id/empty_state"

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Bottom navigation menu — Material3 NavigationBarView.
+  6 destinations: Home, Files, Storage, Transfer, Cleaner, Internals.
+  Icons are distinct monochrome vectors; NavigationBarView tints them and
+  shows the active indicator (primary_container) automatically.
+-->
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/nav_home"
+        android:icon="@drawable/ic_nav_home"
+        android:title="@string/nav_home" />
+
+    <item
+        android:id="@+id/nav_files"
+        android:icon="@drawable/ic_nav_files"
+        android:title="@string/nav_files" />
+
+    <item
+        android:id="@+id/nav_storage"
+        android:icon="@drawable/ic_nav_storage"
+        android:title="@string/nav_storage" />
+
+    <item
+        android:id="@+id/nav_transfer"
+        android:icon="@drawable/ic_nav_transfer"
+        android:title="@string/nav_transfer" />
+
+    <item
+        android:id="@+id/nav_cleaner"
+        android:icon="@drawable/ic_nav_cleaner"
+        android:title="@string/nav_cleaner" />
+
+    <item
+        android:id="@+id/nav_internals"
+        android:icon="@drawable/ic_nav_debug"
+        android:title="@string/nav_internals" />
+
+</menu>
