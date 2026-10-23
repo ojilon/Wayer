@@ -91,7 +91,7 @@ cs :: proc(s: string) -> cstring {
 
 // fs_entry_name converts WayerFsEntry.name to an Odin string (exact length).
 fs_entry_name :: proc(e: ^WayerFsEntry) -> string {
-	return string(e.name[:e.name_len])
+	return string(([^]u8)(e.name)[:e.name_len])
 }
 
 // stat_c checks a path via C stat (bionic-safe, no statx).
