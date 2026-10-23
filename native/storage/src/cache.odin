@@ -1,6 +1,5 @@
 package storage
 
-import "core:os"
 import "core:time"
 
 import core_heart "../../core/src"
@@ -17,10 +16,10 @@ write_cache :: proc(cache_path: string, json: string) {
 	}
 	if last_slash > 0 {
 		parent := cache_path[:last_slash]
-		os.make_dir(parent)
+		fs.mkdir_p_c(parent)
 	}
 	
-	os.write_entire_file(cache_path, transmute([]byte)json)
+	fs.write_file_c(cache_path, transmute([]u8)json)
 }
 
 // read_cache_if_fresh reads cache if it exists and is not older than max_age_seconds
@@ -29,11 +28,10 @@ write_cache :: proc(cache_path: string, json: string) {
 read_cache_if_fresh :: proc(cache_path: string, max_age_seconds: int) -> string {
 	if max_age_seconds <= 0 { return "" }
 	
-	info, err := os.stat(cache_path)
-	if err != nil { return "" }
+	_, mtime, _, ok := fs.stat_c(cache_path)
+	if !ok { return "" }
 	
 	// Use unix timestamps for comparison
-	mtime := info.mod_time().unix() // seconds since epoch
 	now := time.now().unix()
 	age := now - mtime
 	
@@ -41,15 +39,14 @@ read_cache_if_fresh :: proc(cache_path: string, max_age_seconds: int) -> string 
 		return ""
 	}
 	
-	data, err := os.read_entire_file(cache_path)
-	if err != nil { return "" }
+	data, ok := fs.read_file_c(cache_path, 1024 * 1024) // 1MB max
+	if !ok { return "" }
 	
-	return string(data)
+	return data
 }
 
 // invalidate_cache deletes a cache file
 // Mirrors wayer::storage::invalidate_cache
 invalidate_cache :: proc(cache_path: string) -> bool {
-	err := os.remove(cache_path)
-	return err == nil
+	return fs.remove_c(cache_path)
 }

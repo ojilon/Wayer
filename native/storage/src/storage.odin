@@ -3,18 +3,7 @@ package storage
 // Storage module - re-exports all storage submodules
 // This allows wayer_core.odin to import storage "../storage/src"
 
-import extension_map "./extension_map.odin"
-import safety "./safety.odin"
-import walker "./walker.odin"
-import list_files "./list_files.odin"
-import index "./index.odin"
-import cache "./cache.odin"
-import stats_json "./stats_json.odin"
-import stats_db "./stats_db.odin"
-import analyse_storage_space "./analyse_storage_space.odin"
-import search "./search.odin"
-import organizer "./organizer.odin"
-import cleaner "./cleaner.odin"
+
 
 // Re-export key types
 Category :: extension_map.Category
@@ -49,7 +38,6 @@ build_stats_json :: stats_json.build_stats_json
 ascii_lower :: core_heart.ascii_lower
 json_escape :: core_heart.json_escape
 write_text_file :: core_heart.write_text_file
-walk_files :: search.walk_files
 is_excluded_dir :: safety.is_excluded_dir
 category_for_name :: extension_map.category_for_name
 category_for_extension :: extension_map.category_for_extension

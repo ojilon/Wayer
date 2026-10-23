@@ -1,3 +1,6 @@
+// cleaner.odin — large files + duplicate detection (C FS backend)
+// Uses android_fs.c for bionic-safe directory walks and file I/O.
+
 package storage
 
 import "core:c"
@@ -5,14 +8,13 @@ import "core:crypto/fnv"
 import "core:fmt"
 import "core:hash"
 import "core:io"
-import "core:os"
 import "core:sort"
 import "core:strings"
 import "core:time"
 
 import core_heart "../../core/src"
-import extension_map
-import safety
+
+
 
 // =============================================================================
 // LARGE FILES
@@ -32,27 +34,16 @@ find_large_files :: proc(root_path: string, min_bytes: u64, max_results: int) ->
 	
 	found: []LargeEntry
 	
-	// Walk and collect large files
-	err := walk_files(root_path, proc(entry: os.DirEntry) {
-		if !entry.is_file() { return }
-		
-		full_path := strings.concatenate({root_path, "/", entry.name}, context.temp_allocator)
-		info, err := os.stat(full_path)
-		if err != nil { return }
-		
-		size := u64(info.size())
-		if size < min_bytes { return }
+	// Walk and collect large files using C FS
+	fs.walk_files_c(root_path, proc(path: string, name: string, size: i64, mtime: i64) {
+		if size < i64(min_bytes) { return }
 		
 		found = append(found, LargeEntry{
-			name = entry.name,
-			path = full_path,
-			size = size,
+			name = name,
+			path = path,
+			size = u64(size),
 		}, context.temp_allocator)
 	})
-	
-	if err != nil {
-		return fmt.tprintf(`{"min_bytes":%d,"count":0,"files":[]}`, min_bytes)
-	}
 	
 	// Sort by size descending (top N)
 	sort.sort_by(found[:], proc(a, b: LargeEntry) -> bool { return a.size > b.size })
@@ -123,12 +114,11 @@ fnv1a_stream :: proc(reader: io.Reader, max_bytes: u64) -> u64 {
 // try_partial_hash computes hash of first 4 KiB mixed with size
 // Returns (hash, success)
 try_partial_hash :: proc(path: string, size: u64) -> (u64, bool) {
-	file, err := os.open(path)
-	if err != nil { return 0, false }
-	defer file.close()
+	// Use C FS to read file
+	data, ok := fs.read_file_c(path, 4096)
+	if !ok { return 0, false }
 	
-	// Read first 4096 bytes
-	h := fnv1a_stream(file, 4096)
+	h := fnv1a_stream(io.reader_from_slice(data), u64(data.len))
 	h ^= size * 0x9E3779B97F4A7C15
 	return h, true
 }
@@ -136,58 +126,38 @@ try_partial_hash :: proc(path: string, size: u64) -> (u64, bool) {
 // try_full_hash computes full FNV-1a hash of file
 // Returns (hash, success)
 try_full_hash :: proc(path: string) -> (u64, bool) {
-	file, err := os.open(path)
-	if err != nil { return 0, false }
-	defer file.close()
+	data, ok := fs.read_file_c(path, usize.MAX)
+	if !ok { return 0, false }
 	
-	h := fnv1a_stream(file, u64(-1))
+	h := fnv1a_stream(io.reader_from_slice(data), u64(data.len))
 	return h, true
 }
 
 // files_byte_equal compares two files byte-by-byte
 files_byte_equal :: proc(a: string, b: string) -> bool {
-	fa, err := os.open(a)
-	if err != nil { return false }
-	defer fa.close()
+	data_a, ok_a := fs.read_file_c(a, usize.MAX)
+	if !ok_a { return false }
+	defer c.free(data_a.ptr) // need to free if malloc'd
 	
-	fb, err := os.open(b)
-	if err != nil { return false }
-	defer fb.close()
+	data_b, ok_b := fs.read_file_c(b, usize.MAX)
+	if !ok_b { return false }
+	defer c.free(data_b.ptr)
 	
-	buf_a: [8192]u8
-	buf_b: [8192]u8
-	
-	for {
-		na, erra := fa.read(buf_a[:])
-		nb, errb := fb.read(buf_b[:])
-		
-		if na != nb { return false }
-		if na == 0 { return true } // both hit end together
-		
-		for i := 0; i < na; i++ {
-			if buf_a[i] != buf_b[i] { return false }
-		}
-		
-		if erra != nil || errb != nil { break }
-	}
-	
-	return false
+	return std.mem.eql(u8, data_a, data_b)
 }
 
 // file_mtime_unix returns file modification time as unix seconds
 file_mtime_unix :: proc(path: string) -> i64 {
-	info, err := os.stat(path)
-	if err != nil { return 0 }
-	// Convert file time to unix seconds
-	// Odin's time.Time is already unix-based
-	return i64(info.mod_time().unix())
+	_, mtime, _, ok := fs.stat_c(path)
+	if !ok { return 0 }
+	return mtime
 }
 
 // file_size_or_zero returns file size or 0 on error
 file_size_or_zero :: proc(path: string) -> u64 {
-	info, err := os.stat(path)
-	if err != nil { return 0 }
-	return u64(info.size())
+	size, _, _, ok := fs.stat_c(path)
+	if !ok { return 0 }
+	return u64(size)
 }
 
 // =============================================================================
@@ -298,19 +268,11 @@ find_duplicates :: proc(root_path: string) -> string {
 	// Step 1: group by size
 	by_size: map[u64][]string = make(map[u64][]string, context.temp_allocator)
 	
-	err := walk_files(root_path, proc(entry: os.DirEntry) {
-		if !entry.is_file() { return }
-		full_path := strings.concatenate({root_path, "/", entry.name}, context.temp_allocator)
-		info, err := os.stat(full_path)
-		if err != nil { return }
-		size := u64(info.size())
-		if size > 0 {
-			by_size[size] = append(by_size[size], full_path, context.temp_allocator)
-		}
+	fs.walk_files_c(root_path, proc(path: string, name: string, size: i64, mtime: i64) {
+		if size <= 0 { return }
+		u := u64(size)
+		by_size[u] = append(by_size[u], path, context.temp_allocator)
 	})
-	if err != nil {
-		return `{"version":2,"duplicate_groups":[],"related_groups":[]}`
-	}
 	
 	// Step 2: within each size group, group by partial hash
 	duplicate_groups: [][]DupFile

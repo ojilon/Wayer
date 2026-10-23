@@ -1,12 +1,15 @@
+// organizer.odin — plan + apply organization moves (C FS backend)
+// Uses android_fs.c for bionic-safe directory walks and file I/O.
+
 package storage
 
 import "core:fmt"
-import "core:os"
 import "core:strings"
 
 import core_heart "../../core/src"
-import extension_map
-import safety
+
+
+
 
 // Move represents one file move operation from the plan
 Move :: struct {
@@ -17,13 +20,14 @@ Move :: struct {
 // date_bucket returns YYYY-MM string for a file's mtime
 // Mirrors wayer::storage::date_bucket
 date_bucket :: proc(path: string) -> string {
-	info, err := os.stat(path)
-	if err != nil { return "unknown-date" }
+	_, mtime, _, ok := fs.stat_c(path)
+	if !ok { return "unknown-date" }
 	
-	t := info.mod_time()
-	// Odin's time.Time has year(), month() methods
-	year := t.year()
-	month := int(t.month())
+	// Convert unix timestamp to YYYY-MM
+	// We use time parsing from the mtime
+	t := time.unix_to_time(mtime)
+	year := t.year
+	month := int(t.month)
 	
 	return fmt.tprintf("%04d-%02d", year, month)
 }
@@ -35,11 +39,10 @@ plan_organize :: proc(root_path: string) -> string {
 	json := `{"moves":[`
 	first := true
 	
-	err := walk_files(root, proc(entry: os.DirEntry) {
-		if !entry.is_file() { return }
+	fs.walk_files_c(root_path, proc(path: string, name: string, size: i64, mtime: i64) {
+		_ = size
 		
-		src := strings.concatenate({root, "/", entry.name}, context.temp_allocator)
-		ext := strings.split(src, ".", context.temp_allocator)[-1]
+		ext := strings.split(path, ".", context.temp_allocator)[-1]
 		if len(ext) > 0 { ext = "." + ext }
 		category := extension_map.category_for_extension(ext)
 		
@@ -47,21 +50,19 @@ plan_organize :: proc(root_path: string) -> string {
 		// Images stay where they are for now
 		if category == "others" || category == "images" { return }
 		
-		bucket := date_bucket(src)
-		dest := strings.concatenate({root, "/", category, "/", bucket, "/", entry.name}, context.temp_allocator)
+		bucket := date_bucket(path)
+		dest := strings.concatenate({root_path, "/", category, "/", bucket, "/", name}, context.temp_allocator)
 		
-		if dest == src { return }
+		if dest == path { return }
 		
 		if !first { json += "," }
 		first = false
 		json += fmt.tprintf(`{"from":"%s","to":"%s"}`, 
-			core_heart.json_escape(src),
+			core_heart.json_escape(path),
 			core_heart.json_escape(dest))
 	})
 	
-	if err != nil {
-		return `{"moves":[]}`
-	}
+	if !first { json += "," } // won't happen since first is checked
 	
 	json += "]}"
 	return json
@@ -81,12 +82,12 @@ plan_organize_to_file :: proc(root_path: string, out_path: string) -> string {
 // Mirrors wayer::storage::apply_organize_file
 apply_organize_file :: proc(plan_path: string, report_path: string) -> string {
 	// Read plan file
-	plan_data, err := os.read_entire_file(plan_path)
-	if err != nil {
+	plan_data, ok := fs.read_file_c(plan_path, 1024 * 1024) // 1MB max
+	if !ok {
 		return `{"status":"error","reason":"bad_plan"}`
 	}
 	
-	plan_json := string(plan_data)
+	plan_json := plan_data
 	
 	// Parse JSON (simplified - we expect {"moves":[{"from":"...","to":"..."}...]})
 	// For simplicity, we'll use a basic parser
@@ -182,8 +183,8 @@ apply_organize_file :: proc(plan_path: string, report_path: string) -> string {
 		}
 		
 		// Check source exists
-		_, err := os.stat(move.from)
-		if err != nil {
+		_, _, _, ok := fs.stat_c(move.from)
+		if !ok {
 			skipped++
 			continue
 		}
@@ -199,8 +200,8 @@ apply_organize_file :: proc(plan_path: string, report_path: string) -> string {
 		}
 		if last_slash > 0 {
 			parent := to_path[:last_slash]
-			err = os.make_dir(parent)
-			if err != nil {
+			err = fs.mkdir_p_c(parent)
+			if !err {
 				failed++
 				note_error(move.from, "mkdir_failed")
 				continue
@@ -209,8 +210,8 @@ apply_organize_file :: proc(plan_path: string, report_path: string) -> string {
 		
 		// Handle existing destination
 		dest := to_path
-		_, err = os.stat(dest)
-		if err == nil {
+		_, _, _, ok := fs.stat_c(dest)
+		if ok {
 			// File exists, add _dup suffix
 			dot := strings.last_index_byte(dest, '.')
 			if dot > 0 {
@@ -221,8 +222,7 @@ apply_organize_file :: proc(plan_path: string, report_path: string) -> string {
 		}
 		
 		// Move file
-		err = os.rename(move.from, dest)
-		if err != nil {
+		if !fs.rename_c(move.from, dest) {
 			failed++
 			note_error(move.from, "move_failed")
 		} else {

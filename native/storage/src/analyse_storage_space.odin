@@ -95,9 +95,8 @@ write_storage_stats :: proc(root_path: string, out_path: string, known_device_by
 	// TODO: stats_db_record(root_path, device_total, used_bytes) once stats_db is ported.
 	// It was best-effort in C++, so skipping it can't break the snapshot.
 
-	// Write the JSON snapshot to the cache path that Java will later read.
-	// os.write_entire_file returns a non-nil error on failure.
-	if err := os.write_entire_file(out_path, transmute([]byte)json); err != nil {
+	// Write the JSON snapshot to the cache path
+	if !fs.write_file_c(out_path, transmute([]u8)json) {
 		return `{"status":"error","reason":"write_failed"}`
 	}
 	// Success: tell Java where the fresh snapshot lives.

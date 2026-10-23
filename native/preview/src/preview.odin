@@ -1,10 +1,10 @@
 package preview
 
 import "core:fmt"
-import "core:os"
 import "core:strings"
 
 import core_heart "../../core/src"
+import storage "../../storage/src"
 
 kDefaultMaxBytes :: u64(64 * 1024)   // 64 KiB
 kHardMaxBytes    :: u64(256 * 1024)  // 256 KiB hard cap
@@ -18,23 +18,14 @@ read_text_file :: proc(path: string, max_bytes: u64) -> string {
 	if max_bytes == 0 { max_bytes = kDefaultMaxBytes }
 	if max_bytes > kHardMaxBytes { max_bytes = kHardMaxBytes }
 	
-	info, err := os.stat(path)
-	if err != nil { return `{"error":"not_found"}` }
-	if !info.is_file() { return `{"error":"not_file"}` }
+	size, _, is_file, ok := storage.fs.stat_c(path)
+	if !ok { return `{"error":"not_found"}` }
+	if !is_file { return `{"error":"not_file"}` }
 	
-	size := u64(info.size())
+	data, ok := storage.fs.read_file_c(path, usize(max_bytes))
+	if !ok { return `{"error":"unreadable"}` }
 	
-	file, err := os.open(path)
-	if err != nil { return `{"error":"unreadable"}` }
-	defer file.close()
-	
-	want := usize(max_bytes)
-	if size < max_bytes { want = usize(size) }
-	
-	buf := make([]u8, want, context.temp_allocator)
-	n, err := file.read(buf)
-	if err != nil || n < 0 { return `{"error":"unreadable"}` }
-	buf = buf[:n]
+	buf := data
 	
 	// Binary sniff: a NUL byte means "not text"
 	for b in buf {

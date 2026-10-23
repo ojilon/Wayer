@@ -1,9 +1,5 @@
 package core_heart
 
-import json_util "./json_util.odin"
-import paths "./paths.odin"
-import logging "./logging.odin"
-import text "./text.odin"
 
 // Re-export all procedures
 json_escape :: json_util.json_escape

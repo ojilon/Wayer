@@ -139,32 +139,3 @@ search_files_to_file :: proc(root_path: string, query: string, out_path: string)
 	}
 	return fmt.tprintf(`{"status":"ok","path":"%s"}`, core_heart.json_escape(out_path))
 }
-
-// walk_files walks a directory tree and calls visit for each entry
-// Skips excluded directories
-walk_files :: proc(root: string, visit: proc(entry: os.DirEntry)) -> error {
-	// Use os.walk_dir for recursive traversal
-	iter := os.walk_dir(root)
-	for {
-		entry, err := iter.next()
-		if err == os.ErrIteratorDone { break }
-		if err != nil { return err }
-		
-		// Check if excluded
-		if entry.is_dir() {
-			parent := root // simplified; in reality we'd track the parent
-			if safety.is_excluded_dir(entry.name, parent) {
-				continue // skip this directory
-			}
-		}
-		
-		// Skip symlinks
-		if entry.is_symlink() { continue }
-		
-		// Only visit regular files
-		if entry.is_file() {
-			visit(entry)
-		}
-	}
-	return nil
-}

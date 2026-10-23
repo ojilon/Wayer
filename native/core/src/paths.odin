@@ -6,7 +6,6 @@ import "core:os"
 import "core:strings"
 import "core:time"
 
-import json_util
 
 // AppPaths mirrors wayer::core::AppPaths from paths.hpp
 AppPaths :: struct {

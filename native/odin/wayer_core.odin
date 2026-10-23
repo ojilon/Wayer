@@ -272,77 +272,77 @@ wayer_route_action :: proc "c" (action_id: c.int, payload: cstring) -> cstring {
 wayer_list_files :: proc "c" (path: cstring) -> cstring {
 	context = runtime.default_context()
 	defer free_all(context.temp_allocator)
-	return cs(storage.list_files(string(path)))
+	return reply(storage.list_files(string(path)))
 }
 
 @(export)
 wayer_get_network_info :: proc "c" () -> cstring {
 	context = runtime.default_context()
 	defer free_all(context.temp_allocator)
-	return cs(transfer.get_network_info())
+	return reply(transfer.get_network_info())
 }
 
 @(export)
 wayer_filter_documents :: proc "c" (payload: cstring) -> cstring {
 	context = runtime.default_context()
 	defer free_all(context.temp_allocator)
-	return cs(documents.filter_documents(string(payload)))
+	return reply(documents.filter_documents(string(payload)))
 }
 
 @(export)
 wayer_start_listener :: proc "c" (port: c.int) -> cstring {
 	context = runtime.default_context()
 	defer free_all(context.temp_allocator)
-	return cs(transfer.start_listener(int(port)))
+	return reply(transfer.start_listener(int(port)))
 }
 
 @(export)
 wayer_search_files_to_file :: proc "c" (root, query, out_path: cstring) -> cstring {
 	context = runtime.default_context()
 	defer free_all(context.temp_allocator)
-	return cs(storage.search_files_to_file(string(root), string(query), string(out_path)))
+	return reply(storage.search_files_to_file(string(root), string(query), string(out_path)))
 }
 
 @(export)
 wayer_find_large_files_to_file :: proc "c" (root: cstring, min_bytes: u64, max_results: c.int, out_path: cstring) -> cstring {
 	context = runtime.default_context()
 	defer free_all(context.temp_allocator)
-	return cs(storage.find_large_files_to_file(string(root), min_bytes, int(max_results), string(out_path)))
+	return reply(storage.find_large_files_to_file(string(root), min_bytes, int(max_results), string(out_path)))
 }
 
 @(export)
 wayer_find_duplicates_to_file :: proc "c" (root, out_path: cstring) -> cstring {
 	context = runtime.default_context()
 	defer free_all(context.temp_allocator)
-	return cs(storage.find_duplicates_to_file(string(root), string(out_path)))
+	return reply(storage.find_duplicates_to_file(string(root), string(out_path)))
 }
 
 @(export)
 wayer_plan_organize_to_file :: proc "c" (root, out_path: cstring) -> cstring {
 	context = runtime.default_context()
 	defer free_all(context.temp_allocator)
-	return cs(storage.plan_organize_to_file(string(root), string(out_path)))
+	return reply(storage.plan_organize_to_file(string(root), string(out_path)))
 }
 
 @(export)
 wayer_apply_organize_file :: proc "c" (plan_path, report_path: cstring) -> cstring {
 	context = runtime.default_context()
 	defer free_all(context.temp_allocator)
-	return cs(storage.apply_organize_file(string(plan_path), string(report_path)))
+	return reply(storage.apply_organize_file(string(plan_path), string(report_path)))
 }
 
 @(export)
 wayer_read_cache_if_fresh :: proc "c" (cache_path: cstring, max_age: c.int) -> cstring {
 	context = runtime.default_context()
 	defer free_all(context.temp_allocator)
-	return cs(storage.read_cache_if_fresh(string(cache_path), int(max_age)))
+	return reply(storage.read_cache_if_fresh(string(cache_path), int(max_age)))
 }
 
 @(export)
 wayer_read_text_file :: proc "c" (path: cstring, max_bytes: u64) -> cstring {
 	context = runtime.default_context()
 	defer free_all(context.temp_allocator)
-	return cs(preview.read_text_file(string(path), max_bytes))
+	return reply(preview.read_text_file(string(path), max_bytes))
 }
 
 @(export)
@@ -356,14 +356,14 @@ wayer_invalidate_cache :: proc "c" (cache_path: cstring) -> c.bool {
 wayer_init_app_paths :: proc "c" (app_root: cstring) -> cstring {
 	context = runtime.default_context()
 	defer free_all(context.temp_allocator)
-	return cs(init_app_paths(string(app_root)))
+	return reply(init_app_paths(string(app_root)))
 }
 
 @(export)
 wayer_json_escape :: proc "c" (s: cstring) -> cstring {
 	context = runtime.default_context()
 	defer free_all(context.temp_allocator)
-	return cs(core_heart.json_escape(string(s)))
+	return reply(core_heart.json_escape(string(s)))
 }
 
 @(export)

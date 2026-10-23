@@ -57,13 +57,14 @@ filter_documents :: proc(path: string) -> string {
 }
 
 // walk_files walks a directory tree and calls visit for each entry
-walk_files :: proc(root: string, visit: proc(entry: os.DirEntry)) -> error {
-	iter := os.walk_dir(root)
-	for {
-		entry, err := iter.next()
-		if err == os.ErrIteratorDone { break }
-		if err != nil { return err }
-		visit(entry)
-	}
-	return nil
-}
+// DEPRECATED: use C FS walk instead
+// walk_files :: proc(root: string, visit: proc(entry: os.DirEntry)) -> error {
+// 	iter := os.walk_dir(root)
+// 	for {
+// 		entry, err := iter.next()
+// 		if err == os.ErrIteratorDone { break }
+// 		if err != nil { return err }
+// 		visit(entry)
+// 	}
+// 	return nil
+// }

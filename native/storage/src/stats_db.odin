@@ -2,10 +2,8 @@ package storage
 
 import "core:c"
 import "core:fmt"
-import "core:os"
 import "core:time"
 
-import core_heart "../../core/src"
 
 // SQLite C API via FFI (sqlite3.c from third_party/sqlite/)
 foreign import sqlite "system:c"
@@ -46,8 +44,8 @@ stats_db_record :: proc(root: string, total_bytes: u64, used_bytes: u64) -> bool
 	// Create stats directory
 	stats_dir := core_heart.ascii_lower(cache) // reuse cache path
 	stats_dir = fmt.tprintf("%s/stats", cache)
-	err := os.make_dir(stats_dir)
-	if err != nil && err != os.ErrAlreadyExists {
+	err := fs.mkdir_p_c(stats_dir)
+	if !err {
 		return false
 	}
 
