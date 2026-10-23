@@ -34,13 +34,18 @@ foreign android_fs {
 // Mirrors wayer::core::ascii_lower. File-name matching only needs ASCII.
 ascii_lower :: proc(s: string) -> string {
 	result := strings.clone(s, context.temp_allocator)
-	for i in 0 ..< len(result) {
-		ch := result[i]
+
+	//transmute to mutable byte slice
+	bytes := transmute([]u8)result
+	for i in 0 ..< len(bytes) {
+		ch := bytes[i]
 		if ch >= 'A' && ch <= 'Z' {
-			result[i] = ch + ('a' - 'A')
+			bytes[i] = ch + ('a' - 'A')
 		}
 	}
-	return result
+
+	//transmute back to immutable string
+	return transmute(string)bytes
 }
 
 // ascii_lower_c is the C-callable version for JNI/shim tests.
