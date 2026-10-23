@@ -37,3 +37,4 @@ native/build-test/
 
 *.example
 *.log
+native/ERROR_ANALYSIS.md
