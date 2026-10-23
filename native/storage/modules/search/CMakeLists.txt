@@ -1,6 +1,7 @@
 # wayer_storage_search — file name/content search helpers
 add_library(wayer_storage_search STATIC
     src/file_search.cpp
+    src/collect_data.c
 )
 
 target_include_directories(wayer_storage_search
