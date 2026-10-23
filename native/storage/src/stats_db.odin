@@ -50,7 +50,7 @@ sqlite3_stmt :: struct {} // opaque
 SQLITE_OK   :: c.int(0)
 SQLITE_DONE :: c.int(101)
 // SQLITE_TRANSIENT = (sqlite3_destructor_type)-1 — tells SQLite to copy text
-SQLITE_TRANSIENT :: rawptr(rawptr(uintptr(-1)))
+SQLITE_TRANSIENT :: rawptr(rawptr(~uintptr(0)))
 
 // ---------------------------------------------------------------------------
 // c_time is defined in fs_android.odin (same package storage) — shared here.
