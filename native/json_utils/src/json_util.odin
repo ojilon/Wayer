@@ -15,7 +15,7 @@
 // Mirrors: wayer::core::json::escape in native/core/src/json_util.cpp
 // =============================================================================
 
-package core_heart
+package json_util
 
 import "core:strings"
 import "core:fmt"

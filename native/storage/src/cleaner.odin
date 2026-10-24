@@ -43,6 +43,8 @@ import "core:slice"
 import "core:strings"
 
 import core_heart "../../core/src"
+import fs "../../file_system_bridge/src"
+import js_util "../../json_utils/src"
 
 // =============================================================================
 // LARGE FILES
@@ -106,8 +108,8 @@ find_large_files :: proc(root_path: string, min_bytes: u64, max_results: int) ->
 		}
 		e := top[i]
 		fmt.sbprintf(&sb, `{"name":"%s","path":"%s","size":%d}`,
-			core_heart.json_escape(e.name),
-			core_heart.json_escape(e.path),
+			js_util.json_escape(e.name),
+			js_util.json_escape(e.path),
 			e.size)
 	}
 
@@ -141,7 +143,7 @@ find_large_files_to_file :: proc(root_path: string, min_bytes: u64, max_results:
 	if !core_heart.write_text_file(out_path, json) {
 		return `{"status":"error","reason":"write_failed"}`
 	}
-	return fmt.tprintf(`{"status":"ok","path":"%s"}`, core_heart.json_escape(out_path))
+	return fmt.tprintf(`{"status":"ok","path":"%s"}`, js_util.json_escape(out_path))
 }
 
 // =============================================================================
@@ -174,7 +176,7 @@ fnv1a_bytes :: proc(data: []u8) -> u64 {
 // try_partial_hash computes hash of first 4 KiB mixed with file size.
 // Returns (hash, success). Uses C FS read (bionic-safe).
 try_partial_hash :: proc(path: string, size: u64) -> (u64, bool) {
-	data, ok := read_file_c(path, 4096)
+	data, ok := fs.read_file_c(path, 4096)
 	if !ok {
 		return 0, false
 	}
@@ -185,7 +187,7 @@ try_partial_hash :: proc(path: string, size: u64) -> (u64, bool) {
 
 // try_full_hash computes full FNV-1a hash of file.
 try_full_hash :: proc(path: string) -> (u64, bool) {
-	data, ok := read_file_c(path, 16 * 1024 * 1024) // cap 16 MiB for hashing
+	data, ok := fs.read_file_c(path, 16 * 1024 * 1024) // cap 16 MiB for hashing
 	if !ok {
 		return 0, false
 	}
@@ -195,11 +197,11 @@ try_full_hash :: proc(path: string) -> (u64, bool) {
 
 // files_byte_equal compares two files byte-for-byte via C FS reads.
 files_byte_equal :: proc(a: string, b: string) -> bool {
-	data_a, ok_a := read_file_c(a, 16 * 1024 * 1024)
+	data_a, ok_a := fs.read_file_c(a, 16 * 1024 * 1024)
 	if !ok_a {
 		return false
 	}
-	data_b, ok_b := read_file_c(b, 16 * 1024 * 1024)
+	data_b, ok_b := fs.read_file_c(b, 16 * 1024 * 1024)
 	if !ok_b {
 		return false
 	}
@@ -211,7 +213,7 @@ files_byte_equal :: proc(a: string, b: string) -> bool {
 
 // file_mtime_unix returns mtime as unix seconds (0 = unknown).
 file_mtime_unix :: proc(path: string) -> i64 {
-	_, mtime, _, ok := stat_c(path)
+	_, mtime, _, ok := fs.stat_c(path)
 	if !ok {
 		return 0
 	}
@@ -220,7 +222,7 @@ file_mtime_unix :: proc(path: string) -> i64 {
 
 // file_size_or_zero returns size or 0 on error.
 file_size_or_zero :: proc(path: string) -> u64 {
-	size, _, _, ok := stat_c(path)
+	size, _, _, ok := fs.stat_c(path)
 	if !ok {
 		return 0
 	}
@@ -527,7 +529,7 @@ find_duplicates :: proc(root_path: string) -> string {
 			}
 			f := group[i]
 			fmt.sbprintf(&sb, `{"path":"%s","size":%d,"mtime":%d}`,
-				core_heart.json_escape(f.path), f.size, f.mtime)
+				js_util.json_escape(f.path), f.size, f.mtime)
 		}
 		strings.write_string(&sb, "]")
 	}
@@ -539,14 +541,14 @@ find_duplicates :: proc(root_path: string) -> string {
 			strings.write_string(&sb, ",")
 		}
 		group := related[gi]
-		fmt.sbprintf(&sb, `{"key":"%s","files":[`, core_heart.json_escape(group.key))
+		fmt.sbprintf(&sb, `{"key":"%s","files":[`, js_util.json_escape(group.key))
 		for i in 0 ..< len(group.files) {
 			if i > 0 {
 				strings.write_string(&sb, ",")
 			}
 			f := group.files[i]
 			fmt.sbprintf(&sb, `{"path":"%s","size":%d,"mtime":%d}`,
-				core_heart.json_escape(f.path), f.size, f.mtime)
+				js_util.json_escape(f.path), f.size, f.mtime)
 		}
 		strings.write_string(&sb, "]}")
 	}
@@ -562,7 +564,7 @@ find_duplicates_to_file :: proc(root_path: string, out_path: string) -> string {
 	if !core_heart.write_text_file(out_path, json) {
 		return `{"status":"error","reason":"write_failed"}`
 	}
-	return fmt.tprintf(`{"status":"ok","path":"%s"}`, core_heart.json_escape(out_path))
+	return fmt.tprintf(`{"status":"ok","path":"%s"}`, js_util.json_escape(out_path))
 }
 
 // ---------------------------------------------------------------------------
@@ -613,5 +615,5 @@ walk_files_with_ctx :: proc(root: string, cb: WalkWithCtxCb, ud: rawptr) {
 		ud: rawptr,
 	}{cb, ud}
 	c_root := strings.clone_to_cstring(root, context.temp_allocator)
-	wayer_fs_walk_files(c_root, walk_ctx_inner, &wrapper)
+	fs.wayer_fs_walk_files(c_root, walk_ctx_inner, &wrapper)
 }

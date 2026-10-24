@@ -51,6 +51,7 @@ import documents  "../documents/src"
 import transfer   "../transfer/src"
 import preview    "../preview/src"
 import media      "../media/src"
+import js_util "../json_utils/src"
 
 // ---------------------------------------------------------------------------
 // Action IDs — must stay identical to NativeEngine.java's constants
@@ -180,12 +181,12 @@ init_app_paths :: proc(raw: string) -> cstring {
 	// Reply shape must match C++ wayer_init_app_paths (PathRegistry parses it)
 	json := fmt.tprintf(
 		`{"status":"paths_set","manifest":"%s","all_ready":%s,"root":"%s","cache":"%s","temp":"%s","logs":"%s"}`,
-		core_heart.json_escape(manifest),
-		core_heart.bool_to_string(all_ready(report)),
-		core_heart.json_escape(report.paths.root),
-		core_heart.json_escape(report.paths.cache),
-		core_heart.json_escape(report.paths.temp),
-		core_heart.json_escape(report.paths.logs),
+		js_util.json_escape(manifest),
+		js_util.bool_to_string(all_ready(report)),
+		js_util.json_escape(report.paths.root),
+		js_util.json_escape(report.paths.cache),
+		js_util.json_escape(report.paths.temp),
+		js_util.json_escape(report.paths.logs),
 	)
 	return reply(json)
 }
@@ -270,7 +271,7 @@ route_action :: proc(action_id: int, payload: string) -> cstring {
 		// Fast path: fresh cache → return its path without recomputing
 		cached := storage.read_cache_if_fresh(parts[0], max_age)
 		if len(cached) > 0 {
-			return reply(fmt.tprintf(`{"status":"ok","path":"%s"}`, core_heart.json_escape(parts[0])))
+			return reply(fmt.tprintf(`{"status":"ok","path":"%s"}`, js_util.json_escape(parts[0])))
 		}
 		known_bytes := u64(0)
 		if len(parts) > 3 {
@@ -467,7 +468,7 @@ wayer_json_escape :: proc "c" (s: cstring) -> cstring {
 	context = runtime.default_context()
 	defer free_all(context.temp_allocator)
 	if s == nil do return reply("")
-	return reply(core_heart.json_escape(string(s)))
+	return reply(js_util.json_escape(string(s)))
 }
 
 @(export)
@@ -490,5 +491,6 @@ wayer_log_error :: proc "c" (tag, msg: cstring) {
 // because it is an exported symbol (visible to C).
 @(export)
 wayer_media_anchor :: proc "c" () -> c.int {
+	context = runtime.default_context()
 	return c.int(media.media_module_anchor())
 }

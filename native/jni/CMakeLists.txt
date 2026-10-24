@@ -22,6 +22,7 @@ target_link_libraries(wayer_engine
         wayer_media
         wayer_preview
         project_warnings
+        wayer_file_system
 )
 
 if(log-lib)

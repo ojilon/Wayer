@@ -24,6 +24,7 @@ import "core:c"
 import "core:strings"
 
 import core_heart "../../core/src"
+import fs "../../file_system_bridge/src"
 
 // ---------------------------------------------------------------------------
 // SQLite C API — from third_party/sqlite/sqlite3.h (linked via wayer_sqlite3)
@@ -74,7 +75,7 @@ stats_db_record :: proc(root: string, total_bytes: u64, used_bytes: u64) -> bool
 
 	// Ensure stats directory exists (private cache → always writable)
 	stats_dir := strings.concatenate({cache, "/stats"}, context.temp_allocator)
-	if !mkdir_p_c(stats_dir) {
+	if !fs.mkdir_p_c(stats_dir) {
 		return false
 	}
 
@@ -113,7 +114,7 @@ stats_db_record :: proc(root: string, total_bytes: u64, used_bytes: u64) -> bool
 	if sqlite3_bind_int64(stmt, 2, i64(total_bytes)) != SQLITE_OK { return false }
 	if sqlite3_bind_int64(stmt, 3, i64(used_bytes)) != SQLITE_OK { return false }
 
-	now := c_time(nil)
+	now := fs.c_time(nil)
 	if sqlite3_bind_int64(stmt, 4, now) != SQLITE_OK { return false }
 
 	if sqlite3_step(stmt) != SQLITE_DONE {

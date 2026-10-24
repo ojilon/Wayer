@@ -29,7 +29,7 @@
 //   does not allow nested `extern "c" fn` inside a proc).
 // =============================================================================
 
-package storage
+package file_system
 
 import "base:runtime"
 import "core:c"
@@ -37,7 +37,7 @@ import "core:fmt"
 import "core:strings"
 import "core:mem"
 
-import core_heart "../../core/src"
+import js_util "../../json_utils/src"
 
 // ---------------------------------------------------------------------------
 // C ABI — mirrored from native/core/include/wayer/core/android_fs.h
@@ -203,7 +203,7 @@ list_files_via_c :: proc(path: string) -> string {
 			strings.write_string(&sb, ",")
 		}
 		first = false
-		fmt.sbprintf(&sb, `"%s"`, core_heart.json_escape(name))
+		fmt.sbprintf(&sb, `"%s"`, js_util.json_escape(name))
 	}
 	strings.write_string(&sb, "]}")
 	return strings.to_string(sb)

@@ -23,6 +23,7 @@ package storage
 import "core:strings"
 
 import core_heart "../../core/src"
+import fs "../../file_system_bridge/src"
 
 // write_cache writes JSON to a cache file, creating parent directories via C.
 // Mirrors wayer::storage::write_cache
@@ -40,10 +41,10 @@ write_cache :: proc(cache_path: string, json: string) {
 	}
 	if last_slash > 0 {
 		parent := cache_path[:last_slash]
-		mkdir_p_c(parent) // C mkdir -p, bionic-safe
+		fs.mkdir_p_c(parent) // C mkdir -p, bionic-safe
 	}
 
-	write_file_c(cache_path, transmute([]u8)json)
+    fs.write_file_c(cache_path, transmute([]u8)json)
 }
 
 // read_cache_if_fresh returns cached JSON if file exists and is not older than
@@ -58,20 +59,20 @@ read_cache_if_fresh :: proc(cache_path: string, max_age_seconds: int) -> string 
 		return ""
 	}
 
-	_, mtime, _, ok := stat_c(cache_path)
+	_, mtime, _, ok := fs.stat_c(cache_path)
 	if !ok {
 		return ""
 	}
 
 	// Age check via unix timestamps (mtime from C stat, now from C time(2))
-	now := c_time(nil) // C time(nil) → current unix seconds, bionic-safe
+	now := fs.c_time(nil) // C time(nil) → current unix seconds, bionic-safe
 	age := now - mtime
 	if age > i64(max_age_seconds) {
 		return ""
 	}
 
 	// Read file (1 MiB cap — stats snapshots are ~2-10 KiB)
-	data, ok2 := read_file_c(cache_path, 1024 * 1024)
+	data, ok2 := fs.read_file_c(cache_path, 1024 * 1024)
 	if !ok2 {
 		return ""
 	}
@@ -84,5 +85,5 @@ invalidate_cache :: proc(cache_path: string) -> bool {
 	if len(cache_path) == 0 {
 		return false
 	}
-	return remove_c(cache_path)
+	return fs.remove_c(cache_path)
 }

@@ -37,6 +37,8 @@ import "core:slice"
 import "core:strings"
 
 import core_heart "../../core/src"
+import fs "../../file_system_bridge/src"
+import js_util "../../json_utils/src"
 
 // Retail floor — worst-case capacity for phones that don't report real size.
 RETAIL_64GB :: u64(64_000_000_000)
@@ -109,18 +111,18 @@ write_storage_stats :: proc(root_path: string, out_path: string, known_device_by
 	scan_dir(&scan, root, "")
 
 	// 3. Top folders, biggest first, capped.
-	folders := make([dynamic]FolderStat, context.temp_allocator)
+	folders := make([dynamic]js_util.FolderStat, context.temp_allocator)
 	for name, bytes in scan.top_dirs {
-		append(&folders, FolderStat{name = name, bytes = bytes})
+		append(&folders, js_util.FolderStat{name = name, bytes = bytes})
 	}
-	slice.sort_by(folders[:], proc(a, b: FolderStat) -> bool {
+	slice.sort_by(folders[:], proc(a, b: js_util.FolderStat) -> bool {
 		return a.bytes > b.bytes
 	})
 	limit := min(len(folders), kMaxFolders)
 	top_folders := folders[:limit]
 
 	// 4. Assemble numbers struct
-	numbers := StorageNumbers{
+	numbers := js_util.StorageNumbers{
 		total_bytes      = device_total,
 		used_bytes       = used_bytes,
 		free_bytes       = free_bytes,
@@ -135,17 +137,17 @@ write_storage_stats :: proc(root_path: string, out_path: string, known_device_by
 		folders          = top_folders,
 	}
 
-	json := build_stats_json(numbers)
+	json := js_util.build_stats_json(numbers)
 
 	// 5. Best-effort SQLite history row (failure is silent, same as C++)
 	// Deferred until after stats_db is ported — currently no-op if uninitialized.
 	// stats_db_record(root_path, device_total, used_bytes)
 
 	// 6. Write snapshot to cache path via C wrapper (bionic-safe)
-	if !write_file_c(out_path, transmute([]u8)json) {
+	if !fs.write_file_c(out_path, transmute([]u8)json) {
 		return `{"status":"error","reason":"write_failed"}`
 	}
 
 	// Success: tell Java where the fresh snapshot lives.
-	return fmt.tprintf(`{"status":"ok","path":"%s"}`, core_heart.json_escape(out_path))
+	return fmt.tprintf(`{"status":"ok","path":"%s"}`, js_util.json_escape(out_path))
 }

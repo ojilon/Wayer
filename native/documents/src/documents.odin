@@ -31,6 +31,7 @@ import "core:strings"
 import "core:c"
 
 import core_heart "../../core/src"
+import js_util "../../json_utils/src"
 
 // ---------------------------------------------------------------------------
 // C ABI — from doc_filter_helper.c / check_if_directory.c
@@ -82,7 +83,7 @@ filter_documents :: proc(path: string) -> string {
 
 	// Build wrapper JSON safely using builder (avoid fmt.tprintf escaping issues)
 	b := strings.builder_make(context.temp_allocator)
-	fmt.sbprintf(&b, `{"path":"%s","documents":[%s]}`, core_heart.json_escape(path), docs_content)
+	fmt.sbprintf(&b, `{"path":"%s","documents":[%s]}`, js_util.json_escape(path), docs_content)
 
 	return strings.to_string(b)
 }

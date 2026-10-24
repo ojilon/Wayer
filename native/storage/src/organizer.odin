@@ -39,6 +39,8 @@ import "core:strings"
 import "core:time"
 
 import core_heart "../../core/src"
+import fs "../../file_system_bridge/src"
+import js_util "../../json_utils/src"
 
 // Move represents one file move from the plan.
 Move :: struct {
@@ -49,7 +51,7 @@ Move :: struct {
 // date_bucket returns YYYY-MM string for a file's mtime via C stat.
 // Falls back to "unknown-date" when stat fails.
 date_bucket :: proc(path: string) -> string {
-	_, mtime, _, ok := stat_c(path)
+	_, mtime, _, ok := fs.stat_c(path)
 	if !ok {
 		return "unknown-date"
 	}
@@ -151,8 +153,8 @@ organize_walk_cb :: proc(path: string, name: string, size: i64, mtime: i64, ud: 
 	}
 	ctx.first^ = false
 	fmt.sbprintf(ctx.sb, `{"from":"%s","to":"%s"}`,
-		core_heart.json_escape(path),
-		core_heart.json_escape(dest))
+		js_util.json_escape(path),
+		js_util.json_escape(dest))
 }
 
 // plan_organize_to_file writes plan JSON to out_path and returns status JSON.
@@ -162,14 +164,14 @@ plan_organize_to_file :: proc(root_path: string, out_path: string) -> string {
 	if !core_heart.write_text_file(out_path, json) {
 		return `{"status":"error","reason":"write_failed"}`
 	}
-	return fmt.tprintf(`{"status":"ok","path":"%s"}`, core_heart.json_escape(out_path))
+	return fmt.tprintf(`{"status":"ok","path":"%s"}`, js_util.json_escape(out_path))
 }
 
 // apply_organize_file executes a plan file (JSON) and writes a report.
 // Mirrors wayer::storage::apply_organize_file
 apply_organize_file :: proc(plan_path: string, report_path: string) -> string {
 	// Read plan file via C FS (1 MiB cap — plans are small)
-	plan_data, ok := read_file_c(plan_path, 1024 * 1024)
+	plan_data, ok := fs.read_file_c(plan_path, 1024 * 1024)
 	if !ok || len(plan_data) == 0 {
 		return `{"status":"error","reason":"bad_plan"}`
 	}
@@ -239,7 +241,7 @@ apply_organize_file :: proc(plan_path: string, report_path: string) -> string {
 		}
 
 		// Source must exist
-		_, _, _, src_ok := stat_c(move.from)
+		_, _, _, src_ok := fs.stat_c(move.from)
 		if !src_ok {
 			skipped += 1
 			continue
@@ -255,17 +257,17 @@ apply_organize_file :: proc(plan_path: string, report_path: string) -> string {
 		}
 		if last_slash > 0 {
 			parent := dest[:last_slash]
-			if !mkdir_p_c(parent) {
+			if !fs.mkdir_p_c(parent) {
 				failed += 1
 				if len(errors) < kMaxErrors {
-					append(&errors, fmt.tprintf(`{"from":"%s","reason":"mkdir_failed"}`, core_heart.json_escape(move.from)))
+					append(&errors, fmt.tprintf(`{"from":"%s","reason":"mkdir_failed"}`, js_util.json_escape(move.from)))
 				}
 				continue
 			}
 		}
 
 		// Avoid overwrite: if dest exists, add _dup before extension
-		_, _, _, dest_exists := stat_c(dest)
+		_, _, _, dest_exists := fs.stat_c(dest)
 		if dest_exists {
 			dot := strings.last_index_byte(dest, '.')
 			slash := strings.last_index_byte(dest, '/')
@@ -279,10 +281,10 @@ apply_organize_file :: proc(plan_path: string, report_path: string) -> string {
 			}
 		}
 
-		if !rename_c(move.from, dest) {
+		if !fs.rename_c(move.from, dest) {
 			failed += 1
 			if len(errors) < kMaxErrors {
-				append(&errors, fmt.tprintf(`{"from":"%s","reason":"move_failed"}`, core_heart.json_escape(move.from)))
+				append(&errors, fmt.tprintf(`{"from":"%s","reason":"move_failed"}`, js_util.json_escape(move.from)))
 			}
 		} else {
 			moved += 1
@@ -305,7 +307,7 @@ apply_organize_file :: proc(plan_path: string, report_path: string) -> string {
 		return `{"status":"error","reason":"write_failed"}`
 	}
 
-	return fmt.tprintf(`{"status":"ok","path":"%s"}`, core_heart.json_escape(report_path))
+	return fmt.tprintf(`{"status":"ok","path":"%s"}`, js_util.json_escape(report_path))
 }
 
 // ---------------------------------------------------------------------------

@@ -36,6 +36,7 @@ import "core:strings"
 import "core:c"
 
 import core_heart "../../core/src"
+import js_util "../../json_utils/src"
 
 // ---------------------------------------------------------------------------
 // C walk types — from collect_data.c / dir_walk_android.c
@@ -143,9 +144,9 @@ search_files :: proc(root_path: string, query: string) -> string {
 		}
 		r := exacts[i]
 		fmt.sbprintf(&sb, `{"name":"%s","path":"%s","is_dir":%s}`,
-			core_heart.json_escape(r.name),
-			core_heart.json_escape(r.path),
-			core_heart.bool_to_string(r.is_dir),
+			js_util.json_escape(r.name),
+			js_util.json_escape(r.path),
+			js_util.bool_to_string(r.is_dir),
 		)
 	}
 
@@ -157,9 +158,9 @@ search_files :: proc(root_path: string, query: string) -> string {
 		}
 		r := relateds[i]
 		fmt.sbprintf(&sb, `{"name":"%s","path":"%s","is_dir":%s}`,
-			core_heart.json_escape(r.name),
-			core_heart.json_escape(r.path),
-			core_heart.bool_to_string(r.is_dir),
+			js_util.json_escape(r.name),
+			js_util.json_escape(r.path),
+			js_util.bool_to_string(r.is_dir),
 		)
 	}
 
@@ -174,5 +175,5 @@ search_files_to_file :: proc(root_path: string, query: string, out_path: string)
 	if !core_heart.write_text_file(out_path, json) {
 		return `{"status":"error","reason":"write_failed"}`
 	}
-	return fmt.tprintf(`{"status":"ok","path":"%s"}`, core_heart.json_escape(out_path))
+	return fmt.tprintf(`{"status":"ok","path":"%s"}`, js_util.json_escape(out_path))
 }

@@ -7,6 +7,7 @@ import "core:strings"
 import "core:c"
 
 import core_heart "../../../../core/src"
+import js_util "../../../../json_utils/src"
 
 WayerWalkEntry :: struct {
 	name: cstring,
@@ -61,7 +62,7 @@ search_files :: proc(root_path: string, query: string) -> string {
     exacts: [dynamic]SearchResult
     relateds: [dynamic]SearchResult
 
-    for i in 0 .. int(walk.count) {
+    for i in 0 ..< int(walk.count) {
         entry := walk.entries[i]
 
         // Skip symbolic links and unsupported entry types.
@@ -104,9 +105,9 @@ search_files :: proc(root_path: string, query: string) -> string {
         fmt.sbprintf(
             &sb,
             `{"name":"%s","path":"%s","is_dir":%s}`,
-            core_heart.json_escape(result.name),
-            core_heart.json_escape(result.path),
-            core_heart.bool_to_string(result.is_dir),
+            js_util.json_escape(result.name),
+            js_util.json_escape(result.path),
+            js_util.bool_to_string(result.is_dir),
         )
     }
 
@@ -120,9 +121,9 @@ search_files :: proc(root_path: string, query: string) -> string {
         fmt.sbprintf(
             &sb,
             `{"name":"%s","path":"%s","is_dir":%s}`,
-            core_heart.json_escape(result.name),
-            core_heart.json_escape(result.path),
-            core_heart.bool_to_string(result.is_dir),
+            js_util.json_escape(result.name),
+            js_util.json_escape(result.path),
+            js_util.bool_to_string(result.is_dir),
         )
     }
 
@@ -137,5 +138,5 @@ search_files_to_file :: proc(root_path: string, query: string, out_path: string)
 	if !core_heart.write_text_file(out_path, json) {
 		return `{"status":"error","reason":"write_failed"}`
 	}
-	return fmt.tprintf(`{"status":"ok","path":"%s"}`, core_heart.json_escape(out_path))
+	return fmt.tprintf(`{"status":"ok","path":"%s"}`, js_util.json_escape(out_path))
 }

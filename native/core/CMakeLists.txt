@@ -5,7 +5,6 @@ add_library(wayer_core STATIC
     src/paths.cpp
     src/logging.cpp
     src/text.cpp
-    src/android_fs.c
 )
 
 target_include_directories(wayer_core

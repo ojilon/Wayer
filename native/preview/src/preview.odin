@@ -28,7 +28,8 @@ import "core:fmt"
 import "core:strings"
 
 import core_heart "../../core/src"
-import storage   "../../storage/src"
+import js_util "../../json_utils/src"
+import fs "../../file_system_bridge/src"
 
 kDefaultMaxBytes :: u64(64 * 1024)  // 64 KiB default
 kHardMaxBytes    :: u64(256 * 1024) // 256 KiB hard cap — never exceed
@@ -49,7 +50,7 @@ read_text_file :: proc(path: string, max_bytes: u64) -> string {
 	}
 
 	// Stat via C wrapper (bionic-safe) — check existence + is_file
-	size, _, is_dir, ok := storage.stat_c(path)
+	size, _, is_dir, ok := fs.stat_c(path)
 	if !ok {
 		return `{"error":"not_found"}`
 	}
@@ -58,7 +59,7 @@ read_text_file :: proc(path: string, max_bytes: u64) -> string {
 	}
 
 	// Read via C wrapper (capped at limit)
-	data, ok2 := storage.read_file_c(path, int(limit))
+	data, ok2 := fs.read_file_c(path, int(limit))
 	if !ok2 {
 		return `{"error":"unreadable"}`
 	}
@@ -68,7 +69,7 @@ read_text_file :: proc(path: string, max_bytes: u64) -> string {
 	for b in buf {
 		if b == 0 {
 			return fmt.tprintf(`{"path":"%s","size":%d,"binary":true}`,
-				core_heart.json_escape(path), size)
+				js_util.json_escape(path), size)
 		}
 	}
 
@@ -103,7 +104,7 @@ read_text_file :: proc(path: string, max_bytes: u64) -> string {
 			strings.write_string(&lines_builder, ",")
 		}
 		first_line = false
-		fmt.sbprintf(&lines_builder, `"%s"`, core_heart.json_escape(line))
+		fmt.sbprintf(&lines_builder, `"%s"`, js_util.json_escape(line))
 		line_count += 1
 
 		if last {
@@ -117,6 +118,6 @@ read_text_file :: proc(path: string, max_bytes: u64) -> string {
 
 	return fmt.tprintf(
 		`{"path":"%s","size":%d,"truncated":%s,"line_count":%d,"lines":[%s]}`,
-		core_heart.json_escape(path), size,
-		core_heart.bool_to_string(truncated), line_count, lines_json)
+		js_util.json_escape(path), size,
+		js_util.bool_to_string(truncated), line_count, lines_json)
 }

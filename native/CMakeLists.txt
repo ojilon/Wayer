@@ -208,4 +208,5 @@ target_link_libraries(wayer_native_modules INTERFACE
     wayer_transfer
     wayer_media
     wayer_preview
+    wayer_file_system
 )

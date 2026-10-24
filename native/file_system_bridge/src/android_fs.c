@@ -3,7 +3,7 @@
  * Only opendir/readdir/stat/open/read/write/mkdir/rename/unlink.
  * Never statx.
  */
-#include "wayer/core/android_fs.h"
+#include "../include/android_fs.h"
 
 #include <dirent.h>
 #include <errno.h>

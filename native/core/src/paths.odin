@@ -34,19 +34,13 @@ import "core:c"
 import "core:fmt"
 import "core:strings"
 
+import fs "../../file_system_bridge/src"
+import js_util "../../json_utils/src"
+
 // ---------------------------------------------------------------------------
 // C FS bridge — bionic-safe, no statx (Android 10 seccomp)
 // Defined in native/core/src/android_fs.c, linked via wayer_core.
 // ---------------------------------------------------------------------------
-
-foreign import android_fs "system:c"
-
-@(default_calling_convention = "c")
-foreign android_fs {
-	wayer_fs_stat       :: proc(path: cstring, size_out: ^i64, mtime_out: ^i64, is_dir_out: ^c.int) -> c.int ---
-	//wayer_fs_mkdir_p    :: proc(path: cstring) -> c.int ---
-	wayer_fs_write_file :: proc(path: cstring, data: rawptr, n: c.size_t) -> c.int ---
-}
 
 // ---------------------------------------------------------------------------
 // Types — mirror C++ headers (paths.hpp)
@@ -100,7 +94,7 @@ ensure_one :: proc(dir: string) -> DirEnsure {
 	sz: i64
 	mt: i64
 	is_dir: c.int
-	if wayer_fs_stat(c_path, &sz, &mt, &is_dir) == 0 && is_dir == 1 {
+	if fs.wayer_fs_stat(c_path, &sz, &mt, &is_dir) == 0 && is_dir == 1 {
 		d.existed = true
 		d.ready = true
 		return d
@@ -112,7 +106,7 @@ ensure_one :: proc(dir: string) -> DirEnsure {
 	}
 
 	// Verify it is now a directory
-	if wayer_fs_stat(c_path, &sz, &mt, &is_dir) == 0 && is_dir == 1 {
+	if fs.wayer_fs_stat(c_path, &sz, &mt, &is_dir) == 0 && is_dir == 1 {
 		d.ready = true
 	}
 	return d
@@ -165,24 +159,24 @@ write_paths_manifest :: proc(report: AppDirsReport) -> string {
 	// Build JSON manually — no external lib needed for this small manifest.
 	// Use json_escape for paths (they may contain spaces/unicode).
 	fmt.sbprintf(&sb, `{"version":1,"root":"%s","dirs":{"cache":"%s","temp":"%s","logs":"%s"},`,
-		json_escape(report.paths.root),
-		json_escape(report.paths.cache),
-		json_escape(report.paths.temp),
-		json_escape(report.paths.logs))
+		js_util.json_escape(report.paths.root),
+		js_util.json_escape(report.paths.cache),
+		js_util.json_escape(report.paths.temp),
+		js_util.json_escape(report.paths.logs))
 
 	// existed flags
 	fmt.sbprintf(&sb, `"existed":{"root":%s,"cache":%s,"temp":%s,"logs":%s},`,
-		bool_to_string(report.root.existed),
-		bool_to_string(report.cache.existed),
-		bool_to_string(report.temp.existed),
-		bool_to_string(report.logs.existed))
+		js_util.bool_to_string(report.root.existed),
+		js_util.bool_to_string(report.cache.existed),
+		js_util.bool_to_string(report.temp.existed),
+		js_util.bool_to_string(report.logs.existed))
 
 	// ready flags
 	fmt.sbprintf(&sb, `"ready":{"root":%s,"cache":%s,"temp":%s,"logs":%s}}`,
-		bool_to_string(report.root.ready),
-		bool_to_string(report.cache.ready),
-		bool_to_string(report.temp.ready),
-		bool_to_string(report.logs.ready))
+		js_util.bool_to_string(report.root.ready),
+		js_util.bool_to_string(report.cache.ready),
+		js_util.bool_to_string(report.temp.ready),
+		js_util.bool_to_string(report.logs.ready))
 
 	json := strings.to_string(sb)
 

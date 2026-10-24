@@ -24,12 +24,10 @@
 //          in native/storage/src/stats_json.cpp
 // =============================================================================
 
-package storage
+package json_util
 
 import "core:strings"
 import "core:fmt"
-
-import core_heart "../../core/src"
 
 // ---------------------------------------------------------------------------
 // Types — mirror stats_json.hpp
@@ -74,7 +72,7 @@ build_stats_json :: proc(n: StorageNumbers) -> string {
 		if i > 0 {
 			strings.write_string(&sb, ",")
 		}
-		fmt.sbprintf(&sb, `{"path":"%s","bytes":%d}`, core_heart.json_escape(folder.name), folder.bytes)
+		fmt.sbprintf(&sb, `{"path":"%s","bytes":%d}`, json_escape(folder.name), folder.bytes)
 	}
 	strings.write_string(&sb, "]}")
 

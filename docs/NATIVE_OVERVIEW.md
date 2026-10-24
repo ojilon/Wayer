@@ -91,7 +91,7 @@ The October 2025 release had two breaking changes that touched every `*.odin` fi
 | `stats_json.odin` | Fixed `FolderStat`/`StorageNumbers` doc + `core_heart` import path + loop index form. |
 | `cache.odin` | Removed `os.*` usage, uses `stat_c`/`mkdir_p_c`/`write_file_c` + `c_time` from `fs_android` for `max_age` check (1 MiB read cap). |
 | `analyse_storage_space.odin` | Uses `statvfs` via `system:c` FFI (LP64 struct), `scan_dir` walker, `slice.sort_by`, `max()` for retail floor fallback. Writes via `write_file_c`. |
-| `list_files.odin` | Uses `WayerFsDir` (not `core:os.read_dir`), `WayerFsEntry` with `name_len`, `core_heart.json_escape`. |
+| `list_files.odin` | Uses `WayerFsDir` (not `core:os.read_dir`), `WayerFsEntry` with `name_len`, `js_util.json_escape`. |
 | `search.odin` | Fixed `WayerWalkResult` foreign import, `wayer_walk_directory` return convention (0=fail), `strings.clone` for entry names, `builder_make` result. |
 | `cleaner.odin` | **Large rewrite** — replaced `c.free`/`std.mem.eql`/`io.Reader` with `mem.compare`, `slice.sort_by`, `FNV-1a` over `[]u8`, context structs for walk callbacks (`DupWalkCtx`, `LargeAccum`), `walk_files_with_ctx` + `walk_ctx_inner` trampoline (avoids nested `extern "c"`). Group logic unchanged (size → partial hash → full hash → byte-equal). |
 | `organizer.odin` | Fixed `date_bucket` via `stat_c` + `time.unix`/`time.date`, `category_for_name` check, walk via `walk_files_with_ctx`, manual JSON scanner with `find_json_string_end`/`unescape_json_string`, `mkdir_p_c`/`rename_c` with dup suffix, report JSON via builder. |

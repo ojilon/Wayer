@@ -31,7 +31,7 @@ package storage
 import "core:c"
 import "core:strings"
 
-import core_heart "../../core/src"
+import fs "../../file_system_bridge/src"
 
 // ---------------------------------------------------------------------------
 // C ABI — from native/storage/src/index_c.c / index_c.h
@@ -63,7 +63,7 @@ build_index :: proc(root: string, index_path: string) -> string {
 	if len(root) == 0 || len(index_path) == 0 {
 		return `{"error":"bad_payload"}`
 	}
-	return string(wayer_build_index(cs(root), cs(index_path)))
+	return string(wayer_build_index(fs.cs(root), fs.cs(index_path)))
 }
 
 // index_meta returns metadata for index_path (bytes, mtime) without the listing.
@@ -71,7 +71,7 @@ index_meta :: proc(index_path: string) -> string {
 	if len(index_path) == 0 {
 		return `{"error":"bad_payload"}`
 	}
-	return string(wayer_index_meta(cs(index_path)))
+	return string(wayer_index_meta(fs.cs(index_path)))
 }
 
 // search_index_to_file searches index_path for query, spills matches to out_path.
@@ -86,7 +86,7 @@ search_index_to_file :: proc(query: string, max_results: u64, out_path: string, 
 	if limit > 200 {
 		limit = 200
 	}
-	return string(wayer_search_index_to_file(cs(query), limit, cs(out_path), cs(index_path)))
+	return string(wayer_search_index_to_file(fs.cs(query), limit, fs.cs(out_path), fs.cs(index_path)))
 }
 
 // group_index_by_day groups index entries by modification day, spills to out_path.
@@ -108,5 +108,5 @@ group_index_by_day :: proc(index_path: string, out_path: string, max_days: int, 
 	if per_day > 64 {
 		per_day = 64
 	}
-	return string(wayer_group_index_by_day(cs(index_path), cs(out_path), c.int(days), c.int(per_day)))
+	return string(wayer_group_index_by_day(fs.cs(index_path), fs.cs(out_path), c.int(days), c.int(per_day)))
 }
