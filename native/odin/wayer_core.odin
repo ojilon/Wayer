@@ -460,7 +460,7 @@ wayer_invalidate_cache :: proc "c" (cache_path: cstring) -> c.bool {
 wayer_init_app_paths :: proc "c" (app_root: cstring) -> cstring {
 	context = runtime.default_context()
 	defer free_all(context.temp_allocator)
-	return reply(init_app_paths(string(app_root)))
+	return init_app_paths(string(app_root))
 }
 
 @(export)
