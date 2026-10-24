@@ -33,3 +33,6 @@ build/
 
 #build-test files
 native/build-test/
+
+*.log
+native/ERROR_ANALYSIS.md
