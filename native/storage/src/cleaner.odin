@@ -167,7 +167,7 @@ FNV_PRIME  :: u64(1099511628211)
 fnv1a_bytes :: proc(data: []u8) -> u64 {
 	h := FNV_OFFSET
 	for b in data {
-		h ^= u64(b)
+		h = h ~ u64(b)
 		h *= FNV_PRIME
 	}
 	return h
@@ -181,7 +181,7 @@ try_partial_hash :: proc(path: string, size: u64) -> (u64, bool) {
 		return 0, false
 	}
 	h := fnv1a_bytes(transmute([]u8)data)
-	h ^= size * 0x9E3779B97F4A7C15
+	h = h ~ (size * 0x9E3779B97F4A7C15)
 	return h, true
 }
 
@@ -208,7 +208,7 @@ files_byte_equal :: proc(a: string, b: string) -> bool {
 	if len(data_a) != len(data_b) {
 		return false
 	}
-	return mem.compare(data_a, data_b) == 0
+	return mem.compare(transmute([]8u)data_a, transmute([]u8)data_b) == 0
 }
 
 // file_mtime_unix returns mtime as unix seconds (0 = unknown).
