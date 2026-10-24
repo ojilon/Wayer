@@ -47,7 +47,7 @@ log :: proc(level: LogLevel, tag: string, msg: string) {
 	ctag := strings.clone_to_cstring(tag, context.temp_allocator)
 	cmsg := strings.clone_to_cstring(msg, context.temp_allocator)
 
-	when ODIN_OS == .Android {
+	when ODIN_PLATFORM_SUBTARGET == .Android {
 		// Android log priorities (from <android/log.h>)
 		ANDROID_LOG_INFO  :: c.int(4)
 		ANDROID_LOG_ERROR :: c.int(6)
