@@ -41,6 +41,7 @@ import "core:fmt"
 import "core:mem"
 import "core:slice"
 import "core:strings"
+import "base:runtime"
 
 import core_heart "../../core/src"
 import fs "../../file_system_bridge/src"
@@ -597,6 +598,7 @@ WalkWithCtxCb :: proc(path: string, name: string, size: i64, mtime: i64, ud: raw
 
 // walk_ctx_inner is the trampoline for WalkWithCtx
 walk_ctx_inner :: proc "c" (path: cstring, name: cstring, size: i64, mtime: i64, ud: rawptr) {
+	context = runtime.default_context()
 	// ud points to a struct {cb, real_ud}
 	Wrapper :: struct {
 		cb: WalkWithCtxCb,
