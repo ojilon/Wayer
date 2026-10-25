@@ -268,51 +268,51 @@ normalize_related_key :: proc(filename: string) -> string {
 	}
 
 	cur := strings.clone(base, context.temp_allocator)
-	trim_trailing_space_dash(cur, &cur)
+	trimmed_cur := trim_trailing_space_dash(cur)
 
-	for iter := 0; iter < 5; iter += 1 {
+	for iter in 0.. {
 		trim_trailing_space_dash(cur, &cur)
-		if len(cur) == 0 {
+		if len(trimmed_cur) == 0 {
 			break
 		}
 
 		// Trailing " (digits)" like " (1)" or "(12)"
-		if len(cur) > 0 && cur[len(cur)-1] == ')' {
-			open := strings.last_index_byte(cur, '(')
-			if open != -1 && open + 1 < len(cur) {
+		if len(trimmed_cur) > 0 && trimmed_cur[len(trimmed_cur)-1] == ')' {
+			open := strings.last_index_byte(trimmed_cur, '(')
+			if open != -1 && open + 1 < len(trimmed_cur) {
 				all_digits := true
-				for i := open + 1; i+1 < len(cur); i += 1 {
-					if cur[i] < '0' || cur[i] > '9' {
+				for i := open + 1; i+1 < len(trimmed_cur); i += 1 {
+					if trimmed_cur[i] < '0' || cur[i] > '9' {
 						all_digits = false
 						break
 					}
 				}
 				if all_digits {
-					cur = cur[:open]
+					cur = trimmed_cur[:open]
 					continue
 				}
 			}
 			break
 		}
 
-		if ends_with_word(cur, "copy") {
-			pos := len(cur) - 4
+		if ends_with_word(trimmed_cur, "copy") {
+			pos := len(trimmed_cur) - 4
 			if pos > 0 {
-				sep := cur[pos-1]
+				sep := trimmed_cur[pos-1]
 				if sep == ' ' || sep == '-' || sep == '_' || sep == '(' {
-					cur = cur[:pos-1]
+					cur = trimmed_cur[:pos-1]
 					continue
 				}
 			}
 			break
 		}
 
-		if ends_with_word(cur, "final") {
-			pos := len(cur) - 5
+		if ends_with_word(trimmed_cur, "final") {
+			pos := len(trimmed_cur) - 5
 			if pos > 0 {
-				sep := cur[pos-1]
+				sep := trimmed_cur[pos-1]
 				if sep == ' ' || sep == '-' || sep == '_' {
-					cur = cur[:pos-1]
+					cur = trimmed_cur[:pos-1]
 					continue
 				}
 			}
@@ -320,23 +320,23 @@ normalize_related_key :: proc(filename: string) -> string {
 		}
 
 		// Trailing v-number: " v2", "_v2", "-v2"
-		n := len(cur)
+		n := len(trimmed_cur)
 		d := n
-		for d > 0 && cur[d-1] >= '0' && cur[d-1] <= '9' {
+		for d > 0 && trimmed_cur[d-1] >= '0' && trimmed_cur[d-1] <= '9' {
 			d -= 1
 		}
-		if d < n && d > 0 && (cur[d-1] == 'v' || cur[d-1] == 'V') {
+		if d < n && d > 0 && (trimmed_cur[d-1] == 'v' || trimmed_cur[d-1] == 'V') {
 			vpos := d - 1
 			if vpos == 0 {
 				cur = ""
 				break
 			}
-			sep := cur[vpos-1]
+			sep := trimmed_cur[vpos-1]
 			if sep == ' ' || sep == '-' || sep == '_' || vpos == 0 {
 				if vpos > 0 && (sep == ' ' || sep == '-' || sep == '_') {
-					cur = cur[:vpos-1]
+					trimmed_cur = trimmed_cur[:vpos-1]
 				} else {
-					cur = cur[:vpos]
+					trimmed_cur = trimmed_cur[:vpos]
 				}
 				continue
 			}
@@ -344,8 +344,8 @@ normalize_related_key :: proc(filename: string) -> string {
 		break
 	}
 
-	trim_trailing_space_dash(cur, &cur)
-	return cur
+	trimmed_cur2 := trim_trailing_space_dash(trimmed_cur)
+	return trimmed_cur2
 }
 
 // ---------------------------------------------------------------------------
