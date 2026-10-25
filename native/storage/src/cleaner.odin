@@ -241,17 +241,20 @@ ends_with_word :: proc(s: string, word: string) -> bool {
 	return s[len(s)-len(word):] == word
 }
 
-trim_trailing_space_dash :: proc(s: string, out: ^string) {
+trim_trailing_space_dash :: proc(s: string) -> string {
 	end := len(s)
+	
 	for end > 0 {
 		ch := s[end-1]
 		if ch == ' ' || ch == '\t' || ch == '-' || ch == '_' || ch == '.' {
-			end -= 1
+			end = end - 1
 		} else {
 			break
 		}
 	}
-	out^ = s[:end]
+
+	//return the new slice 
+	return s[:end]
 }
 
 // normalize_related_key strips " (1)", " copy", " final", " _v2" etc.
