@@ -112,11 +112,11 @@ public class NativeEngine {
     }
 
     /** Index search; matches go to outPath, reply is {status,path}. */
-    public static void searchIndexAsync(String query, int maxResults, String outPath, Callback callback) {
+    /*public static void searchIndexAsync(String query, int maxResults, String outPath, Callback callback) {
         Bridge.run(ACTION_SEARCH_INDEX,
                 (outPath != null ? outPath : "") + "|" + maxResults + "|" + (query != null ? query : ""),
                 outPath, "search", callback);
-    }
+    }*/
 
     /** Live file-name search; matches go to outPath, reply is {status,path}. */
     public static void searchFilesAsync(String root, String query, String outPath, Callback callback) {

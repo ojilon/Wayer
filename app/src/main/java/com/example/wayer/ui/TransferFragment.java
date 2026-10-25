@@ -349,7 +349,7 @@ public class TransferFragment extends Fragment {
         String out = dir + "/transfer-search-tab.json";
         PathCache.remember("transfer-search-tab", out);
         binding.searchResultsHint.setText("Searching…");
-        NativeEngine.searchIndexAsync(query, 50, out, rawJson -> {
+        NativeEngine.searchIndexAsync(requireContext(), query, 50, out, rawJson -> {
             if (binding == null) return;
             if ("busy".equals(PathCache.reason(rawJson))) {
                 binding.searchResultsHint.setText("Busy — try again");
@@ -687,7 +687,7 @@ public class TransferFragment extends Fragment {
         }
         String out = dir + "/transfer-matches.json";
         PathCache.remember("transfer-search", out);
-        NativeEngine.searchIndexAsync(name, 50, out, rawJson -> {
+        NativeEngine.searchIndexAsync(requireContext(), name, 50, out, rawJson -> {
             if (!isAdded()) return;
             setTransferButtonsEnabled(true);
             if ("busy".equals(PathCache.reason(rawJson))) {

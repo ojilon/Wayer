@@ -63,6 +63,7 @@ foreign android_fs {
 @(default_calling_convention = "c")
 foreign libc {
 	// bionic-safe time(2) and free (for C-allocated read buffers)
+	@(link_name = "time")
 	c_time :: proc(tloc: ^i64) -> i64 ---
 	free   :: proc(ptr: rawptr) ---
 }

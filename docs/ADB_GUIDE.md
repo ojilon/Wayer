@@ -106,3 +106,38 @@ Verify any APK's signature with:
 & $ADB logcat | Select-String "WayerNative|AndroidRuntime"
 # tap around on the phone, read the filtered output
 ```
+
+extra
+```
+```bash
+adb logcat --pid=$(adb shell pidof -s com.example.wayer.debug) *:E
+```
+
+That attaches only to your app’s process and shows **Error** level and above, so most system noise is gone.
+
+### Useful variants
+
+**All levels for the app only (still process-filtered):**
+```bash
+adb logcat --pid=$(adb shell pidof -s com.example.wayer.debug)
+```
+
+**App + crash/FATAL lines (good for the inflate crash you hit):**
+```bash
+adb logcat --pid=$(adb shell pidof -s com.example.wayer.debug) *:E AndroidRuntime:E
+```
+
+**If the process isn’t running yet** (start the app, then run):
+```bash
+adb logcat -c && adb shell am start -n com.example.wayer.debug/com.example.wayer.core.MainActivity && adb logcat --pid=$(adb shell pidof -s com.example.wayer.debug) *:E
+```
+
+**Tag-based filter** (when you care about specific tags like `WayerNative` / `WayerStorage`):
+```bash
+adb logcat WayerNative:E WayerStorage:E AndroidRuntime:E *:S
+```
+
+`*:S` silences everything else; only the listed tags at Error+ are shown.
+
+Use the package `com.example.wayer` (no `.debug`) if you’re on a release build.
+```

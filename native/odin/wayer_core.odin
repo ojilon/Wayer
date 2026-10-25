@@ -180,7 +180,7 @@ init_app_paths :: proc(raw: string) -> cstring {
 
 	// Reply shape must match C++ wayer_init_app_paths (PathRegistry parses it)
 	json := fmt.tprintf(
-		`{"status":"paths_set","manifest":"%s","all_ready":%s,"root":"%s","cache":"%s","temp":"%s","logs":"%s"}`,
+		`{{"status":"paths_set","manifest":"%s","all_ready":%s,"root":"%s","cache":"%s","temp":"%s","logs":"%s"}}`,
 		js_util.json_escape(manifest),
 		js_util.bool_to_string(all_ready(report)),
 		js_util.json_escape(report.paths.root),

@@ -59,7 +59,8 @@ public class MainActivity extends AppCompatActivity {
         setupNavigation();
 
         if (savedInstanceState == null) {
-            binding.bottomNavigation.setSelectedItemId(R.id.nav_home);
+            binding.bottomNavigation.check(R.id.nav_home);
+            scrollBarTo(R.id.nav_home);
         }
     }
 
@@ -95,16 +96,14 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setupNavigation() {
-        binding.bottomNavigation.setOnItemSelectedListener(item -> {
-            int id = item.getItemId();
-            if (id == R.id.nav_home) showFragment(new HomeFragment());
-            else if (id == R.id.nav_storage) showFragment(new StorageFragment());
-            else if (id == R.id.nav_transfer) showFragment(new TransferFragment());
-            else if (id == R.id.nav_files) showFragment(new FilesFragment());
-            else if (id == R.id.nav_cleaner) showFragment(new CleanerFragment());
-            else if (id == R.id.nav_internals) showFragment(new InternalFragment());
-            else return false;
-            return true;
+        binding.bottomNavigation.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
+            if (!isChecked) return;
+            if (checkedId == R.id.nav_home) showFragment(new HomeFragment());
+            else if (checkedId == R.id.nav_storage) showFragment(new StorageFragment());
+            else if (checkedId == R.id.nav_transfer) showFragment(new TransferFragment());
+            else if (checkedId == R.id.nav_files) showFragment(new FilesFragment());
+            else if (checkedId == R.id.nav_cleaner) showFragment(new CleanerFragment());
+            else if (checkedId == R.id.nav_internals) showFragment(new InternalFragment());
         });
     }
 
@@ -116,12 +115,17 @@ public class MainActivity extends AppCompatActivity {
 
     /** Navigate to a bottom-nav destination (used by Home quick actions). */
     public void navigateTo(int itemId) {
-        binding.bottomNavigation.setSelectedItemId(itemId);
+        binding.bottomNavigation.check(itemId);
+        scrollBarTo(itemId);
     }
 
-    /** @deprecated no-op since Oct 2025 — bottom bar no longer scrolls */
-    @Deprecated
+    /** Keep the selected destination visible inside the scrollable bar. */
     private void scrollBarTo(int itemId) {
-        // NavigationBarView handles visibility; no scroll needed.
+        android.view.View item = binding.bottomNavigation.findViewById(itemId);
+        if (item == null) return;
+        binding.bottomNavScroll.post(() -> {
+            int x = item.getLeft() - binding.bottomNavScroll.getWidth() / 4;
+            binding.bottomNavScroll.smoothScrollTo(Math.max(0, x), 0);
+        });
     }
 }
