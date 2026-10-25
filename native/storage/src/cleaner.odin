@@ -209,7 +209,7 @@ files_byte_equal :: proc(a: string, b: string) -> bool {
 	if len(data_a) != len(data_b) {
 		return false
 	}
-	return mem.compare(transmute([]8u)data_a, transmute([]u8)data_b) == 0
+	return mem.compare(transmute([]u8)data_a, transmute([]u8)data_b) == 0
 }
 
 // file_mtime_unix returns mtime as unix seconds (0 = unknown).
