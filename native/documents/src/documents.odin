@@ -42,7 +42,7 @@ foreign import doc_c "system:c"
 @(default_calling_convention = "c")
 foreign doc_c {
 	// Returns 1 if path is a directory, 0 otherwise (bionic-safe stat)
-	wayer_is_directory :: proc(path: cstring) -> c.int ---
+	is_directory :: proc(path: cstring) -> c.int ---
 
 	// Walk + filter: fills buf with quoted JSON strings, sets buf_len and first
 	// Returns 0 on success, non-zero on error (invalid directory etc.)
@@ -61,7 +61,7 @@ filter_documents :: proc(path: string) -> string {
 	}
 
 	c_path := strings.clone_to_cstring(path, context.temp_allocator)
-	if wayer_is_directory(c_path) == 0 {
+	if is_directory(c_path) == 0 {
 		return `{"error":"invalid_directory"}`
 	}
 

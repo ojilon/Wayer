@@ -71,6 +71,7 @@ add_subdirectory(transfer)
 add_subdirectory(media)
 add_subdirectory(preview)
 add_subdirectory(shim)
+add_subdirectory(file_system_bridge)
 
 # =============================================================================
 # Odin — build a static archive that the C JNI layer links against

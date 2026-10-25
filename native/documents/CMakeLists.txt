@@ -3,6 +3,8 @@
 add_library(wayer_documents STATIC
     src/document_engine.cpp
     src/documents_placeholder.cpp
+    src/check_if_directory.c
+    src/doc_filter_helper.c
 )
 
 target_include_directories(wayer_documents

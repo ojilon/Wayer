@@ -270,8 +270,8 @@ normalize_related_key :: proc(filename: string) -> string {
 	cur := strings.clone(base, context.temp_allocator)
 	trimmed_cur := trim_trailing_space_dash(cur)
 
-	for iter in 0.. {
-		trim_trailing_space_dash(cur, &cur)
+	for iter in 0..<5 {
+		trimmed_cur = trim_trailing_space_dash(cur)
 		if len(trimmed_cur) == 0 {
 			break
 		}
