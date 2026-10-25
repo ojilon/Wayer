@@ -37,3 +37,6 @@ native/build-test/
 
 *.log
 native/ERROR_ANALYSIS.md
+
+#build files
+*.o
