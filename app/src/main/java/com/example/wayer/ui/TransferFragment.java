@@ -26,6 +26,7 @@ import com.example.wayer.core.UiChrome;
 import com.example.wayer.databinding.FragmentTransferBinding;
 import com.example.wayer.network.NetworkCallback;
 import com.example.wayer.network.NetworkManager;
+import com.example.wayer.network.ProtocolV2;
 import com.example.wayer.storage.FileIndexer;
 import com.example.wayer.transfer.RecentTransfersStore;
 import com.example.wayer.transfer.TransferController;
@@ -41,6 +42,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 public class TransferFragment extends Fragment {
 
@@ -69,7 +72,7 @@ public class TransferFragment extends Fragment {
 
     private void setupUI() {
         binding.connectionDetails.setText("Target: " + Config.HOST + ":" + Config.PORT);
-        binding.connectionStatus.setText("Not tested");
+        binding.connectionStatus.setText("Protocol: v1 · v2 not linked");
         updateSessionStats();
         updateSavePathLabel();
         updateThemeLabel();
@@ -570,7 +573,7 @@ public class TransferFragment extends Fragment {
                 socket.connect(new InetSocketAddress(Config.HOST, Config.PORT), 3000);
                 ok = socket.isConnected();
                 long ms = System.currentTimeMillis() - start;
-                message = ok ? "Connected (" + ms + " ms)" : "Not connected";
+                message = ok ? "TCP reachable (" + ms + " ms) · protocol not tested" : "Not connected";
             } catch (Exception e) {
                 message = "Failed: " + e.getMessage();
             }
@@ -612,6 +615,14 @@ public class TransferFragment extends Fragment {
             workingDir.mkdirs();
         }
 
+        if (binding.autoV2.isChecked()) {
+            runV2Download(name, workingDir);
+            return;
+        }
+        runV1Download(name, workingDir);
+    }
+
+    private void runV1Download(String name, File workingDir) {
         String command = "/ask " + name;
         appendLog("Download: " + name + " → " + savePath);
         setTransferButtonsEnabled(false);
@@ -646,6 +657,86 @@ public class TransferFragment extends Fragment {
                 });
             }
         });
+    }
+
+    private void runV2Download(String name, File dir) {
+        final String did;
+        try { did = Config.deviceId(requireContext()); }
+        catch (Exception e) { appendLog("Cannot create device ID: " + e.getMessage()); return; }
+        String device = android.os.Build.MODEL;
+        setTransferButtonsEnabled(false);
+        appendLog("Trying v2 download: " + name);
+        new Thread(() -> {
+            try {
+                File result = ProtocolV2.download(Config.HOST, Config.PORT, device, did, name, dir,
+                        new ProtocolV2.Listener() {
+                    private long lastProgress;
+                    @Override public void linked(String pc) {
+                        runOnUi(() -> binding.connectionStatus.setText("Protocol: v2 · linked to " + pc));
+                    }
+                    @Override public int choose(JSONArray items) throws Exception {
+                        ArrayBlockingQueue<Integer> choice = new ArrayBlockingQueue<>(1);
+                        String[] labels = new String[items.length()];
+                        int[] numbers = new int[items.length()];
+                        for (int i = 0; i < items.length(); i++) {
+                            JSONObject item = items.getJSONObject(i);
+                            numbers[i] = item.getInt("n");
+                            long mtime = item.optLong("mtime", 0);
+                            labels[i] = item.optString("name") + " · " + formatSize(item.optLong("size"))
+                                    + " · " + java.text.DateFormat.getDateTimeInstance().format(new java.util.Date(mtime * 1000));
+                        }
+                        runOnUi(() -> new AlertDialog.Builder(requireContext())
+                                .setTitle("Pick a PC file")
+                                .setItems(labels, (dialog, which) -> choice.offer(numbers[which]))
+                                .setNegativeButton("Cancel", (dialog, which) -> choice.offer(-1))
+                                .setOnCancelListener(dialog -> choice.offer(-1)).show());
+                        Integer selected = choice.poll(115, TimeUnit.SECONDS);
+                        return selected == null ? -1 : selected;
+                    }
+                    @Override public void progress(long bytes, long total) {
+                        long now = android.os.SystemClock.elapsedRealtime();
+                        if (bytes != total && now - lastProgress < 250) return;
+                        lastProgress = now;
+                        runOnUi(() -> binding.bandwidthHint.setText("Receiving " + formatSize(bytes) + " / " + formatSize(total)));
+                    }
+                });
+                runOnUi(() -> {
+                    binding.connectionStatus.setText("Protocol: v2 · disconnected");
+                    setTransferButtonsEnabled(true);
+                    appendLog("Downloaded: " + result.getName());
+                    sessionReceivedBytes += result.length();
+                    updateSessionStats();
+                    recordSuccess(true, result.getName(), result.getParent());
+                });
+            } catch (ProtocolV2.HandshakeException e) {
+                runOnUi(() -> {
+                    binding.connectionStatus.setText("v2 unavailable · using v1");
+                    appendLog("v2 handshake unavailable; trying v1.");
+                    runV1Download(name, dir);
+                });
+            } catch (Exception e) {
+                String message = e instanceof ProtocolV2.RemoteException
+                        ? v2Error((ProtocolV2.RemoteException) e) : e.getMessage();
+                runOnUi(() -> {
+                    binding.connectionStatus.setText("Protocol: v2 · disconnected");
+                    setTransferButtonsEnabled(true);
+                    appendLog("v2 download failed: " + message);
+                });
+            }
+        }).start();
+    }
+
+    private static String v2Error(ProtocolV2.RemoteException e) {
+        switch (e.code) {
+            case "not_found": return "No matching file on PC";
+            case "expired": return "Match selection expired; search again";
+            case "busy": return "PC is busy; try again";
+            case "hash_mismatch": return "File checksum mismatch";
+            case "too_large": return "File exceeds the 2 GiB limit";
+            case "denied": return "Transfer denied";
+            case "aborted": return "Transfer aborted";
+            default: return e.code + ": " + e.getMessage();
+        }
     }
 
     private void runUploadSearch() {

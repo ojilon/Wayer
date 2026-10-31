@@ -143,4 +143,5 @@
     <!-- layout\nav_header -->
     <string name="layout_nav_header_text_41">Browse and search your device</string>
 
+    <string name="auto_v2_download">Try v2 downloads (fall back to v1)</string>
 </resources>
