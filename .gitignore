@@ -30,3 +30,7 @@ keystore.properties
 *.keystore
 
 build/
+*.o
+*.log
+native/ERROR_ANALYSIS.md
+*.a
